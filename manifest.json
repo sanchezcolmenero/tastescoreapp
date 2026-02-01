@@ -1,7 +1,7 @@
 {
   "name": "TasteScore",
   "short_name": "TasteScore",
-  "description": "Catas de productos en grupo - Puntúa y compara productos con amigos",
+  "description": "Catas de productos en grupo",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#f8fafc",
@@ -9,7 +9,7 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%232563eb'/%3E%3Cellipse cx='256' cy='360' rx='130' ry='105' fill='%231e40af'/%3E%3Ccircle cx='256' cy='195' r='100' fill='%231e40af'/%3E%3Cellipse cx='148' cy='108' rx='29' ry='42' fill='%231e40af' transform='rotate(-15 148 108)'/%3E%3Cellipse cx='364' cy='108' rx='29' ry='42' fill='%231e40af' transform='rotate(15 364 108)'/%3E%3Cellipse cx='148' cy='108' rx='15' ry='28' fill='%233b82f6' transform='rotate(-15 148 108)'/%3E%3Cellipse cx='364' cy='108' rx='15' ry='28' fill='%233b82f6' transform='rotate(15 364 108)'/%3E%3Cellipse cx='256' cy='225' rx='62' ry='50' fill='white'/%3E%3Ccircle cx='222' cy='200' r='13' fill='%231a1a1a'/%3E%3Ccircle cx='290' cy='200' r='13' fill='%231a1a1a'/%3E%3Ccircle cx='226' cy='194' r='4.5' fill='white'/%3E%3Ccircle cx='294' cy='194' r='4.5' fill='white'/%3E%3Cellipse cx='256' cy='225' rx='8' ry='5' fill='%231a1a1a'/%3E%3Cpath d='M238 238 Q256 256 274 238' stroke='%231a1a1a' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='194' cy='228' rx='10' ry='6' fill='%23f59e0b' opacity='0.5'/%3E%3Cellipse cx='318' cy='228' rx='10' ry='6' fill='%23f59e0b' opacity='0.5'/%3E%3Cellipse cx='256' cy='375' rx='46' ry='38' fill='%233b82f6'/%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%232563eb'/%3E%3Ccircle cx='256' cy='210' r='135' fill='white'/%3E%3Cellipse cx='148' cy='105' rx='46' ry='56' fill='%231a1a1a'/%3E%3Cellipse cx='364' cy='105' rx='46' ry='56' fill='%231a1a1a'/%3E%3Cellipse cx='148' cy='108' rx='24' ry='32' fill='%23374151'/%3E%3Cellipse cx='364' cy='108' rx='24' ry='32' fill='%23374151'/%3E%3Cellipse cx='200' cy='200' rx='46' ry='40' fill='%231a1a1a' transform='rotate(-5 200 200)'/%3E%3Cellipse cx='312' cy='200' rx='46' ry='40' fill='%231a1a1a' transform='rotate(5 312 200)'/%3E%3Cellipse cx='256' cy='212' rx='16' ry='12' fill='%231a1a1a'/%3E%3Ccircle cx='200' cy='195' r='22' fill='white'/%3E%3Ccircle cx='312' cy='195' r='22' fill='white'/%3E%3Ccircle cx='206' cy='196' r='14' fill='%231a1a1a'/%3E%3Ccircle cx='318' cy='196' r='14' fill='%231a1a1a'/%3E%3Ccircle cx='210' cy='191' r='5.5' fill='white'/%3E%3Ccircle cx='322' cy='191' r='5.5' fill='white'/%3E%3Cellipse cx='256' cy='238' rx='13' ry='9' fill='%231a1a1a'/%3E%3Cpath d='M241 252 Q256 268 271 252' stroke='%231a1a1a' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='165' cy='240' rx='15' ry='9' fill='%23f59e0b' opacity='0.35'/%3E%3Cellipse cx='347' cy='240' rx='15' ry='9' fill='%23f59e0b' opacity='0.35'/%3E%3Cellipse cx='256' cy='430' rx='148' ry='120' fill='white'/%3E%3Cellipse cx='256' cy='445' rx='78' ry='62' fill='%23dbeafe'/%3E%3Cellipse cx='118' cy='400' rx='34' ry='62' fill='%231a1a1a' transform='rotate(18 118 400)'/%3E%3Cellipse cx='394' cy='400' rx='34' ry='62' fill='%231a1a1a' transform='rotate(-18 394 400)'/%3E%3C/svg%3E",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
