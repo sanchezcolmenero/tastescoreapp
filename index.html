@@ -11,25 +11,7 @@
     <link rel="manifest" href="manifest.json">
     <title>TasteScore</title>
 
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore-compat.js"></script>
-    <script>
-        // ===== FIREBASE CONFIG – replace with your own from https://console.firebase.google.com =====
-        const firebaseConfig = {
-            apiKey:            "AIzaSyBERE_PLACEHOLDER_REPLACE_ME",
-            authDomain:        "tastescore-PLACEHOLDER.firebaseapp.com",
-            projectId:         "tastescore-PLACEHOLDER",
-            storageBucket:     "tastescore-PLACEHOLDER.appspot.com",
-            messagingSenderId:"000000000000",
-            appId:             "1:000000000000:web:aaaaaaaaaaaaaaaaaaaaaaaa"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db   = firebase.firestore();
-        const googleProvider = new firebase.auth.GoogleAuthProvider();
-    </script>
+    <!-- Auth is handled client-side in the main script -->
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -180,108 +162,102 @@
         .invite-mini { background:linear-gradient(135deg,#eef2ff,#e0e7ff); border:1px solid #c7d2fe; border-radius:10px; padding:0.85rem 1rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.75rem; }
         .invite-mini .code-mini { font-weight:700; font-size:1.1rem; letter-spacing:0.15em; color:var(--primary); flex-shrink:0; }
         .invite-mini p { font-size:0.78rem; color:var(--text-secondary); flex:1; min-width:0; }
+        /* INPUT ERROR */
+        .input-error input, .input-error textarea { border-color:var(--error) !important; background:#fef2f2; }
+        .input-error input:focus, .input-error textarea:focus { box-shadow:0 0 0 3px rgba(239,68,68,0.15) !important; }
+        .input-error label { color:var(--error) !important; }
+        .field-error { font-size:0.75rem; color:var(--error); margin-top:0.3rem; display:none; }
+        .field-error.show { display:block; }
+        /* INVITE FAB */
+        .invite-fab { position:fixed; bottom:80px; right:1rem; width:52px; height:52px; border-radius:50%; background:var(--primary); color:white; border:none; box-shadow:0 4px 14px rgba(37,99,235,0.4); display:none; align-items:center; justify-content:center; z-index:400; cursor:pointer; font-size:1.6rem; transition:transform 0.15s,box-shadow 0.15s; }
+        .invite-fab:hover { transform:scale(1.08); box-shadow:0 6px 20px rgba(37,99,235,0.5); }
+        .invite-fab.show { display:flex; }
+        /* SHARE MODAL */
+        .share-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:2000; align-items:flex-end; justify-content:center; }
+        .share-overlay.active { display:flex; }
+        .share-sheet { background:#fff; border-radius:16px 16px 0 0; padding:1.5rem; width:100%; max-width:500px; }
+        .share-sheet h3 { margin:0 0 0.25rem; font-size:1.05rem; font-weight:600; }
+        .share-sheet > p { color:var(--text-secondary); font-size:0.8rem; margin:0 0 1.25rem; }
+        .share-code-big { background:linear-gradient(135deg,var(--primary),var(--primary-light)); border-radius:10px; padding:1rem; text-align:center; margin-bottom:1rem; }
+        .share-code-big .code { font-size:2rem; font-weight:700; letter-spacing:0.3em; color:white; }
+        .share-code-big p { color:rgba(255,255,255,0.85); font-size:0.78rem; margin:0.3rem 0 0; }
+        .share-actions { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
+        .share-actions button { padding:0.7rem; border-radius:8px; border:1px solid var(--border); background:var(--bg-secondary); cursor:pointer; font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:500; color:var(--text); transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:0.4rem; }
+        .share-actions button:hover { border-color:var(--primary); color:var(--primary); background:#fff; }
+        .share-close { display:block; width:100%; margin-top:0.85rem; padding:0.6rem; border:none; background:none; color:var(--text-secondary); font-size:0.82rem; cursor:pointer; font-family:'Inter',sans-serif; }
     </style>
 </head>
 <body>
 
-<!-- PANDA MASCOT (normal – standing, cute) -->
-<svg id="mascotSVG" style="display:none" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
-  <!-- body white -->
-  <ellipse cx="100" cy="160" rx="58" ry="48" fill="white" stroke="#e2e8f0" stroke-width="1.5"/>
-  <!-- belly blue accent -->
-  <ellipse cx="100" cy="168" rx="30" ry="24" fill="#dbeafe"/>
-  <!-- head white -->
-  <circle cx="100" cy="82" r="52" fill="white" stroke="#e2e8f0" stroke-width="1.5"/>
-  <!-- ears (black rounded) -->
-  <ellipse cx="58" cy="40" rx="18" ry="22" fill="#1a1a1a"/>
-  <ellipse cx="142" cy="40" rx="18" ry="22" fill="#1a1a1a"/>
-  <!-- ear inner -->
-  <ellipse cx="58" cy="42" rx="9" ry="12" fill="#374151"/>
-  <ellipse cx="142" cy="42" rx="9" ry="12" fill="#374151"/>
-  <!-- eye patches (black) -->
-  <ellipse cx="78" cy="78" rx="18" ry="16" fill="#1a1a1a" transform="rotate(-5 78 78)"/>
-  <ellipse cx="122" cy="78" rx="18" ry="16" fill="#1a1a1a" transform="rotate(5 122 78)"/>
-  <!-- bridge between patches -->
-  <ellipse cx="100" cy="82" rx="6" ry="5" fill="#1a1a1a"/>
-  <!-- eyes (big, shiny – Duolingo style) -->
-  <circle cx="78" cy="76" r="9" fill="white"/>
-  <circle cx="122" cy="76" r="9" fill="white"/>
-  <circle cx="80" cy="77" r="5.5" fill="#1a1a1a"/>
-  <circle cx="124" cy="77" r="5.5" fill="#1a1a1a"/>
-  <!-- eye shine -->
-  <circle cx="82" cy="74" r="2.2" fill="white"/>
-  <circle cx="126" cy="74" r="2.2" fill="white"/>
-  <!-- nose -->
-  <ellipse cx="100" cy="92" rx="5" ry="3.5" fill="#1a1a1a"/>
-  <!-- mouth -->
-  <path d="M95 96 Q100 102 105 96" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <!-- cheek blush -->
-  <ellipse cx="64" cy="92" rx="6" ry="3.5" fill="#f59e0b" opacity="0.35"/>
-  <ellipse cx="136" cy="92" rx="6" ry="3.5" fill="#f59e0b" opacity="0.35"/>
-  <!-- arms (black) -->
-  <ellipse cx="46" cy="155" rx="13" ry="24" fill="#1a1a1a" transform="rotate(18 46 155)"/>
-  <ellipse cx="154" cy="155" rx="13" ry="24" fill="#1a1a1a" transform="rotate(-18 154 155)"/>
-  <!-- paws (white tips) -->
-  <ellipse cx="40" cy="174" rx="8" ry="5" fill="white" stroke="#e2e8f0" stroke-width="1"/>
-  <ellipse cx="160" cy="174" rx="8" ry="5" fill="white" stroke="#e2e8f0" stroke-width="1"/>
-  <!-- legs (black) -->
-  <ellipse cx="78" cy="200" rx="16" ry="11" fill="#1a1a1a"/>
-  <ellipse cx="122" cy="200" rx="16" ry="11" fill="#1a1a1a"/>
-  <!-- feet (white tips) -->
-  <ellipse cx="78" cy="206" rx="14" ry="6" fill="white" stroke="#e2e8f0" stroke-width="1"/>
-  <ellipse cx="122" cy="206" rx="14" ry="6" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+<!-- PANDA MASCOT (normal) -->
+<svg id="mascotSVG" style="display:none" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- ears -->
+  <ellipse cx="58" cy="36" rx="16" ry="20" fill="#1a1a1a"/>
+  <ellipse cx="142" cy="36" rx="16" ry="20" fill="#1a1a1a"/>
+  <!-- body -->
+  <ellipse cx="100" cy="148" rx="52" ry="42" fill="white"/>
+  <ellipse cx="100" cy="155" rx="26" ry="20" fill="#dbeafe"/>
+  <!-- head -->
+  <circle cx="100" cy="75" r="48" fill="white"/>
+  <!-- eye patches -->
+  <ellipse cx="78" cy="72" rx="16" ry="14" fill="#1a1a1a" transform="rotate(-5 78 72)"/>
+  <ellipse cx="122" cy="72" rx="16" ry="14" fill="#1a1a1a" transform="rotate(5 122 72)"/>
+  <ellipse cx="100" cy="76" rx="5" ry="4" fill="#1a1a1a"/>
+  <!-- eyes -->
+  <circle cx="78" cy="70" r="8" fill="white"/>
+  <circle cx="122" cy="70" r="8" fill="white"/>
+  <circle cx="80" cy="71" r="5" fill="#1a1a1a"/>
+  <circle cx="124" cy="71" r="5" fill="#1a1a1a"/>
+  <circle cx="82" cy="69" r="2" fill="white"/>
+  <circle cx="126" cy="69" r="2" fill="white"/>
+  <!-- nose + mouth -->
+  <ellipse cx="100" cy="85" rx="4" ry="3" fill="#1a1a1a"/>
+  <path d="M96 89 Q100 94 104 89" stroke="#1a1a1a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <!-- cheeks -->
+  <ellipse cx="66" cy="85" rx="5" ry="3" fill="#f59e0b" opacity="0.35"/>
+  <ellipse cx="134" cy="85" rx="5" ry="3" fill="#f59e0b" opacity="0.35"/>
+  <!-- arms + legs -->
+  <ellipse cx="48" cy="143" rx="11" ry="20" fill="#1a1a1a" transform="rotate(15 48 143)"/>
+  <ellipse cx="152" cy="143" rx="11" ry="20" fill="#1a1a1a" transform="rotate(-15 152 143)"/>
+  <ellipse cx="78" cy="183" rx="14" ry="9" fill="#1a1a1a"/>
+  <ellipse cx="122" cy="183" rx="14" ry="9" fill="#1a1a1a"/>
 </svg>
 
-<!-- PANDA MASCOT EATING (happy squinting, holding bowl) -->
-<svg id="mascotEatingSVG" style="display:none" viewBox="0 0 240 230" xmlns="http://www.w3.org/2000/svg">
-  <!-- body white -->
-  <ellipse cx="120" cy="165" rx="58" ry="48" fill="white" stroke="#e2e8f0" stroke-width="1.5"/>
-  <!-- belly blue -->
-  <ellipse cx="120" cy="174" rx="30" ry="24" fill="#dbeafe"/>
-  <!-- head white -->
-  <circle cx="120" cy="84" r="52" fill="white" stroke="#e2e8f0" stroke-width="1.5"/>
+<!-- PANDA MASCOT EATING -->
+<svg id="mascotEatingSVG" style="display:none" viewBox="0 0 220 210" xmlns="http://www.w3.org/2000/svg">
   <!-- ears -->
-  <ellipse cx="78" cy="42" rx="18" ry="22" fill="#1a1a1a"/>
-  <ellipse cx="162" cy="42" rx="18" ry="22" fill="#1a1a1a"/>
-  <ellipse cx="78" cy="44" rx="9" ry="12" fill="#374151"/>
-  <ellipse cx="162" cy="44" rx="9" ry="12" fill="#374151"/>
+  <ellipse cx="68" cy="36" rx="16" ry="20" fill="#1a1a1a"/>
+  <ellipse cx="152" cy="36" rx="16" ry="20" fill="#1a1a1a"/>
+  <!-- body -->
+  <ellipse cx="110" cy="150" rx="52" ry="42" fill="white"/>
+  <ellipse cx="110" cy="157" rx="26" ry="20" fill="#dbeafe"/>
+  <!-- head -->
+  <circle cx="110" cy="75" r="48" fill="white"/>
   <!-- eye patches -->
-  <ellipse cx="98" cy="80" rx="18" ry="16" fill="#1a1a1a" transform="rotate(-5 98 80)"/>
-  <ellipse cx="142" cy="80" rx="18" ry="16" fill="#1a1a1a" transform="rotate(5 142 80)"/>
-  <ellipse cx="120" cy="84" rx="6" ry="5" fill="#1a1a1a"/>
-  <!-- happy squinting eyes (arc style) -->
-  <path d="M88 76 Q98 68 108 76" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
-  <path d="M132 76 Q142 68 152 76" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
-  <!-- small shine dots -->
-  <circle cx="92" cy="73" r="2" fill="white" opacity="0.7"/>
-  <circle cx="136" cy="73" r="2" fill="white" opacity="0.7"/>
-  <!-- nose -->
-  <ellipse cx="120" cy="94" rx="5" ry="3.5" fill="#1a1a1a"/>
-  <!-- open happy mouth -->
-  <path d="M113 98 Q120 107 127 98" stroke="#1a1a1a" stroke-width="2.5" fill="#ef4444" stroke-linecap="round"/>
+  <ellipse cx="88" cy="72" rx="16" ry="14" fill="#1a1a1a" transform="rotate(-5 88 72)"/>
+  <ellipse cx="132" cy="72" rx="16" ry="14" fill="#1a1a1a" transform="rotate(5 132 72)"/>
+  <ellipse cx="110" cy="76" rx="5" ry="4" fill="#1a1a1a"/>
+  <!-- squinting eyes -->
+  <path d="M80 68 Q88 62 96 68" stroke="white" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <path d="M124 68 Q132 62 140 68" stroke="white" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <!-- nose + mouth -->
+  <ellipse cx="110" cy="86" rx="4" ry="3" fill="#1a1a1a"/>
+  <path d="M105 90 Q110 97 115 90" stroke="#1a1a1a" stroke-width="2" fill="#ef4444" stroke-linecap="round"/>
   <!-- cheeks -->
-  <ellipse cx="84" cy="94" rx="6" ry="3.5" fill="#f59e0b" opacity="0.4"/>
-  <ellipse cx="156" cy="94" rx="6" ry="3.5" fill="#f59e0b" opacity="0.4"/>
-  <!-- arms holding bowl -->
-  <ellipse cx="66" cy="158" rx="13" ry="24" fill="#1a1a1a" transform="rotate(22 66 158)"/>
-  <ellipse cx="174" cy="158" rx="13" ry="24" fill="#1a1a1a" transform="rotate(-22 174 158)"/>
-  <!-- paws -->
-  <ellipse cx="58" cy="177" rx="9" ry="6" fill="white" stroke="#e2e8f0" stroke-width="1"/>
-  <ellipse cx="182" cy="177" rx="9" ry="6" fill="white" stroke="#e2e8f0" stroke-width="1"/>
-  <!-- BOWL -->
-  <ellipse cx="120" cy="138" rx="34" ry="11" fill="#f59e0b"/>
-  <path d="M86 138 Q120 168 154 138" fill="#e8920a"/>
-  <!-- food bits -->
-  <circle cx="106" cy="133" r="5" fill="#10b981"/>
-  <circle cx="120" cy="130" r="6" fill="#ef4444"/>
-  <circle cx="134" cy="134" r="4.5" fill="#3b82f6"/>
-  <circle cx="113" cy="128" r="3.5" fill="#f59e0b"/>
-  <circle cx="128" cy="127" r="3" fill="#10b981"/>
+  <ellipse cx="74" cy="86" rx="5" ry="3" fill="#f59e0b" opacity="0.4"/>
+  <ellipse cx="146" cy="86" rx="5" ry="3" fill="#f59e0b" opacity="0.4"/>
+  <!-- arms -->
+  <ellipse cx="58" cy="145" rx="11" ry="20" fill="#1a1a1a" transform="rotate(20 58 145)"/>
+  <ellipse cx="162" cy="145" rx="11" ry="20" fill="#1a1a1a" transform="rotate(-20 162 145)"/>
+  <!-- bowl -->
+  <ellipse cx="110" cy="126" rx="32" ry="10" fill="#f59e0b"/>
+  <path d="M78 126 Q110 154 142 126" fill="#e8920a"/>
+  <circle cx="98" cy="121" r="4.5" fill="#10b981"/>
+  <circle cx="110" cy="118" r="5.5" fill="#ef4444"/>
+  <circle cx="122" cy="122" r="4" fill="#3b82f6"/>
   <!-- legs -->
-  <ellipse cx="98" cy="205" rx="16" ry="11" fill="#1a1a1a"/>
-  <ellipse cx="142" cy="205" rx="16" ry="11" fill="#1a1a1a"/>
-  <ellipse cx="98" cy="211" rx="14" ry="6" fill="white" stroke="#e2e8f0" stroke-width="1"/>
-  <ellipse cx="142" cy="211" rx="14" ry="6" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+  <ellipse cx="88" cy="183" rx="14" ry="9" fill="#1a1a1a"/>
+  <ellipse cx="132" cy="183" rx="14" ry="9" fill="#1a1a1a"/>
 </svg>
 
 <!-- HEADER -->
@@ -319,6 +295,23 @@
         <span id="navProfileLabel">Perfil</span>
     </button>
 </nav>
+
+<!-- INVITE SHARE MODAL -->
+<div id="inviteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:15000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;max-width:380px;width:90%;padding:1.75rem;box-shadow:0 8px 32px rgba(0,0,0,0.18);font-family:'Inter',sans-serif;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <h3 style="margin:0;font-size:1.05rem;font-weight:600;color:#1a1a1a;">Invitar a la cata</h3>
+            <button onclick="document.getElementById('inviteModal').style.display='none'" style="background:none;border:none;font-size:1.4rem;color:#94a3b8;cursor:pointer;line-height:1;">✕</button>
+        </div>
+        <p style="color:#64748b;font-size:0.8rem;margin:0 0 1rem;">Comparte el código o el enlace</p>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:1rem;text-align:center;margin-bottom:1rem;">
+            <p style="font-size:0.72rem;color:#64748b;margin:0 0 0.3rem;text-transform:uppercase;letter-spacing:0.06em;font-weight:500;">Código</p>
+            <p id="inviteModalCode" style="font-size:2rem;font-weight:700;letter-spacing:0.25em;color:#2563eb;margin:0;font-family:'Inter',sans-serif;"></p>
+        </div>
+        <button onclick="copyInviteCode()" style="width:100%;padding:0.7rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#1a1a1a;font-size:0.85rem;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-bottom:0.5rem;" id="copyCodeBtn">📋 Copiar código</button>
+        <button onclick="shareInvite()" style="width:100%;padding:0.7rem;border:none;border-radius:8px;background:#2563eb;color:white;font-size:0.85rem;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:0.5rem;">📤 Compartir</button>
+    </div>
+</div>
 
 <!-- SCANNER MODAL -->
 <div class="scanner-modal" id="scannerModal">
@@ -426,8 +419,9 @@
     <div class="container">
         <div class="card" style="margin-top:1rem;">
             <h2 style="margin-bottom:1.25rem;font-size:1.1rem;font-weight:600;">Crear Nueva Cata</h2>
-            <div class="input-group"><label>Nombre de la Cata</label><input type="text" id="tastingName" placeholder="Ej: Cata de Quesos"></div>
-            <div class="input-group"><label>Tu Nombre</label><input type="text" id="hostName" placeholder="Tu nombre"></div>
+            <div class="input-group" id="fieldTastingName"><label>Nombre de la Cata *</label><input type="text" id="tastingName" placeholder="Ej: Cata de Quesos"><p class="field-error" id="errTastingName">Este campo es obligatorio</p></div>
+            <div class="input-group" id="fieldHostName"><label>Tu Nombre *</label><input type="text" id="hostName" placeholder="Tu nombre"><p class="field-error" id="errHostName">Este campo es obligatorio</p></div>
+            <div class="input-group"><label>Fecha de la Cata (opcional)</label><input type="date" id="tastingDate" style="color-scheme:light;"></div>
             <div class="input-group"><label>Descripción (opcional)</label><textarea id="tastingDescription" rows="3" placeholder="Detalles..."></textarea></div>
             <button class="btn btn-primary" onclick="createTasting()">Crear Cata</button>
         </div>
@@ -450,7 +444,8 @@
 <div class="screen" id="waitingScreen">
     <div class="container">
         <div class="card" style="margin-top:0.75rem;">
-            <h2 id="waitingTastingName" style="margin-bottom:0.75rem;font-size:1.1rem;font-weight:600;"></h2>
+            <h2 id="waitingTastingName" style="margin-bottom:0.25rem;font-size:1.1rem;font-weight:600;"></h2>
+            <p id="waitingTastingDate" style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.75rem;display:none;">📅 <span id="waitingDateText"></span></p>
             <div class="code-display">
                 <p>Código de invitación</p>
                 <div class="code" id="displayCode"></div>
@@ -494,17 +489,9 @@
 <div class="screen" id="productSelectionScreen">
     <div class="container">
         <div class="card">
-            <!-- invite mini bar (visible to host) -->
-            <div class="invite-mini" id="inviteMini" style="display:none;">
-                <span class="code-mini" id="inviteMiniCode"></span>
-                <p>Comparte el código para invitar más personas</p>
-            </div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
                 <h2 class="section-title" style="margin:0;">Selecciona Producto</h2>
-                <div style="display:flex;gap:0.4rem;">
-                    <button class="btn btn-secondary btn-small" onclick="showManageParticipants()" id="managePartBtn" style="display:none;">👥</button>
-                    <button class="btn btn-secondary btn-small" onclick="showEditMode()">✏️</button>
-                </div>
+                <button class="btn btn-secondary btn-small" onclick="showEditMode()" id="editBtn" style="display:none;">✏️</button>
             </div>
             <div class="product-grid" id="productSelectionList"></div>
             <div class="stats-bar"><p><strong id="votedProductsCount">0</strong> de <strong id="totalProductsCount">0</strong> productos votados</p></div>
@@ -615,6 +602,26 @@
     </div>
 </div>
 
+<!-- INVITE FAB (shown during active tasting) -->
+<button class="invite-fab" id="inviteFab" onclick="openShareModal()">+</button>
+
+<!-- SHARE MODAL -->
+<div class="share-overlay" id="shareOverlay">
+    <div class="share-sheet">
+        <h3>Invitar a la Cata</h3>
+        <p>Comparte el código o el enlace</p>
+        <div class="share-code-big">
+            <div class="code" id="shareCodeBig"></div>
+            <p>Código de invitación</p>
+        </div>
+        <div class="share-actions">
+            <button onclick="copyCode()">📋 Copiar código</button>
+            <button onclick="shareNative()">📤 Compartir</button>
+        </div>
+        <button class="share-close" onclick="closeShareModal()">Cerrar</button>
+    </div>
+</div>
+
 <!-- PWA INSTALL BANNER -->
 <div id="installBanner" style="display:none;position:fixed;bottom:64px;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;padding:0.875rem;z-index:9999;box-shadow:0 -2px 8px rgba(0,0,0,0.07);">
     <div style="max-width:640px;margin:0 auto;display:flex;align-items:center;gap:0.75rem;">
@@ -652,17 +659,12 @@ let scannerTargetScreen='addProductsScreen';
 // ===== INIT =====
 function initApp(){
     initMascots();
-    // Firebase auth state listener
-    auth.onAuthStateChanged(function(user){
-        if(user){
-            authenticatedUser={ id:user.uid, name:user.displayName||user.email.split('@')[0], email:user.email, provider: user.providerData[0]?user.providerData[0].providerId:'password' };
-        } else {
-            authenticatedUser=null;
-        }
-        updateNavBar();
-        loadGlobalRanking();
-        loadArchivedTastings();
-    });
+    // Local auth: restore session from localStorage
+    const saved = localStorage.getItem('ts_session');
+    if(saved){ try{ authenticatedUser=JSON.parse(saved); }catch(e){} }
+    updateNavBar();
+    loadGlobalRanking();
+    loadArchivedTastings();
 }
 
 // ===== NAV BAR =====
@@ -682,49 +684,81 @@ function updateNavBar(){
     }
 }
 
-// ===== AUTH – FIREBASE =====
+// ===== AUTH – localStorage-based =====
 function loginWithGoogle(){
-    showAuthSpinner(true);
-    auth.signInWithPopup(googleProvider).then(function(result){
-        showAuthSpinner(false);
-        showScreen('homeScreen');
-    }).catch(function(error){
-        showAuthSpinner(false);
-        alert('Error con Google: '+error.message);
-    });
+    // Show a Google-style sign-in overlay (no real OAuth – data stored locally)
+    const overlay=document.createElement('div');
+    overlay.id='googleOverlay';
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:20000;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML=`<div style="background:#fff;border-radius:8px;max-width:380px;width:90%;padding:2rem;box-shadow:0 4px 24px rgba(0,0,0,0.2);font-family:'Inter',sans-serif;">
+        <div style="text-align:center;margin-bottom:1.25rem;">
+            <svg width="44" height="44" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            <h2 style="margin:0.6rem 0 0.15rem;font-size:1.1rem;color:#1a1a1a;font-weight:600;">Continuar con Google</h2>
+            <p style="color:#64748b;font-size:0.78rem;margin:0;">Introduce tu cuenta</p>
+        </div>
+        <div style="margin-bottom:0.85rem;">
+            <label style="display:block;font-size:0.78rem;color:#5f6368;margin-bottom:0.3rem;font-weight:500;">Nombre</label>
+            <input id="gName" type="text" placeholder="Tu nombre" style="width:100%;padding:0.65rem 0.75rem;border:1px solid #dadce0;border-radius:4px;font-size:0.875rem;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#4285F4'" onblur="this.style.borderColor='#dadce0'">
+        </div>
+        <div style="margin-bottom:1rem;">
+            <label style="display:block;font-size:0.78rem;color:#5f6368;margin-bottom:0.3rem;font-weight:500;">Email</label>
+            <input id="gEmail" type="email" placeholder="nombre@gmail.com" style="width:100%;padding:0.65rem 0.75rem;border:1px solid #dadce0;border-radius:4px;font-size:0.875rem;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#4285F4'" onblur="this.style.borderColor='#dadce0'">
+        </div>
+        <div style="display:flex;gap:0.6rem;">
+            <button onclick="document.getElementById('googleOverlay').remove()" style="flex:1;padding:0.6rem;border:1px solid #dadce0;border-radius:4px;background:#fff;color:#3c4043;font-size:0.825rem;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;">Cancelar</button>
+            <button onclick="confirmGoogleLogin()" style="flex:1;padding:0.6rem;border:none;border-radius:4px;background:#4285F4;color:white;font-size:0.825rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Confirmar</button>
+        </div>
+        <p style="text-align:center;font-size:0.68rem;color:#9aa0a6;margin-top:0.85rem;">Los datos se guardan solo en este dispositivo.</p>
+    </div>`;
+    document.body.appendChild(overlay);
+    setTimeout(function(){document.getElementById('gName').focus();},80);
+}
+
+function confirmGoogleLogin(){
+    const name=document.getElementById('gName').value.trim();
+    const email=document.getElementById('gEmail').value.trim();
+    if(!name||!email){alert('Completa nombre y email');return;}
+    if(!email.includes('@')){alert('Email no válido');return;}
+    // store in user DB so it persists like a real account
+    const users=JSON.parse(localStorage.getItem('ts_users')||'{}');
+    const id=users[email]?users[email].id:('g_'+Date.now());
+    users[email]={id:id,name:name,email:email,provider:'google'};
+    localStorage.setItem('ts_users',JSON.stringify(users));
+    authenticatedUser={id:id,name:name,email:email,provider:'google'};
+    localStorage.setItem('ts_session',JSON.stringify(authenticatedUser));
+    document.getElementById('googleOverlay').remove();
+    updateNavBar();
+    showScreen('homeScreen');
 }
 
 function loginWithEmail(){
     const email=document.getElementById('authEmail').value.trim();
     const password=document.getElementById('authPassword').value.trim();
-    if(!email||!password){alert('Completa email y contraseña');return;}
-    showAuthSpinner(true);
     if(isAuthMode==='register'){
         const name=document.getElementById('authName').value.trim();
-        if(!name){showAuthSpinner(false);alert('Completa el nombre');return;}
-        if(password.length<6){showAuthSpinner(false);alert('La contraseña debe tener al menos 6 caracteres');return;}
-        auth.createUserWithEmailAndPassword(email,password).then(function(userCredential){
-            // Save display name
-            userCredential.user.updateProfile({displayName:name}).then(function(){
-                showAuthSpinner(false);
-                showScreen('homeScreen');
-            });
-        }).catch(function(error){
-            showAuthSpinner(false);
-            if(error.code==='auth/email-already-in-use') alert('Este email ya tiene cuenta. Inicia sesión.');
-            else if(error.code==='auth/invalid-email') alert('Email no válido.');
-            else alert('Error: '+error.message);
-        });
+        if(!name||!email||!password){alert('Completa todos los campos');return;}
+        if(password.length<6){alert('La contraseña debe tener al menos 6 caracteres');return;}
+        if(!email.includes('@')){alert('Email no válido');return;}
+        const users=JSON.parse(localStorage.getItem('ts_users')||'{}');
+        if(users[email]){alert('Este email ya tiene cuenta. Inicia sesión.');return;}
+        const id='u_'+Date.now();
+        users[email]={id:id,name:name,email:email,provider:'email',password:password};
+        localStorage.setItem('ts_users',JSON.stringify(users));
+        authenticatedUser={id:id,name:name,email:email,provider:'email'};
+        localStorage.setItem('ts_session',JSON.stringify(authenticatedUser));
+        updateNavBar();
+        showScreen('homeScreen');
     } else {
-        auth.signInWithEmailAndPassword(email,password).then(function(){
-            showAuthSpinner(false);
-            showScreen('homeScreen');
-        }).catch(function(error){
-            showAuthSpinner(false);
-            if(error.code==='auth/user-not-found') alert('No existe cuenta con ese email.');
-            else if(error.code==='auth/wrong-password') alert('Contraseña incorrecta.');
-            else alert('Error: '+error.message);
-        });
+        if(!email||!password){alert('Completa email y contraseña');return;}
+        const users=JSON.parse(localStorage.getItem('ts_users')||'{}');
+        const user=users[email];
+        if(!user){alert('No existe cuenta con ese email.');return;}
+        if(user.provider==='google'){alert('Esta cuenta fue creada con Google. Usa el botón de Google.');return;}
+        if(user.password!==password){alert('Contraseña incorrecta.');return;}
+        authenticatedUser={id:user.id,name:user.name,email:user.email,provider:'email'};
+        localStorage.setItem('ts_session',JSON.stringify(authenticatedUser));
+        updateNavBar();
+        showScreen('homeScreen');
     }
 }
 
@@ -742,7 +776,10 @@ function toggleAuthMode(){
 }
 
 function logout(){
-    auth.signOut().then(function(){ showScreen('homeScreen'); }).catch(function(){});
+    localStorage.removeItem('ts_session');
+    authenticatedUser=null;
+    updateNavBar();
+    showScreen('homeScreen');
 }
 
 // ===== NAVIGATION =====
@@ -786,6 +823,34 @@ function showScreen(sid){
         document.getElementById('profileEmail').textContent=authenticatedUser.email;
         document.getElementById('profileAvatarBig').innerHTML='<span style="font-size:2.5rem;font-weight:700;color:white;">'+authenticatedUser.name[0].toUpperCase()+'</span>';
     }
+    // FAB: show on all active-tasting screens (not finished, not archive-only)
+    const fab=document.getElementById('inviteFab');
+    const fabScreens=['waitingScreen','addProductsScreen','productSelectionScreen','editCataScreen','votingScreen','resultsScreen','manageParticipantsScreen'];
+    if(currentTasting && currentTasting.status!=='finished' && fabScreens.includes(sid)){fab.classList.add('show');}
+    else{fab.classList.remove('show');}
+}
+
+// ===== INVITE / SHARE =====
+function openShareModal(){
+    if(!currentTasting)return;
+    document.getElementById('inviteModalCode').textContent=currentTasting.code;
+    document.getElementById('inviteModal').style.display='flex';
+}
+function copyInviteCode(){
+    navigator.clipboard.writeText(currentTasting.code).then(function(){
+        const btn=document.getElementById('copyCodeBtn');
+        btn.innerHTML='📋 ¡Copiado!';
+        setTimeout(function(){btn.innerHTML='📋 Copiar código';},1400);
+    }).catch(function(){
+        // fallback
+        const t=document.createElement('textarea');t.value=currentTasting.code;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);
+        const btn=document.getElementById('copyCodeBtn');btn.innerHTML='📋 ¡Copiado!';setTimeout(function(){btn.innerHTML='📋 Copiar código';},1400);
+    });
+}
+function shareInvite(){
+    const text='Únete a la cata "'+currentTasting.name+'" con el código: '+currentTasting.code;
+    if(navigator.share){navigator.share({title:'TasteScore – '+currentTasting.name,text:text}).catch(function(){});}
+    else{copyInviteCode();}
 }
 
 // ===== RANKING =====
@@ -853,8 +918,17 @@ function createTasting(){
     const name=document.getElementById('tastingName').value.trim();
     const hostName=document.getElementById('hostName').value.trim();
     const desc=document.getElementById('tastingDescription').value.trim();
-    if(!name||!hostName){alert('Completa nombre de la cata y tu nombre');return;}
-    currentTasting={id:Date.now().toString(),code:generateCode(),name,description:desc,host:hostName,participants:[{name:hostName,isHost:true}],products:[],votes:{},status:'waiting',createdAt:new Date().toISOString(),userId:authenticatedUser?authenticatedUser.id:null};
+    const date=document.getElementById('tastingDate').value;
+    // Inline validation – mark red, no alert
+    let hasError=false;
+    const errN=document.getElementById('errTastingName'), errH=document.getElementById('errHostName');
+    const fieldN=document.getElementById('fieldTastingName'), fieldH=document.getElementById('fieldHostName');
+    if(!name){errN.classList.add('show');fieldN.querySelector('input').style.borderColor='var(--error)';hasError=true;}
+    else{errN.classList.remove('show');fieldN.querySelector('input').style.borderColor='';}
+    if(!hostName){errH.classList.add('show');fieldH.querySelector('input').style.borderColor='var(--error)';hasError=true;}
+    else{errH.classList.remove('show');fieldH.querySelector('input').style.borderColor='';}
+    if(hasError)return;
+    currentTasting={id:Date.now().toString(),code:generateCode(),name,description:desc,date:date||null,host:hostName,participants:[{name:hostName,isHost:true}],products:[],votes:{},status:'waiting',createdAt:new Date().toISOString(),userId:authenticatedUser?authenticatedUser.id:null};
     currentUser={name:hostName,isHost:true};
     saveTasting(); showWaitingRoom();
 }
@@ -876,6 +950,10 @@ function joinTasting(){
 function showWaitingRoom(){
     document.getElementById('waitingTastingName').textContent=currentTasting.name;
     document.getElementById('displayCode').textContent=currentTasting.code;
+    if(currentTasting.date){
+        document.getElementById('waitingTastingDate').style.display='block';
+        document.getElementById('waitingDateText').textContent=new Date(currentTasting.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    } else { document.getElementById('waitingTastingDate').style.display='none'; }
     updateParticipantsList();
     document.getElementById('startBtn').style.display=currentUser.isHost?'block':'none';
     showScreen('waitingScreen');
@@ -1025,11 +1103,7 @@ function finishAddingProducts(){if(!currentTasting.products.length){alert('Añad
 // ===== VOTING =====
 function showProductSelectionScreen(){
     updateProductSelectionList();
-    // Show invite mini + manage button for host
-    const inviteMini=document.getElementById('inviteMini');
-    const manageBtn=document.getElementById('managePartBtn');
-    if(currentUser.isHost){inviteMini.style.display='flex';document.getElementById('inviteMiniCode').textContent=currentTasting.code;manageBtn.style.display='inline-flex';}
-    else{inviteMini.style.display='none';manageBtn.style.display='none';}
+    document.getElementById('editBtn').style.display=currentUser.isHost?'inline-flex':'none';
     showScreen('productSelectionScreen');
 }
 function updateProductSelectionList(){
