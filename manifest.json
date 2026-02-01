@@ -9,18 +9,11 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%232563eb'/%3E%3Ctext x='256' y='340' font-size='300' text-anchor='middle' fill='white'%3E🍽️%3C/text%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%232563eb'/%3E%3Cellipse cx='256' cy='360' rx='130' ry='105' fill='%231e40af'/%3E%3Ccircle cx='256' cy='195' r='100' fill='%231e40af'/%3E%3Cellipse cx='148' cy='108' rx='29' ry='42' fill='%231e40af' transform='rotate(-15 148 108)'/%3E%3Cellipse cx='364' cy='108' rx='29' ry='42' fill='%231e40af' transform='rotate(15 364 108)'/%3E%3Cellipse cx='148' cy='108' rx='15' ry='28' fill='%233b82f6' transform='rotate(-15 148 108)'/%3E%3Cellipse cx='364' cy='108' rx='15' ry='28' fill='%233b82f6' transform='rotate(15 364 108)'/%3E%3Cellipse cx='256' cy='225' rx='62' ry='50' fill='white'/%3E%3Ccircle cx='222' cy='200' r='13' fill='%231a1a1a'/%3E%3Ccircle cx='290' cy='200' r='13' fill='%231a1a1a'/%3E%3Ccircle cx='226' cy='194' r='4.5' fill='white'/%3E%3Ccircle cx='294' cy='194' r='4.5' fill='white'/%3E%3Cellipse cx='256' cy='225' rx='8' ry='5' fill='%231a1a1a'/%3E%3Cpath d='M238 238 Q256 256 274 238' stroke='%231a1a1a' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='194' cy='228' rx='10' ry='6' fill='%23f59e0b' opacity='0.5'/%3E%3Cellipse cx='318' cy='228' rx='10' ry='6' fill='%23f59e0b' opacity='0.5'/%3E%3Cellipse cx='256' cy='375' rx='46' ry='38' fill='%233b82f6'/%3E%3C/svg%3E",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%232563eb'/%3E%3Ctext x='256' y='340' font-size='300' text-anchor='middle' fill='white'%3E🍽️%3C/text%3E%3C/svg%3E",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
-  "screenshots": [],
   "categories": ["food", "social"]
 }
