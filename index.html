@@ -33,7 +33,8 @@
         /* HEADER */
         .header { background:rgba(255,255,255,0.95); padding:1rem; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; backdrop-filter:blur(10px); }
         .header-inner { max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; }
-        .header h1 { font-size:1.5rem; font-weight:700; letter-spacing:-0.02em; color:var(--primary); }
+        .header h1 { font-size:1.5rem; font-weight:700; letter-spacing:-0.02em; color:var(--primary); display:flex; align-items:center; gap:0.5rem; }
+        .header-mascot { width:32px; height:32px; }
         .header p { font-size:0.875rem; color:var(--text-secondary); }
         .header-content { display:flex; align-items:center; }
         .back-btn { background:none; border:none; color:var(--text); font-size:1.5rem; cursor:pointer; padding:0.5rem; margin-right:0.75rem; }
@@ -66,6 +67,9 @@
         .input-group input:focus,.input-group textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
         /* PRODUCTS – overflow fix */
         .product-item { background:var(--bg-secondary); padding:1rem; border-radius:8px; margin-bottom:0.75rem; border:1px solid var(--border); transition:all 0.15s; display:flex; gap:0.75rem; align-items:center; cursor:pointer; }
+        .drag-handle { width:24px; height:24px; display:flex; align-items:center; justify-content:center; cursor:grab; color:var(--text-tertiary); flex-shrink:0; font-size:1rem; }
+        .drag-handle:active { cursor:grabbing; }
+        .product-item.dragging { opacity:0.5; }
         .product-item:hover { background:var(--bg-tertiary); border-color:var(--primary); }
         .product-item.selected { border-color:var(--primary); background:var(--bg); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
         .product-image { width:56px; height:56px; border-radius:6px; object-fit:cover; background:var(--bg-tertiary); border:1px solid var(--border); flex-shrink:0; }
@@ -111,7 +115,8 @@
         /* ARCHIVE */
         .archive-item { background:var(--bg); padding:1.25rem; border-radius:12px; margin-bottom:0.75rem; border:1px solid var(--border); cursor:pointer; transition:all 0.15s; display:flex; gap:0.75rem; align-items:flex-start; }
         .archive-item:hover { border-color:var(--primary); box-shadow:0 4px 12px var(--shadow-hover); }
-        .archive-icon { width:42px; height:42px; border-radius:10px; background:linear-gradient(135deg,var(--primary),var(--primary-light)); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1.25rem; }
+        .archive-icon { width:42px; height:42px; border-radius:10px; background:linear-gradient(135deg,var(--primary),var(--primary-light)); display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; }
+        .archive-icon img { width:100%; height:100%; object-fit:cover; }
         .archive-content { flex:1; min-width:0; }
         .archive-content h3 { margin-bottom:0.35rem; font-size:0.95rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .archive-meta { display:flex; gap:0.75rem; font-size:0.775rem; color:var(--text-secondary); flex-wrap:wrap; }
@@ -260,12 +265,38 @@
   <ellipse cx="132" cy="183" rx="14" ry="9" fill="#1a1a1a"/>
 </svg>
 
+<!-- PANDA MASCOT WAITING (sitting, for archives) -->
+<svg id="mascotWaitingSVG" style="display:none" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="58" cy="34" rx="16" ry="20" fill="#1a1a1a"/>
+  <ellipse cx="142" cy="34" rx="16" ry="20" fill="#1a1a1a"/>
+  <ellipse cx="100" cy="150" rx="54" ry="44" fill="white"/>
+  <ellipse cx="100" cy="158" rx="28" ry="22" fill="#dbeafe"/>
+  <circle cx="100" cy="70" r="46" fill="white"/>
+  <ellipse cx="78" cy="68" rx="15" ry="13" fill="#1a1a1a" transform="rotate(-5 78 68)"/>
+  <ellipse cx="122" cy="68" rx="15" ry="13" fill="#1a1a1a" transform="rotate(5 122 68)"/>
+  <ellipse cx="100" cy="72" rx="5" ry="4" fill="#1a1a1a"/>
+  <circle cx="78" cy="66" r="7" fill="white"/>
+  <circle cx="122" cy="66" r="7" fill="white"/>
+  <circle cx="80" cy="67" r="4.5" fill="#1a1a1a"/>
+  <circle cx="124" cy="67" r="4.5" fill="#1a1a1a"/>
+  <circle cx="82" cy="65" r="1.8" fill="white"/>
+  <circle cx="126" cy="65" r="1.8" fill="white"/>
+  <ellipse cx="100" cy="80" rx="3.5" ry="2.5" fill="#1a1a1a"/>
+  <path d="M96 84 Q100 89 104 84" stroke="#1a1a1a" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <ellipse cx="66" cy="80" rx="4.5" ry="2.8" fill="#f59e0b" opacity="0.35"/>
+  <ellipse cx="134" cy="80" rx="4.5" ry="2.8" fill="#f59e0b" opacity="0.35"/>
+  <ellipse cx="90" cy="122" rx="10" ry="18" fill="#1a1a1a"/>
+  <ellipse cx="110" cy="122" rx="10" ry="18" fill="#1a1a1a"/>
+  <ellipse cx="75" cy="185" rx="14" ry="9" fill="#1a1a1a"/>
+  <ellipse cx="125" cy="185" rx="14" ry="9" fill="#1a1a1a"/>
+</svg>
+
 <!-- HEADER -->
 <div class="header">
     <div class="header-inner">
         <div class="header-content">
             <button class="back-btn" id="backBtn" style="display:none;">←</button>
-            <div><h1>TasteScore</h1><p id="headerSubtitle">Catas de productos en grupo</p></div>
+            <div><h1>TasteScore <img id="headerMascot" src="" alt="" class="header-mascot"></h1><p id="headerSubtitle">Catas de productos en grupo</p></div>
         </div>
     </div>
 </div>
@@ -326,8 +357,6 @@
 <!-- HOME -->
 <div class="screen active" id="homeScreen">
     <div class="container">
-        <div style="text-align:center;padding:1.25rem 0 0.25rem;">
-            <img id="homeMascot" src="" alt="TasteScore" style="width:150px;height:auto;">
         </div>
         <div class="card">
             <h2 style="margin-bottom:0.75rem;font-size:1.2rem;font-weight:600;text-align:center;">¡Bienvenido!</h2>
@@ -639,13 +668,15 @@
 </div>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 // ===== MASCOTS =====
-let MASCOT_URL='', MASCOT_EATING_URL='';
+let MASCOT_URL='', MASCOT_EATING_URL='', MASCOT_WAITING_URL='';
 function initMascots(){
     MASCOT_URL='data:image/svg+xml,'+encodeURIComponent(document.getElementById('mascotSVG').outerHTML.replace(' style="display:none"',''));
     MASCOT_EATING_URL='data:image/svg+xml,'+encodeURIComponent(document.getElementById('mascotEatingSVG').outerHTML.replace(' style="display:none"',''));
-    document.getElementById('homeMascot').src=MASCOT_EATING_URL;
+    MASCOT_WAITING_URL='data:image/svg+xml,'+encodeURIComponent(document.getElementById('mascotWaitingSVG').outerHTML.replace(' style="display:none"',''));
+    document.getElementById('headerMascot').src=MASCOT_URL;
     document.getElementById('authMascot').src=MASCOT_URL;
     document.getElementById('bannerMascot').src=MASCOT_URL;
 }
@@ -655,6 +686,7 @@ let currentTasting=null, currentUser=null, selectedProductId=null;
 let userVotes={}, searchTimeout=null, html5QrCode=null;
 let globalRanking={}, isAuthMode='login', authenticatedUser=null;
 let scannerTargetScreen='addProductsScreen';
+let sortableInstances={};
 
 // ===== INIT =====
 function initApp(){
@@ -882,7 +914,7 @@ function loadUserTastings(){
     if(!list.length){c.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>No has participado en ninguna cata</p></div>';return;}
     c.innerHTML=list.map((t)=>{
         const idx=archived.indexOf(t);
-        return `<div class="archive-item" onclick="viewArchiveFromIndex(${idx})"><div class="archive-icon">🍷</div><div class="archive-content"><h3>${t.name}</h3><div class="archive-meta"><span>📅 ${new Date(t.archivedAt).toLocaleDateString('es-ES')}</span><span>👥 ${t.participants.length}</span><span>🍽️ ${t.products.length} prod.</span></div></div></div>`;
+        return `<div class="archive-item" onclick="viewArchiveFromIndex(${idx})"><div class="archive-icon"><img src="${MASCOT_WAITING_URL}" alt=""></div><div class="archive-content"><h3>${t.name}</h3><div class="archive-meta"><span>📅 ${new Date(t.archivedAt).toLocaleDateString('es-ES')}</span><span>👥 ${t.participants.length}</span><span>🍽️ ${t.products.length} prod.</span></div></div></div>`;
     }).join('');
 }
 
@@ -916,10 +948,12 @@ function generateCode(){return Math.random().toString(36).substring(2,8).toUpper
 
 function createTasting(){
     const name=document.getElementById('tastingName').value.trim();
-    const hostName=document.getElementById('hostName').value.trim();
+    let hostName=document.getElementById('hostName').value.trim();
     const desc=document.getElementById('tastingDescription').value.trim();
     const date=document.getElementById('tastingDate').value;
-    // Inline validation – mark red, no alert
+    // Pre-fill from authenticated user if empty
+    if(!hostName && authenticatedUser) hostName=authenticatedUser.name;
+    // Inline validation
     let hasError=false;
     const errN=document.getElementById('errTastingName'), errH=document.getElementById('errHostName');
     const fieldN=document.getElementById('fieldTastingName'), fieldH=document.getElementById('fieldHostName');
@@ -928,6 +962,8 @@ function createTasting(){
     if(!hostName){errH.classList.add('show');fieldH.querySelector('input').style.borderColor='var(--error)';hasError=true;}
     else{errH.classList.remove('show');fieldH.querySelector('input').style.borderColor='';}
     if(hasError)return;
+    // Update field with auto-filled value
+    document.getElementById('hostName').value=hostName;
     currentTasting={id:Date.now().toString(),code:generateCode(),name,description:desc,date:date||null,host:hostName,participants:[{name:hostName,isHost:true}],products:[],votes:{},status:'waiting',createdAt:new Date().toISOString(),userId:authenticatedUser?authenticatedUser.id:null};
     currentUser={name:hostName,isHost:true};
     saveTasting(); showWaitingRoom();
@@ -935,7 +971,9 @@ function createTasting(){
 
 function joinTasting(){
     const code=document.getElementById('joinCode').value.trim().toUpperCase();
-    const name=document.getElementById('participantName').value.trim();
+    let name=document.getElementById('participantName').value.trim();
+    // Pre-fill from authenticated user if empty
+    if(!name && authenticatedUser) name=authenticatedUser.name;
     if(!code||!name){alert('Completa código y nombre');return;}
     const t=loadTastingByCode(code);
     if(!t){alert('Código no encontrado');return;}
@@ -1095,7 +1133,19 @@ function addProductFromEdit(product){if(currentTasting.products.find(p=>p.name==
 function updateAddedProducts(){
     const c=document.getElementById('addedProducts');document.getElementById('productCount').textContent=currentTasting.products.length;
     if(!currentTasting.products.length){c.innerHTML='<div class="empty-state" style="padding:1.5rem 0;"><div class="icon">📦</div><p>Aún no hay productos</p></div>';return;}
-    c.innerHTML=currentTasting.products.map(function(p,i){return '<div class="product-item"><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+p.name+'</h4><p>'+p.brand+'</p></div><button onclick="removeProduct('+i+')" class="btn btn-small" style="background:var(--error);color:white;border-color:var(--error);width:auto;flex-shrink:0;">✕</button></div>';}).join('');
+    c.innerHTML=currentTasting.products.map(function(p,i){return '<div class="product-item" data-id="'+p.id+'"><div class="drag-handle">⋮⋮</div><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+p.name+'</h4><p>'+p.brand+'</p></div><button onclick="removeProduct('+i+')" class="btn btn-small" style="background:var(--error);color:white;border-color:var(--error);width:auto;flex-shrink:0;">✕</button></div>';}).join('');
+    // Init Sortable for drag & drop
+    if(sortableInstances.addedProducts) sortableInstances.addedProducts.destroy();
+    sortableInstances.addedProducts = new Sortable(c, {
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'dragging',
+        onEnd: function(evt) {
+            const item = currentTasting.products.splice(evt.oldIndex, 1)[0];
+            currentTasting.products.splice(evt.newIndex, 0, item);
+            saveTasting();
+        }
+    });
 }
 function removeProduct(i){currentTasting.products.splice(i,1);saveTasting();updateAddedProducts();}
 function finishAddingProducts(){if(!currentTasting.products.length){alert('Añade al menos un producto');return;}currentTasting.status='voting';saveTasting();showProductSelectionScreen();}
@@ -1144,8 +1194,20 @@ function updateEditProductsList(){
     const c=document.getElementById('editProductsList');document.getElementById('editProductCount').textContent=currentTasting.products.length;
     c.innerHTML=currentTasting.products.map(function(p,i){
         const hasVotes=currentTasting.votes[p.id]&&currentTasting.votes[p.id].length>0;
-        return '<div class="product-item"><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+p.name+'</h4><p>'+p.brand+'</p>'+(hasVotes?'<p style="color:var(--success);font-size:0.72rem;margin-top:0.15rem;">✓ '+currentTasting.votes[p.id].length+' votos</p>':'')+' </div><button onclick="removeProductFromEdit('+i+')" class="btn btn-small" style="background:var(--error);color:white;border-color:var(--error);width:auto;flex-shrink:0;" '+(hasVotes?'disabled style="opacity:0.4;cursor:not-allowed;"':'')+'>✕</button></div>';
+        return '<div class="product-item" data-id="'+p.id+'"><div class="drag-handle">⋮⋮</div><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+p.name+'</h4><p>'+p.brand+'</p>'+(hasVotes?'<p style="color:var(--success);font-size:0.72rem;margin-top:0.15rem;">✓ '+currentTasting.votes[p.id].length+' votos</p>':'')+' </div><button onclick="removeProductFromEdit('+i+')" class="btn btn-small" style="background:var(--error);color:white;border-color:var(--error);width:auto;flex-shrink:0;" '+(hasVotes?'disabled style="opacity:0.4;cursor:not-allowed;"':'')+'>✕</button></div>';
     }).join('');
+    // Init Sortable for drag & drop
+    if(sortableInstances.editProductsList) sortableInstances.editProductsList.destroy();
+    sortableInstances.editProductsList = new Sortable(c, {
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'dragging',
+        onEnd: function(evt) {
+            const item = currentTasting.products.splice(evt.oldIndex, 1)[0];
+            currentTasting.products.splice(evt.newIndex, 0, item);
+            saveTasting();
+        }
+    });
 }
 function removeProductFromEdit(i){const p=currentTasting.products[i];if(currentTasting.votes[p.id]&&currentTasting.votes[p.id].length){alert('No puedes eliminar un producto con votos');return;}currentTasting.products.splice(i,1);saveTasting();updateEditProductsList();}
 function exitEditMode(){showProductSelectionScreen();}
@@ -1172,7 +1234,7 @@ function loadArchivedTastings(){
     const c=document.getElementById('archivedList');
     if(!archived.length){c.innerHTML='<div class="empty-state" style="padding:1.5rem 0;"><div class="icon">🍷</div><p>No tienes catas archivadas</p></div>';return;}
     c.innerHTML=archived.map(function(t,i){
-        return '<div class="archive-item"><div class="archive-icon" onclick="viewArchive('+i+')">🍷</div><div class="archive-content" onclick="viewArchive('+i+')"><h3>'+t.name+'</h3><div class="archive-meta"><span>📅 '+new Date(t.archivedAt).toLocaleDateString('es-ES')+'</span><span>👥 '+t.participants.length+' part.</span><span>🍽️ '+t.products.length+' prod.</span></div></div><button class="archive-delete" onclick="deleteArchive('+i+',event)" title="Eliminar">🗑️</button></div>';
+        return '<div class="archive-item"><div class="archive-icon" onclick="viewArchive('+i+')"><img src="'+MASCOT_WAITING_URL+'" alt=""></div><div class="archive-content" onclick="viewArchive('+i+')"><h3>'+t.name+'</h3><div class="archive-meta"><span>📅 '+new Date(t.archivedAt).toLocaleDateString('es-ES')+'</span><span>👥 '+t.participants.length+' part.</span><span>🍽️ '+t.products.length+' prod.</span></div></div><button class="archive-delete" onclick="deleteArchive('+i+',event)" title="Eliminar">🗑️</button></div>';
     }).join('');
 }
 function deleteArchive(i,event){
