@@ -11,7 +11,14 @@
     <link rel="manifest" href="manifest.json">
     <title>TasteScore</title>
 
-    <!-- Auth is handled client-side in the main script -->
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://uhrdphpbmulaudexubgd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVocmRwaHBibXVsYXVkZXh1YmdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg0NDY2MjYsImV4cCI6MjA1NDAyMjYyNn0.zKOc9yR0YkDVIarZT8f_LNnfUZGlRDqH9N3zKdg8-FE';
+        const {createClient} = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -67,9 +74,11 @@
         .input-group input:focus,.input-group textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
         /* PRODUCTS – overflow fix */
         .product-item { background:var(--bg-secondary); padding:1rem; border-radius:8px; margin-bottom:0.75rem; border:1px solid var(--border); transition:all 0.15s; display:flex; gap:0.75rem; align-items:center; cursor:pointer; }
-        .drag-handle { width:24px; height:24px; display:flex; align-items:center; justify-content:center; cursor:grab; color:var(--text-tertiary); flex-shrink:0; font-size:1rem; }
+        .drag-handle { width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:grab; color:var(--text-tertiary); flex-shrink:0; font-size:1.1rem; transition:color 0.2s; }
+        .drag-handle:hover { color:var(--primary); }
         .drag-handle:active { cursor:grabbing; }
-        .product-item.dragging { opacity:0.5; }
+        .product-item.dragging { opacity:0.4; transform:scale(1.05); box-shadow:0 8px 24px rgba(37,99,235,0.3); border-color:var(--primary); background:var(--bg); }
+        .product-item.ghost { opacity:0.5; background:var(--bg-tertiary); }
         .product-item:hover { background:var(--bg-tertiary); border-color:var(--primary); }
         .product-item.selected { border-color:var(--primary); background:var(--bg); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
         .product-image { width:56px; height:56px; border-radius:6px; object-fit:cover; background:var(--bg-tertiary); border:1px solid var(--border); flex-shrink:0; }
@@ -131,6 +140,11 @@
         .stats-bar { display:flex; justify-content:space-between; align-items:center; padding:0.875rem; background:var(--bg-secondary); border-radius:8px; margin-top:1rem; border:1px solid var(--border); }
         .stats-bar p { font-size:0.875rem; color:var(--text-secondary); }
         .edit-mode-banner { background:var(--bg-secondary); padding:0.875rem; border-radius:8px; margin-bottom:1rem; border:1px solid var(--border); text-align:center; font-size:0.875rem; color:var(--text-secondary); }
+        /* TABS */
+        .tabs { display:flex; gap:0.5rem; margin-bottom:1.25rem; border-bottom:2px solid var(--border); }
+        .tab { padding:0.75rem 1.25rem; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-weight:500; font-size:0.9rem; color:var(--text-secondary); transition:all 0.2s; font-family:'Inter',sans-serif; margin-bottom:-2px; }
+        .tab:hover { color:var(--primary); }
+        .tab.active { color:var(--primary); border-bottom-color:var(--primary); }
         /* RANKING */
         .ranking-item { display:flex; gap:0.75rem; align-items:center; padding:0.875rem; background:var(--bg-secondary); border-radius:8px; margin-bottom:0.6rem; border:1px solid var(--border); }
         .ranking-position { width:30px; height:30px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; flex-shrink:0; }
@@ -492,19 +506,42 @@
     <div class="container">
         <div class="card">
             <h2 class="section-title">Añadir Productos</h2>
-            <div class="input-group"><label>Buscar Producto</label><input type="text" id="productSearch" placeholder="Buscar en Open Food Facts..." oninput="searchProducts()"></div>
-            <div class="btn-group">
-                <button class="btn btn-icon" onclick="openScanner()"><span>📷</span><span>Escanear</span></button>
-                <button class="btn btn-secondary btn-icon" onclick="toggleManualForm()"><span>✍️</span><span>Manual</span></button>
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchProductTab('supermarket')">🛒 Supermercado</button>
+                <button class="tab" onclick="switchProductTab('restaurant')">🍔 Restaurantes</button>
             </div>
-            <div class="manual-product-form" id="manualProductForm" style="display:none;">
-                <h4 style="margin-bottom:0.75rem;font-size:0.9rem;font-weight:600;">Producto Manual</h4>
-                <div class="input-group"><label>Nombre</label><input type="text" id="manualProductName" placeholder="Ej: Queso Manchego"></div>
-                <div class="input-group"><label>Marca</label><input type="text" id="manualProductBrand" placeholder="Ej: García Baquero"></div>
-                <div class="input-group"><label>URL Imagen (opcional)</label><input type="text" id="manualProductImage" placeholder="https://..."></div>
-                <button class="btn btn-primary" onclick="addManualProduct()">Añadir</button>
+            <!-- SUPERMERCADO TAB -->
+            <div id="supermarketTab">
+                <div class="input-group"><label>Buscar Producto</label><input type="text" id="productSearch" placeholder="Buscar en Open Food Facts..." oninput="searchProducts()"></div>
+                <div class="btn-group">
+                    <button class="btn btn-icon" onclick="openScanner()"><span>📷</span><span>Escanear</span></button>
+                    <button class="btn btn-secondary btn-icon" onclick="toggleManualForm()"><span>✍️</span><span>Manual</span></button>
+                </div>
+                <div class="manual-product-form" id="manualProductForm" style="display:none;">
+                    <h4 style="margin-bottom:0.75rem;font-size:0.9rem;font-weight:600;">Producto Manual</h4>
+                    <div class="input-group"><label>Nombre</label><input type="text" id="manualProductName" placeholder="Ej: Queso Manchego"></div>
+                    <div class="input-group"><label>Marca</label><input type="text" id="manualProductBrand" placeholder="Ej: García Baquero"></div>
+                    <div class="input-group"><label>URL Imagen (opcional)</label><input type="text" id="manualProductImage" placeholder="https://..."></div>
+                    <button class="btn btn-primary" onclick="addManualProduct()">Añadir</button>
+                </div>
+                <div class="search-results" id="searchResults"></div>
             </div>
-            <div class="search-results" id="searchResults"></div>
+            <!-- RESTAURANTES TAB -->
+            <div id="restaurantTab" style="display:none;">
+                <div class="input-group"><label>Buscar Plato o Restaurante</label><input type="text" id="restaurantSearch" placeholder="Buscar en McDonald's, Burger King, KFC..." oninput="searchRestaurants()"></div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary btn-icon" onclick="toggleManualFormRestaurant()"><span>✍️</span><span>Manual</span></button>
+                </div>
+                <div class="manual-product-form" id="manualRestaurantForm" style="display:none;">
+                    <h4 style="margin-bottom:0.75rem;font-size:0.9rem;font-weight:600;">Producto Manual</h4>
+                    <div class="input-group"><label>Nombre</label><input type="text" id="manualRestaurantName" placeholder="Ej: Big Mac"></div>
+                    <div class="input-group"><label>Restaurante</label><input type="text" id="manualRestaurantBrand" placeholder="Ej: McDonald's"></div>
+                    <div class="input-group"><label>URL Imagen (opcional)</label><input type="text" id="manualRestaurantImage" placeholder="https://..."></div>
+                    <button class="btn btn-primary" onclick="addManualRestaurant()">Añadir</button>
+                </div>
+                <div class="search-results" id="restaurantResults"></div>
+            </div>
             <div style="margin:1.5rem 0;">
                 <h3 class="section-title">Productos Añadidos (<span id="productCount">0</span>)</h3>
                 <div class="product-grid" id="addedProducts"></div>
@@ -689,11 +726,33 @@ let scannerTargetScreen='addProductsScreen';
 let sortableInstances={};
 
 // ===== INIT =====
-function initApp(){
+async function initApp(){
     initMascots();
-    // Local auth: restore session from localStorage
-    const saved = localStorage.getItem('ts_session');
-    if(saved){ try{ authenticatedUser=JSON.parse(saved); }catch(e){} }
+    // Supabase auth state listener
+    const {data:{session}} = await supabaseClient.auth.getSession();
+    if(session && session.user){
+        const {data:profile} = await supabaseClient.from('profiles').select('*').eq('id',session.user.id).single();
+        if(profile){
+            authenticatedUser={id:session.user.id, name:profile.name||session.user.email.split('@')[0], email:session.user.email};
+        } else {
+            authenticatedUser={id:session.user.id, name:session.user.email.split('@')[0], email:session.user.email};
+        }
+    }
+    supabaseClient.auth.onAuthStateChange(async (_event, session)=>{
+        if(session && session.user){
+            const {data:profile} = await supabaseClient.from('profiles').select('*').eq('id',session.user.id).single();
+            if(profile){
+                authenticatedUser={id:session.user.id, name:profile.name||session.user.email.split('@')[0], email:session.user.email};
+            } else {
+                authenticatedUser={id:session.user.id, name:session.user.email.split('@')[0], email:session.user.email};
+            }
+        } else {
+            authenticatedUser=null;
+        }
+        updateNavBar();
+        loadGlobalRanking();
+        loadArchivedTastings();
+    });
     updateNavBar();
     loadGlobalRanking();
     loadArchivedTastings();
@@ -717,80 +776,39 @@ function updateNavBar(){
 }
 
 // ===== AUTH – localStorage-based =====
-function loginWithGoogle(){
-    // Show a Google-style sign-in overlay (no real OAuth – data stored locally)
-    const overlay=document.createElement('div');
-    overlay.id='googleOverlay';
-    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:20000;display:flex;align-items:center;justify-content:center;';
-    overlay.innerHTML=`<div style="background:#fff;border-radius:8px;max-width:380px;width:90%;padding:2rem;box-shadow:0 4px 24px rgba(0,0,0,0.2);font-family:'Inter',sans-serif;">
-        <div style="text-align:center;margin-bottom:1.25rem;">
-            <svg width="44" height="44" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-            <h2 style="margin:0.6rem 0 0.15rem;font-size:1.1rem;color:#1a1a1a;font-weight:600;">Continuar con Google</h2>
-            <p style="color:#64748b;font-size:0.78rem;margin:0;">Introduce tu cuenta</p>
-        </div>
-        <div style="margin-bottom:0.85rem;">
-            <label style="display:block;font-size:0.78rem;color:#5f6368;margin-bottom:0.3rem;font-weight:500;">Nombre</label>
-            <input id="gName" type="text" placeholder="Tu nombre" style="width:100%;padding:0.65rem 0.75rem;border:1px solid #dadce0;border-radius:4px;font-size:0.875rem;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#4285F4'" onblur="this.style.borderColor='#dadce0'">
-        </div>
-        <div style="margin-bottom:1rem;">
-            <label style="display:block;font-size:0.78rem;color:#5f6368;margin-bottom:0.3rem;font-weight:500;">Email</label>
-            <input id="gEmail" type="email" placeholder="nombre@gmail.com" style="width:100%;padding:0.65rem 0.75rem;border:1px solid #dadce0;border-radius:4px;font-size:0.875rem;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#4285F4'" onblur="this.style.borderColor='#dadce0'">
-        </div>
-        <div style="display:flex;gap:0.6rem;">
-            <button onclick="document.getElementById('googleOverlay').remove()" style="flex:1;padding:0.6rem;border:1px solid #dadce0;border-radius:4px;background:#fff;color:#3c4043;font-size:0.825rem;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;">Cancelar</button>
-            <button onclick="confirmGoogleLogin()" style="flex:1;padding:0.6rem;border:none;border-radius:4px;background:#4285F4;color:white;font-size:0.825rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Confirmar</button>
-        </div>
-        <p style="text-align:center;font-size:0.68rem;color:#9aa0a6;margin-top:0.85rem;">Los datos se guardan solo en este dispositivo.</p>
-    </div>`;
-    document.body.appendChild(overlay);
-    setTimeout(function(){document.getElementById('gName').focus();},80);
+async function loginWithGoogle(){
+    showAuthSpinner(true);
+    const {error} = await supabaseClient.auth.signInWithOAuth({provider:'google'});
+    if(error){showAuthSpinner(false);alert('Error con Google: '+error.message);}
 }
 
-function confirmGoogleLogin(){
-    const name=document.getElementById('gName').value.trim();
-    const email=document.getElementById('gEmail').value.trim();
-    if(!name||!email){alert('Completa nombre y email');return;}
-    if(!email.includes('@')){alert('Email no válido');return;}
-    // store in user DB so it persists like a real account
-    const users=JSON.parse(localStorage.getItem('ts_users')||'{}');
-    const id=users[email]?users[email].id:('g_'+Date.now());
-    users[email]={id:id,name:name,email:email,provider:'google'};
-    localStorage.setItem('ts_users',JSON.stringify(users));
-    authenticatedUser={id:id,name:name,email:email,provider:'google'};
-    localStorage.setItem('ts_session',JSON.stringify(authenticatedUser));
-    document.getElementById('googleOverlay').remove();
-    updateNavBar();
-    showScreen('homeScreen');
-}
-
-function loginWithEmail(){
+async function loginWithEmail(){
     const email=document.getElementById('authEmail').value.trim();
     const password=document.getElementById('authPassword').value.trim();
     if(isAuthMode==='register'){
         const name=document.getElementById('authName').value.trim();
         if(!name||!email||!password){alert('Completa todos los campos');return;}
         if(password.length<6){alert('La contraseña debe tener al menos 6 caracteres');return;}
-        if(!email.includes('@')){alert('Email no válido');return;}
-        const users=JSON.parse(localStorage.getItem('ts_users')||'{}');
-        if(users[email]){alert('Este email ya tiene cuenta. Inicia sesión.');return;}
-        const id='u_'+Date.now();
-        users[email]={id:id,name:name,email:email,provider:'email',password:password};
-        localStorage.setItem('ts_users',JSON.stringify(users));
-        authenticatedUser={id:id,name:name,email:email,provider:'email'};
-        localStorage.setItem('ts_session',JSON.stringify(authenticatedUser));
-        updateNavBar();
-        showScreen('homeScreen');
+        showAuthSpinner(true);
+        const {data,error} = await supabaseClient.auth.signUp({email:email,password:password});
+        showAuthSpinner(false);
+        if(error){alert('Error: '+error.message);return;}
+        if(data.user){
+            await supabaseClient.from('profiles').upsert({id:data.user.id,name:name,email:email});
+            document.getElementById('emailSentMsg').style.display='block';
+        }
     } else {
         if(!email||!password){alert('Completa email y contraseña');return;}
-        const users=JSON.parse(localStorage.getItem('ts_users')||'{}');
-        const user=users[email];
-        if(!user){alert('No existe cuenta con ese email.');return;}
-        if(user.provider==='google'){alert('Esta cuenta fue creada con Google. Usa el botón de Google.');return;}
-        if(user.password!==password){alert('Contraseña incorrecta.');return;}
-        authenticatedUser={id:user.id,name:user.name,email:user.email,provider:'email'};
-        localStorage.setItem('ts_session',JSON.stringify(authenticatedUser));
-        updateNavBar();
-        showScreen('homeScreen');
+        showAuthSpinner(true);
+        const {error} = await supabaseClient.auth.signInWithPassword({email:email,password:password});
+        showAuthSpinner(false);
+        if(error){
+            if(error.message.includes('Invalid login')) alert('Email o contraseña incorrectos');
+            else if(error.message.includes('Email not confirmed')) alert('Confirma tu email antes de iniciar sesión');
+            else alert('Error: '+error.message);
+        } else {
+            showScreen('homeScreen');
+        }
     }
 }
 
@@ -805,12 +823,11 @@ function toggleAuthMode(){
     document.getElementById('authBtn').textContent=isAuthMode==='register'?'Registrarse':'Iniciar Sesión';
     document.getElementById('authToggleLink').textContent=isAuthMode==='register'?'Inicia sesión':'Regístrate';
     document.getElementById('nameGroup').style.display=isAuthMode==='register'?'block':'none';
+    document.getElementById('emailSentMsg').style.display='none';
 }
 
-function logout(){
-    localStorage.removeItem('ts_session');
-    authenticatedUser=null;
-    updateNavBar();
+async function logout(){
+    await supabaseClient.auth.signOut();
     showScreen('homeScreen');
 }
 
@@ -1127,6 +1144,117 @@ function toggleManualFormEdit(){const f=document.getElementById('manualProductFo
 function addManualProduct(){const n=document.getElementById('manualProductName').value.trim(),b=document.getElementById('manualProductBrand').value.trim(),img=document.getElementById('manualProductImage').value.trim();if(!n||!b){alert('Completa nombre y marca');return;}addProduct({name:n,brand:b,image:img});document.getElementById('manualProductName').value='';document.getElementById('manualProductBrand').value='';document.getElementById('manualProductImage').value='';toggleManualForm();}
 function addManualProductEdit(){const n=document.getElementById('editManualProductName').value.trim(),b=document.getElementById('editManualProductBrand').value.trim(),img=document.getElementById('editManualProductImage').value.trim();if(!n||!b){alert('Completa nombre y marca');return;}addProductFromEdit({name:n,brand:b,image:img});document.getElementById('editManualProductName').value='';document.getElementById('editManualProductBrand').value='';document.getElementById('editManualProductImage').value='';toggleManualFormEdit();}
 
+// ===== TABS =====
+function switchProductTab(tab){
+    const tabs=document.querySelectorAll('.tab');
+    tabs.forEach(t=>t.classList.remove('active'));
+    if(tab==='supermarket'){
+        tabs[0].classList.add('active');
+        document.getElementById('supermarketTab').style.display='block';
+        document.getElementById('restaurantTab').style.display='none';
+    } else {
+        tabs[1].classList.add('active');
+        document.getElementById('supermarketTab').style.display='none';
+        document.getElementById('restaurantTab').style.display='block';
+    }
+}
+
+// ===== RESTAURANTES =====
+const RESTAURANT_DATA={
+    "McDonald's":[
+        {name:"Big Mac",brand:"McDonald's",image:"https://images.unsplash.com/photo-1550547660-d9450f859349?w=400"},
+        {name:"McChicken",brand:"McDonald's",image:"https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=400"},
+        {name:"McNuggets",brand:"McDonald's",image:"https://images.unsplash.com/photo-1562967914-608f82629710?w=400"},
+        {name:"McFlurry",brand:"McDonald's",image:"https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400"},
+        {name:"Patatas Fritas",brand:"McDonald's",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"}
+    ],
+    "Burger King":[
+        {name:"Whopper",brand:"Burger King",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},
+        {name:"Chicken Royale",brand:"Burger King",image:"https://images.unsplash.com/photo-1513639776629-7b61b0ac49cb?w=400"},
+        {name:"Bacon King",brand:"Burger King",image:"https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400"},
+        {name:"Nuggets",brand:"Burger King",image:"https://images.unsplash.com/photo-1562967914-608f82629710?w=400"},
+        {name:"Onion Rings",brand:"Burger King",image:"https://images.unsplash.com/photo-1639024471283-03518883512d?w=400"}
+    ],
+    "KFC":[
+        {name:"Pollo Frito Original",brand:"KFC",image:"https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400"},
+        {name:"Tiras de Pollo",brand:"KFC",image:"https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?w=400"},
+        {name:"Hot Wings",brand:"KFC",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
+        {name:"Bucket Original",brand:"KFC",image:"https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400"},
+        {name:"Ensalada Coleslaw",brand:"KFC",image:"https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=400"}
+    ],
+    "Domino's Pizza":[
+        {name:"Pizza Barbacoa",brand:"Domino's",image:"https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400"},
+        {name:"Pizza Carbonara",brand:"Domino's",image:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400"},
+        {name:"Pizza 4 Quesos",brand:"Domino's",image:"https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=400"},
+        {name:"Alitas Picantes",brand:"Domino's",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
+        {name:"Palitos de Pan",brand:"Domino's",image:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400"}
+    ],
+    "Telepizza":[
+        {name:"Pizza Barbacoa",brand:"Telepizza",image:"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400"},
+        {name:"Pizza Carbonara",brand:"Telepizza",image:"https://images.unsplash.com/photo-1571407970349-bc81e7e96a47?w=400"},
+        {name:"Pizza 4 Estaciones",brand:"Telepizza",image:"https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?w=400"},
+        {name:"Alitas",brand:"Telepizza",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
+        {name:"Pan de Ajo",brand:"Telepizza",image:"https://images.unsplash.com/photo-1573166953836-06864dc70a21?w=400"}
+    ],
+    "Subway":[
+        {name:"Sub Italiano B.M.T.",brand:"Subway",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},
+        {name:"Sub Pollo Teriyaki",brand:"Subway",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},
+        {name:"Sub Atún",brand:"Subway",image:"https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400"},
+        {name:"Sub Vegetal",brand:"Subway",image:"https://images.unsplash.com/photo-1587487518314-9fca9e8f4f8d?w=400"},
+        {name:"Cookies",brand:"Subway",image:"https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400"}
+    ],
+    "Taco Bell":[
+        {name:"Crunchy Taco",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400"},
+        {name:"Burrito Supreme",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400"},
+        {name:"Quesadilla",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1571804258955-7b32160d5b25?w=400"},
+        {name:"Nachos Supreme",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=400"},
+        {name:"Crunchwrap",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400"}
+    ]
+};
+
+let restaurantTimeout=null;
+function searchRestaurants(){
+    const q=document.getElementById('restaurantSearch').value.trim().toLowerCase();
+    if(q.length<2){document.getElementById('restaurantResults').innerHTML='';return;}
+    clearTimeout(restaurantTimeout);
+    restaurantTimeout=setTimeout(function(){
+        const results=[];
+        Object.keys(RESTAURANT_DATA).forEach(function(brand){
+            RESTAURANT_DATA[brand].forEach(function(item){
+                if(item.name.toLowerCase().includes(q) || brand.toLowerCase().includes(q)){
+                    results.push(item);
+                }
+            });
+        });
+        const div=document.getElementById('restaurantResults');
+        if(results.length){
+            div.innerHTML=results.slice(0,10).map(function(p){
+                const obj=JSON.stringify(p).replace(/'/g,"&apos;");
+                return '<div class="search-result-item" onclick=\'addProduct('+obj+')\'><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><strong>'+p.name+'</strong><p>'+p.brand+'</p></div></div>';
+            }).join('');
+        } else {
+            div.innerHTML='<p style="text-align:center;color:var(--text-secondary);padding:1.5rem;">No se encontraron productos</p>';
+        }
+    },300);
+}
+
+function toggleManualFormRestaurant(){
+    const f=document.getElementById('manualRestaurantForm');
+    f.style.display=f.style.display==='none'?'block':'none';
+}
+
+function addManualRestaurant(){
+    const n=document.getElementById('manualRestaurantName').value.trim();
+    const b=document.getElementById('manualRestaurantBrand').value.trim();
+    const img=document.getElementById('manualRestaurantImage').value.trim();
+    if(!n||!b){alert('Completa nombre y restaurante');return;}
+    addProduct({name:n,brand:b,image:img});
+    document.getElementById('manualRestaurantName').value='';
+    document.getElementById('manualRestaurantBrand').value='';
+    document.getElementById('manualRestaurantImage').value='';
+    toggleManualFormRestaurant();
+}
+
 function addProduct(product){if(currentTasting.products.find(p=>p.name===product.name&&p.brand===product.brand))return;currentTasting.products.push({id:Date.now().toString(),...product});saveTasting();updateAddedProducts();document.getElementById('productSearch').value='';document.getElementById('searchResults').innerHTML='';}
 function addProductFromEdit(product){if(currentTasting.products.find(p=>p.name===product.name&&p.brand===product.brand))return;currentTasting.products.push({id:Date.now().toString(),...product});saveTasting();updateEditProductsList();document.getElementById('editProductSearch').value='';document.getElementById('editSearchResults').innerHTML='';}
 
@@ -1138,8 +1266,12 @@ function updateAddedProducts(){
     if(sortableInstances.addedProducts) sortableInstances.addedProducts.destroy();
     sortableInstances.addedProducts = new Sortable(c, {
         handle: '.drag-handle',
-        animation: 150,
-        ghostClass: 'dragging',
+        animation: 200,
+        easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+        ghostClass: 'ghost',
+        dragClass: 'dragging',
+        forceFallback: true,
+        fallbackTolerance: 3,
         onEnd: function(evt) {
             const item = currentTasting.products.splice(evt.oldIndex, 1)[0];
             currentTasting.products.splice(evt.newIndex, 0, item);
@@ -1200,8 +1332,12 @@ function updateEditProductsList(){
     if(sortableInstances.editProductsList) sortableInstances.editProductsList.destroy();
     sortableInstances.editProductsList = new Sortable(c, {
         handle: '.drag-handle',
-        animation: 150,
-        ghostClass: 'dragging',
+        animation: 200,
+        easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+        ghostClass: 'ghost',
+        dragClass: 'dragging',
+        forceFallback: true,
+        fallbackTolerance: 3,
         onEnd: function(evt) {
             const item = currentTasting.products.splice(evt.oldIndex, 1)[0];
             currentTasting.products.splice(evt.newIndex, 0, item);
@@ -1232,7 +1368,7 @@ function archiveTasting(){const a=JSON.parse(localStorage.getItem('archivedTasti
 function loadArchivedTastings(){
     const archived=JSON.parse(localStorage.getItem('archivedTastings')||'[]');
     const c=document.getElementById('archivedList');
-    if(!archived.length){c.innerHTML='<div class="empty-state" style="padding:1.5rem 0;"><div class="icon">🍷</div><p>No tienes catas archivadas</p></div>';return;}
+    if(!archived.length){c.innerHTML='<div class="empty-state" style="padding:1.5rem 0;"><div class="icon">📋</div><p>No tienes catas archivadas</p></div>';return;}
     c.innerHTML=archived.map(function(t,i){
         return '<div class="archive-item"><div class="archive-icon" onclick="viewArchive('+i+')"><img src="'+MASCOT_WAITING_URL+'" alt=""></div><div class="archive-content" onclick="viewArchive('+i+')"><h3>'+t.name+'</h3><div class="archive-meta"><span>📅 '+new Date(t.archivedAt).toLocaleDateString('es-ES')+'</span><span>👥 '+t.participants.length+' part.</span><span>🍽️ '+t.products.length+' prod.</span></div></div><button class="archive-delete" onclick="deleteArchive('+i+',event)" title="Eliminar">🗑️</button></div>';
     }).join('');
