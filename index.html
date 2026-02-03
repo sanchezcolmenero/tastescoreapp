@@ -33,26 +33,25 @@
         }
         body {
             font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
-            background:var(--bg-secondary); color:var(--text); line-height:1.6;
+            background:#e2e8f0; color:var(--text); line-height:1.6;
             min-height:100vh; -webkit-font-smoothing:antialiased;
-            padding-bottom:72px; max-width:100vw; overflow-x:hidden;
+            padding-bottom:72px;
         }
-        /* MOBILE-FIRST CONSTRAINT */
-        .header, .container, #bottomNav { max-width:640px; margin-left:auto; margin-right:auto; }
-        @media (min-width: 641px) {
-            body { background:#e2e8f0; }
-            .header { border-left:1px solid var(--border); border-right:1px solid var(--border); }
-            #bottomNav { left:50%; transform:translateX(-50%); max-width:640px; border-left:1px solid var(--border); border-right:1px solid var(--border); }
+        .app-wrapper { max-width:480px; margin:0 auto; background:var(--bg-secondary); min-height:100vh; box-shadow:0 0 0 1px rgba(0,0,0,0.05); }
+        @media (max-width: 480px) {
+            .app-wrapper { box-shadow:none; }
         }
+        .container { padding:1rem; }
         /* HEADER */
         .header { background:rgba(255,255,255,0.95); padding:1rem; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; backdrop-filter:blur(10px); }
         .header-inner { max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; }
         .header h1 { font-size:1.5rem; font-weight:700; letter-spacing:-0.02em; color:var(--primary); }
         .header p { font-size:0.875rem; color:var(--text-secondary); }
         .header-content { display:flex; align-items:center; }
-        .header-profile { width:40px; height:40px; border-radius:50%; overflow:hidden; cursor:pointer; border:2px solid var(--border); transition:all 0.2s; }
+        .header-profile { width:40px; height:40px; border-radius:50%; overflow:hidden; cursor:pointer; border:2px solid var(--border); transition:all 0.2s; display:flex; align-items:center; justify-content:center; background:white; }
         .header-profile:hover { border-color:var(--primary); transform:scale(1.05); }
         .header-profile img { width:100%; height:100%; object-fit:cover; }
+        .header-profile svg { color:var(--text-secondary); }
         .back-btn { background:none; border:none; color:var(--text); font-size:1.5rem; cursor:pointer; padding:0.5rem; margin-right:0.75rem; }
         .back-btn:hover { opacity:0.6; }
         /* BOTTOM NAV */
@@ -226,6 +225,7 @@
     </style>
 </head>
 <body>
+<div class="app-wrapper">
 
 <!-- PANDA MASCOT (normal) -->
 <svg id="mascotSVG" style="display:none" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
@@ -357,8 +357,9 @@
             <button class="back-btn" id="backBtn" style="display:none;">←</button>
             <div><h1>TasteScore</h1><p id="headerSubtitle">Catas de productos en grupo</p></div>
         </div>
-        <div id="headerProfile" class="header-profile" onclick="navigateTo('profile')" style="display:none;">
-            <img id="headerProfileImg" src="" alt="Perfil">
+        <div id="headerProfile" class="header-profile" onclick="headerProfileClick()">
+            <svg id="headerLoginIcon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <img id="headerProfileImg" src="" alt="Perfil" style="display:none;">
         </div>
     </div>
 </div>
@@ -446,7 +447,10 @@
         </div>
         
         <div class="card">
-            <h3 style="margin-bottom:0.75rem;font-weight:600;font-size:0.95rem;">Catas Archivadas</h3>
+            <h3 style="margin-bottom:0.75rem;font-weight:600;font-size:0.95rem;display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:1.25rem;">📋</span>
+                Catas Archivadas
+            </h3>
             <div id="archivedList"></div>
         </div>
     </div>
@@ -973,10 +977,12 @@ async function updateNavBar(){
     const favBtn=document.getElementById('nav-favs'), myBtn=document.getElementById('nav-mytastings');
     const headerProfile=document.getElementById('headerProfile');
     const headerProfileImg=document.getElementById('headerProfileImg');
+    const headerLoginIcon=document.getElementById('headerLoginIcon');
     
     if(authenticatedUser){
         favBtn.style.display='flex'; myBtn.style.display='flex';
-        headerProfile.style.display='block';
+        headerLoginIcon.style.display='none';
+        headerProfileImg.style.display='block';
         
         // Load user avatar
         const {data:profile} = await supabaseClient.from('profiles').select('avatar').eq('id',authenticatedUser.id).single();
@@ -985,16 +991,32 @@ async function updateNavBar(){
         if(PANDA_AVATARS[avatarKey]){
             if(avatarKey.startsWith('panda')){
                 headerProfileImg.src = PANDA_AVATARS[avatarKey];
+                headerProfileImg.style.display='block';
+                // Remove emoji div if it exists
+                const emojiDiv = headerProfile.querySelector('div');
+                if(emojiDiv) emojiDiv.remove();
             }else{
                 // Food emoji avatar
                 headerProfileImg.style.display='none';
-                headerProfile.innerHTML='<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;background:white;">'+PANDA_AVATARS[avatarKey]+'</div>';
+                headerProfile.innerHTML='<svg id="headerLoginIcon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><img id="headerProfileImg" src="" alt="Perfil" style="display:none;"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;background:white;">'+PANDA_AVATARS[avatarKey]+'</div>';
                 headerProfile.onclick=function(){navigateTo('profile');};
             }
         }
     } else {
         favBtn.style.display='none'; myBtn.style.display='none';
-        headerProfile.style.display='none';
+        headerLoginIcon.style.display='block';
+        headerProfileImg.style.display='none';
+        // Remove emoji div if it exists
+        const emojiDiv = headerProfile.querySelector('div');
+        if(emojiDiv) emojiDiv.remove();
+    }
+}
+
+function headerProfileClick(){
+    if(authenticatedUser){
+        navigateTo('profile');
+    }else{
+        navigateTo('auth');
     }
 }
 
@@ -1918,5 +1940,6 @@ document.getElementById('dismissBanner').addEventListener('click',function(){ins
 document.getElementById('closeIosModal').addEventListener('click',function(){document.getElementById('iosModal').style.display='none';});
 window.addEventListener('load',function(){if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.matchMedia('(display-mode: standalone)').matches&&!sessionStorage.getItem('pwa-banner-dismissed'))setTimeout(function(){document.getElementById('iosModal').style.display='flex';},2000);});
 </script>
+</div>
 </body>
 </html>
