@@ -427,13 +427,24 @@
 <!-- HOME -->
 <div class="screen active" id="homeScreen">
     <div class="container">
+        <!-- Auth prompt for non-logged users -->
+        <div class="card" id="homeAuthPrompt" style="display:none;">
+            <div style="text-align:center;margin-bottom:1rem;">
+                <img id="bannerMascot" src="" alt="" style="width:80px;height:auto;margin-bottom:0.75rem;">
+                <h2 style="font-size:1.15rem;font-weight:600;margin-bottom:0.5rem;">¡Bienvenido a TasteScore!</h2>
+                <p style="color:var(--text-secondary);font-size:0.875rem;">Inicia sesión para guardar tus catas y acceder a todas las funciones</p>
+            </div>
+            <button class="btn btn-primary" onclick="navigateTo('auth')" style="margin-bottom:0.6rem;">Iniciar Sesión</button>
+            <button class="btn btn-secondary" onclick="isAuthMode='register'; toggleAuthMode(); navigateTo('auth');">Crear Cuenta</button>
         </div>
+        
         <div class="card">
             <h2 style="margin-bottom:0.75rem;font-size:1.2rem;font-weight:600;text-align:center;">¡Bienvenido!</h2>
             <p style="color:var(--text-secondary);margin-bottom:1.25rem;text-align:center;font-size:0.9rem;">Crea una cata o únete a una existente.</p>
             <button class="btn btn-primary" onclick="showScreen('createScreen')" style="margin-bottom:0.6rem;">Crear Nueva Cata</button>
             <button class="btn btn-secondary" onclick="showScreen('joinScreen')">Unirse a Cata</button>
         </div>
+        
         <div class="card">
             <h3 style="margin-bottom:0.75rem;font-weight:600;font-size:0.95rem;">Catas Archivadas</h3>
             <div id="archivedList"></div>
@@ -1178,7 +1189,13 @@ function showScreen(sid){
     document.getElementById(sid).classList.add('active');
     setActiveNav(sid);
     const bb=document.getElementById('backBtn');
-    if(sid==='homeScreen'){bb.style.display='none';document.getElementById('headerSubtitle').textContent='Catas de productos en grupo';loadArchivedTastings();}
+    if(sid==='homeScreen'){
+        bb.style.display='none';
+        document.getElementById('headerSubtitle').textContent='Catas de productos en grupo';
+        loadArchivedTastings();
+        // Show auth prompt if not logged in
+        document.getElementById('homeAuthPrompt').style.display = authenticatedUser ? 'none' : 'block';
+    }
     else if(['rankingScreen','favsScreen','myTastingsScreen','profileScreen','authScreen'].includes(sid)){
         bb.style.display='none';
         const titles={rankingScreen:'Ranking Global',favsScreen:'Favoritos',myTastingsScreen:'Mis Catas',profileScreen:'Mi Perfil',authScreen:'Cuenta'};
