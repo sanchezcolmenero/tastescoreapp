@@ -40,8 +40,8 @@
         /* HEADER */
         .header { background:rgba(255,255,255,0.95); padding:1rem; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; backdrop-filter:blur(10px); }
         .header-inner { max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; }
-        .header h1 { font-size:1.5rem; font-weight:700; letter-spacing:-0.02em; color:var(--primary); display:flex; align-items:center; gap:0.5rem; }
-        .header-mascot { width:32px; height:32px; }
+        .header h1 { font-size:1.5rem; font-weight:700; letter-spacing:-0.02em; color:var(--primary); }
+        .header-panda { width:36px; height:36px; }
         .header p { font-size:0.875rem; color:var(--text-secondary); }
         .header-content { display:flex; align-items:center; }
         .back-btn { background:none; border:none; color:var(--text); font-size:1.5rem; cursor:pointer; padding:0.5rem; margin-right:0.75rem; }
@@ -165,6 +165,7 @@
         .scanner-content { background:var(--bg); border-radius:12px; padding:1.5rem; max-width:500px; width:90%; border:1px solid var(--border); }
         /* PROFILE */
         .profile-avatar-big { width:96px; height:96px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; overflow:hidden; }
+        .avatar-option:hover { border-color:var(--primary)!important; background:var(--bg-secondary); }
         /* FAV */
         .fav-item { background:var(--bg); padding:0.875rem; border-radius:10px; margin-bottom:0.5rem; border:1px solid var(--border); display:flex; align-items:center; gap:0.75rem; }
         .fav-item img { width:48px; height:48px; border-radius:6px; object-fit:cover; flex-shrink:0; border:1px solid var(--border); }
@@ -305,13 +306,40 @@
   <ellipse cx="125" cy="185" rx="14" ry="9" fill="#1a1a1a"/>
 </svg>
 
+<!-- PANDA HEAD EATING BAMBOO (for navbar profile) -->
+<svg id="pandaHeadSVG" style="display:none" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- ears -->
+  <ellipse cx="28" cy="26" rx="14" ry="18" fill="#1a1a1a"/>
+  <ellipse cx="92" cy="26" rx="14" ry="18" fill="#1a1a1a"/>
+  <!-- head -->
+  <circle cx="60" cy="60" r="42" fill="white"/>
+  <!-- eye patches -->
+  <ellipse cx="42" cy="56" rx="14" ry="12" fill="#1a1a1a" transform="rotate(-5 42 56)"/>
+  <ellipse cx="78" cy="56" rx="14" ry="12" fill="#1a1a1a" transform="rotate(5 78 56)"/>
+  <!-- eyes closed (eating) -->
+  <path d="M36 54 Q42 50 48 54" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M72 54 Q78 50 84 54" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- nose -->
+  <ellipse cx="60" cy="66" rx="4" ry="3" fill="#1a1a1a"/>
+  <!-- mouth eating -->
+  <path d="M56 70 Q60 76 64 70" stroke="#1a1a1a" stroke-width="2" fill="#ef4444" stroke-linecap="round"/>
+  <!-- cheeks -->
+  <ellipse cx="32" cy="68" rx="5" ry="3" fill="#f59e0b" opacity="0.4"/>
+  <ellipse cx="88" cy="68" rx="5" ry="3" fill="#f59e0b" opacity="0.4"/>
+  <!-- bamboo stick -->
+  <rect x="70" y="45" width="4" height="35" rx="2" fill="#4ade80" transform="rotate(25 72 62)"/>
+  <rect x="68" y="40" width="8" height="6" rx="2" fill="#22c55e"/>
+  <rect x="68" y="48" width="8" height="6" rx="2" fill="#22c55e"/>
+</svg>
+
 <!-- HEADER -->
 <div class="header">
     <div class="header-inner">
         <div class="header-content">
             <button class="back-btn" id="backBtn" style="display:none;">←</button>
-            <div><h1>TasteScore <img id="headerMascot" src="" alt="" class="header-mascot"></h1><p id="headerSubtitle">Catas de productos en grupo</p></div>
+            <div><h1>TasteScore</h1><p id="headerSubtitle">Catas de productos en grupo</p></div>
         </div>
+        <img id="headerPanda" src="" alt="" class="header-panda" style="cursor:pointer;" onclick="navigateTo('profile')">
     </div>
 </div>
 
@@ -355,6 +383,20 @@
         </div>
         <button onclick="copyInviteCode()" style="width:100%;padding:0.7rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#1a1a1a;font-size:0.85rem;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-bottom:0.5rem;" id="copyCodeBtn">📋 Copiar código</button>
         <button onclick="shareInvite()" style="width:100%;padding:0.7rem;border:none;border-radius:8px;background:#2563eb;color:white;font-size:0.85rem;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:0.5rem;">📤 Compartir</button>
+    </div>
+</div>
+
+<!-- EMAIL CONFIRMATION MODAL -->
+<div id="emailConfirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:16000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;max-width:420px;width:90%;padding:2rem;box-shadow:0 8px 32px rgba(0,0,0,0.25);font-family:'Inter',sans-serif;text-align:center;">
+        <div style="width:72px;height:72px;margin:0 auto 1.25rem;background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <h2 style="margin:0 0 0.75rem;font-size:1.35rem;font-weight:700;color:#1a1a1a;">Confirma tu email</h2>
+        <p style="color:#64748b;font-size:0.95rem;line-height:1.6;margin:0 0 1.5rem;">Hemos enviado un email de confirmación a <strong id="confirmEmailAddress" style="color:#2563eb;"></strong></p>
+        <p style="color:#64748b;font-size:0.875rem;margin:0 0 1.75rem;padding:1rem;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">Haz clic en el enlace del email para activar tu cuenta. Revisa también la carpeta de spam.</p>
+        <button onclick="openEmailApp()" style="width:100%;padding:0.9rem;border:none;border-radius:10px;background:#2563eb;color:white;font-size:0.95rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:0.75rem;transition:all 0.2s;">📧 Abrir mi correo</button>
+        <button onclick="closeEmailModal()" style="width:100%;padding:0.9rem;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#64748b;font-size:0.9rem;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;">Cerrar</button>
     </div>
 </div>
 
@@ -425,10 +467,69 @@
 <div class="screen" id="profileScreen">
     <div class="container">
         <div class="card" style="text-align:center;">
-            <div class="profile-avatar-big" id="profileAvatarBig"></div>
+            <div class="profile-avatar-big" id="profileAvatarBig" style="cursor:pointer;" onclick="showAvatarSelector()"></div>
+            <p style="font-size:0.75rem;color:var(--text-tertiary);margin-bottom:1rem;">Toca para cambiar avatar</p>
             <h2 id="profileName" style="font-size:1.2rem;font-weight:600;margin-bottom:0.2rem;"></h2>
             <p id="profileEmail" style="color:var(--text-secondary);font-size:0.825rem;margin-bottom:1.25rem;"></p>
-            <button class="btn btn-secondary" onclick="logout()" style="max-width:180px;margin:0 auto;display:block;">Cerrar Sesión</button>
+            <div style="display:grid;gap:0.75rem;max-width:300px;margin:0 auto;">
+                <button class="btn btn-secondary" onclick="showEditProfile()">✏️ Editar Perfil</button>
+                <button class="btn btn-secondary" onclick="logout()">🚪 Cerrar Sesión</button>
+                <button class="btn" onclick="deleteAccount()" style="color:var(--error);border-color:var(--error);">🗑️ Eliminar Cuenta</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EDIT PROFILE -->
+<div class="screen" id="editProfileScreen">
+    <div class="container">
+        <div class="card">
+            <h2 style="margin-bottom:1.25rem;font-size:1.1rem;font-weight:600;">Editar Perfil</h2>
+            <div class="input-group">
+                <label>Nombre de usuario</label>
+                <input type="text" id="editProfileName" placeholder="Tu nombre">
+            </div>
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" id="editProfileEmail" placeholder="tu@email.com">
+                <p style="font-size:0.75rem;color:var(--text-tertiary);margin-top:0.3rem;">Si cambias el email, deberás confirmar el nuevo</p>
+            </div>
+            <div class="input-group">
+                <label>Nueva contraseña (opcional)</label>
+                <input type="password" id="editProfilePassword" placeholder="Dejar vacío para no cambiar">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:1.5rem;">
+                <button class="btn btn-secondary" onclick="showScreen('profileScreen')">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveProfileChanges()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AVATAR SELECTOR MODAL -->
+<div id="avatarSelectorModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:16000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;max-width:480px;width:90%;padding:2rem;box-shadow:0 8px 32px rgba(0,0,0,0.25);font-family:'Inter',sans-serif;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+            <h3 style="margin:0;font-size:1.15rem;font-weight:600;">Elige tu avatar</h3>
+            <button onclick="closeAvatarSelector()" style="background:none;border:none;font-size:1.5rem;color:#94a3b8;cursor:pointer;">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1.5rem;">
+            <div class="avatar-option" onclick="selectAvatar('panda_normal')" style="border:3px solid transparent;border-radius:12px;padding:1rem;cursor:pointer;transition:all 0.2s;text-align:center;">
+                <img src="" id="avatar_panda_normal" style="width:80px;height:80px;margin-bottom:0.5rem;">
+                <p style="font-size:0.8rem;color:var(--text-secondary);margin:0;">Panda Normal</p>
+            </div>
+            <div class="avatar-option" onclick="selectAvatar('panda_eating')" style="border:3px solid transparent;border-radius:12px;padding:1rem;cursor:pointer;transition:all 0.2s;text-align:center;">
+                <img src="" id="avatar_panda_eating" style="width:80px;height:80px;margin-bottom:0.5rem;">
+                <p style="font-size:0.8rem;color:var(--text-secondary);margin:0;">Panda Comiendo</p>
+            </div>
+            <div class="avatar-option" onclick="selectAvatar('panda_waiting')" style="border:3px solid transparent;border-radius:12px;padding:1rem;cursor:pointer;transition:all 0.2s;text-align:center;">
+                <img src="" id="avatar_panda_waiting" style="width:80px;height:80px;margin-bottom:0.5rem;">
+                <p style="font-size:0.8rem;color:var(--text-secondary);margin:0;">Panda Esperando</p>
+            </div>
+            <div class="avatar-option" onclick="selectAvatar('panda_head')" style="border:3px solid transparent;border-radius:12px;padding:1rem;cursor:pointer;transition:all 0.2s;text-align:center;">
+                <img src="" id="avatar_panda_head" style="width:80px;height:80px;margin-bottom:0.5rem;">
+                <p style="font-size:0.8rem;color:var(--text-secondary);margin:0;">Panda con Bambú</p>
+            </div>
         </div>
     </div>
 </div>
@@ -708,12 +809,26 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 // ===== MASCOTS =====
-let MASCOT_URL='', MASCOT_EATING_URL='', MASCOT_WAITING_URL='';
+let MASCOT_URL='', MASCOT_EATING_URL='', MASCOT_WAITING_URL='', PANDA_HEAD_URL='';
+const PANDA_AVATARS = {
+    panda_normal: '',
+    panda_eating: '',
+    panda_waiting: '',
+    panda_head: ''
+};
+
 function initMascots(){
     MASCOT_URL='data:image/svg+xml,'+encodeURIComponent(document.getElementById('mascotSVG').outerHTML.replace(' style="display:none"',''));
     MASCOT_EATING_URL='data:image/svg+xml,'+encodeURIComponent(document.getElementById('mascotEatingSVG').outerHTML.replace(' style="display:none"',''));
     MASCOT_WAITING_URL='data:image/svg+xml,'+encodeURIComponent(document.getElementById('mascotWaitingSVG').outerHTML.replace(' style="display:none"',''));
-    document.getElementById('headerMascot').src=MASCOT_URL;
+    PANDA_HEAD_URL='data:image/svg+xml,'+encodeURIComponent(document.getElementById('pandaHeadSVG').outerHTML.replace(' style="display:none"',''));
+    
+    PANDA_AVATARS.panda_normal = MASCOT_URL;
+    PANDA_AVATARS.panda_eating = MASCOT_EATING_URL;
+    PANDA_AVATARS.panda_waiting = MASCOT_WAITING_URL;
+    PANDA_AVATARS.panda_head = PANDA_HEAD_URL;
+    
+    document.getElementById('headerPanda').src=PANDA_HEAD_URL;
     document.getElementById('authMascot').src=MASCOT_URL;
     document.getElementById('bannerMascot').src=MASCOT_URL;
 }
@@ -799,8 +914,10 @@ async function loginWithEmail(){
         showAuthSpinner(false);
         if(error){alert('Error: '+error.message);return;}
         if(data.user){
-            await supabaseClient.from('profiles').upsert({id:data.user.id,name:name,email:email});
-            document.getElementById('emailSentMsg').style.display='block';
+            await supabaseClient.from('profiles').upsert({id:data.user.id,name:name,email:email,avatar:'panda_normal'});
+            // Show email confirmation modal
+            document.getElementById('confirmEmailAddress').textContent=email;
+            document.getElementById('emailConfirmModal').style.display='flex';
         }
     } else {
         if(!email||!password){alert('Completa email y contraseña');return;}
@@ -809,12 +926,21 @@ async function loginWithEmail(){
         showAuthSpinner(false);
         if(error){
             if(error.message.includes('Invalid login')) alert('Email o contraseña incorrectos');
-            else if(error.message.includes('Email not confirmed')) alert('Confirma tu email antes de iniciar sesión');
+            else if(error.message.includes('Email not confirmed')) alert('Confirma tu email antes de iniciar sesión. Revisa tu bandeja de entrada.');
             else alert('Error: '+error.message);
         } else {
             showScreen('homeScreen');
         }
     }
+}
+
+function openEmailApp(){
+    window.location.href='mailto:';
+}
+
+function closeEmailModal(){
+    document.getElementById('emailConfirmModal').style.display='none';
+    showScreen('authScreen');
 }
 
 function showAuthSpinner(show){
@@ -844,12 +970,12 @@ function navigateTo(dest){
         case 'myTastings': if(!authenticatedUser){showScreen('authScreen');break;} loadUserTastings(); showScreen('myTastingsScreen'); break;
         case 'favs': if(!authenticatedUser){showScreen('authScreen');break;} loadFavLists(); renderFavs(); showScreen('favsScreen'); break;
         case 'auth': showScreen('authScreen'); break;
-        case 'profile': showScreen('profileScreen'); break;
+        case 'profile': if(!authenticatedUser){showScreen('authScreen');break;} loadProfileData(); showScreen('profileScreen'); break;
     }
 }
 function setActiveNav(sid){
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-    const map={homeScreen:'nav-home',rankingScreen:'nav-ranking',favsScreen:'nav-favs',myTastingsScreen:'nav-mytastings',profileScreen:'nav-profile',authScreen:'nav-profile'};
+    const map={homeScreen:'nav-home',rankingScreen:'nav-ranking',favsScreen:'nav-favs',myTastingsScreen:'nav-mytastings',profileScreen:'nav-profile',authScreen:'nav-profile',editProfileScreen:'nav-profile'};
     const el=document.getElementById(map[sid]); if(el) el.classList.add('active');
 }
 function showScreen(sid){
@@ -869,7 +995,7 @@ function showScreen(sid){
             else if(currentTasting&&currentTasting.status==='voting') showProductSelectionScreen();
             else showScreen('homeScreen');
         };
-        const subtitles={waitingScreen:'Sala de espera',addProductsScreen:'Añadir productos',productSelectionScreen:'Cata en curso',editCataScreen:'Editar cata',votingScreen:'Votar producto',resultsScreen:'Resultados',archiveScreen:'Cata archivada',manageParticipantsScreen:'Participantes'};
+        const subtitles={waitingScreen:'Sala de espera',addProductsScreen:'Añadir productos',productSelectionScreen:'Cata en curso',editCataScreen:'Editar cata',votingScreen:'Votar producto',resultsScreen:'Resultados',archiveScreen:'Cata archivada',manageParticipantsScreen:'Participantes',editProfileScreen:'Editar perfil'};
         document.getElementById('headerSubtitle').textContent=subtitles[sid]||'';
     }
     if(sid==='profileScreen'&&authenticatedUser){
@@ -1398,6 +1524,87 @@ function viewArchiveFromIndex(i){
         return '<div class="result-card"><div style="display:flex;gap:0.75rem;align-items:center;margin-bottom:1rem;"><img src="'+(product.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div><h3 style="margin:0 0 0.15rem;">'+product.name+'</h3><p style="color:var(--text-secondary);margin:0;font-size:0.825rem;">'+product.brand+'</p></div></div><div class="avg-score">'+avg.toFixed(1)+'</div>'+(votes.length?'<h4 style="margin:0.75rem 0 0.5rem;font-size:0.825rem;font-weight:600;">Puntuaciones</h4>'+votes.map(function(v){return '<div class="rating-result"><div><strong style="font-size:0.875rem;">'+v.user+'</strong>'+(v.comment?'<p style="font-size:0.775rem;color:var(--text-secondary);margin-top:0.15rem;">'+v.comment+'</p>':'')+' </div><div class="rating-score">'+v.score.toFixed(1)+'</div></div>';}).join(''):'<p style="text-align:center;color:var(--text-secondary);padding:0.75rem;">Sin votos</p>')+'</div>';
     }).join('');
     showScreen('archiveScreen');
+}
+
+// ===== PROFILE MANAGEMENT =====
+async function loadProfileData(){
+    if(!authenticatedUser)return;
+    document.getElementById('profileName').textContent=authenticatedUser.name;
+    document.getElementById('profileEmail').textContent=authenticatedUser.email;
+    const {data:profile} = await supabaseClient.from('profiles').select('avatar').eq('id',authenticatedUser.id).single();
+    const avatarKey = profile?.avatar || 'panda_normal';
+    const avatarImg = PANDA_AVATARS[avatarKey] || PANDA_AVATARS.panda_normal;
+    document.getElementById('profileAvatarBig').innerHTML='<img src="'+avatarImg+'" style="width:100%;height:100%;object-fit:cover;">';
+    document.getElementById('avatar_panda_normal').src=PANDA_AVATARS.panda_normal;
+    document.getElementById('avatar_panda_eating').src=PANDA_AVATARS.panda_eating;
+    document.getElementById('avatar_panda_waiting').src=PANDA_AVATARS.panda_waiting;
+    document.getElementById('avatar_panda_head').src=PANDA_AVATARS.panda_head;
+}
+
+function showEditProfile(){
+    document.getElementById('editProfileName').value=authenticatedUser.name;
+    document.getElementById('editProfileEmail').value=authenticatedUser.email;
+    document.getElementById('editProfilePassword').value='';
+    showScreen('editProfileScreen');
+}
+
+async function saveProfileChanges(){
+    const newName=document.getElementById('editProfileName').value.trim();
+    const newEmail=document.getElementById('editProfileEmail').value.trim();
+    const newPassword=document.getElementById('editProfilePassword').value.trim();
+    if(!newName||!newEmail){alert('Nombre y email son obligatorios');return;}
+    
+    try{
+        await supabaseClient.from('profiles').update({name:newName,email:newEmail}).eq('id',authenticatedUser.id);
+        authenticatedUser.name=newName;
+        
+        if(newEmail!==authenticatedUser.email){
+            const {error:emailError} = await supabaseClient.auth.updateUser({email:newEmail});
+            if(emailError) alert('Error al cambiar email: '+emailError.message);
+            else alert('Se ha enviado un email de confirmación a la nueva dirección');
+        }
+        
+        if(newPassword){
+            if(newPassword.length<6){alert('La contraseña debe tener al menos 6 caracteres');return;}
+            const {error:pwError} = await supabaseClient.auth.updateUser({password:newPassword});
+            if(pwError){alert('Error al cambiar contraseña: '+pwError.message);return;}
+        }
+        
+        alert('✓ Perfil actualizado');
+        showScreen('profileScreen');
+        loadProfileData();
+    }catch(e){
+        alert('Error al guardar cambios: '+e.message);
+    }
+}
+
+function showAvatarSelector(){
+    document.getElementById('avatarSelectorModal').style.display='flex';
+}
+
+function closeAvatarSelector(){
+    document.getElementById('avatarSelectorModal').style.display='none';
+}
+
+async function selectAvatar(avatarKey){
+    await supabaseClient.from('profiles').update({avatar:avatarKey}).eq('id',authenticatedUser.id);
+    closeAvatarSelector();
+    loadProfileData();
+}
+
+async function deleteAccount(){
+    if(!confirm('¿Estás seguro de que quieres eliminar tu cuenta?\\n\\nEsta acción NO se puede deshacer.'))return;
+    if(!confirm('Última confirmación: ¿Eliminar cuenta permanentemente?'))return;
+    
+    try{
+        await supabaseClient.from('profiles').delete().eq('id',authenticatedUser.id);
+        await supabaseClient.rpc('delete_user');
+        await logout();
+        alert('Tu cuenta ha sido eliminada');
+    }catch(e){
+        alert('Cuenta eliminada de la app. Para eliminarla completamente, contacta con soporte.');
+        await logout();
+    }
 }
 
 // ===== INIT =====
