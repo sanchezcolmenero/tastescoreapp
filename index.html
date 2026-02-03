@@ -33,25 +33,17 @@
         }
         body {
             font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
-            background:#e2e8f0; color:var(--text); line-height:1.6;
+            background:var(--bg-secondary); color:var(--text); line-height:1.6;
             min-height:100vh; -webkit-font-smoothing:antialiased;
             padding-bottom:72px;
         }
-        .app-wrapper { max-width:480px; margin:0 auto; background:var(--bg-secondary); min-height:100vh; box-shadow:0 0 0 1px rgba(0,0,0,0.05); }
-        @media (max-width: 480px) {
-            .app-wrapper { box-shadow:none; }
-        }
-        .container { padding:1rem; }
         /* HEADER */
         .header { background:rgba(255,255,255,0.95); padding:1rem; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; backdrop-filter:blur(10px); }
         .header-inner { max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; }
         .header h1 { font-size:1.5rem; font-weight:700; letter-spacing:-0.02em; color:var(--primary); }
+        .header-panda { width:36px; height:36px; }
         .header p { font-size:0.875rem; color:var(--text-secondary); }
         .header-content { display:flex; align-items:center; }
-        .header-profile { width:40px; height:40px; border-radius:50%; overflow:hidden; cursor:pointer; border:2px solid var(--border); transition:all 0.2s; display:flex; align-items:center; justify-content:center; background:white; }
-        .header-profile:hover { border-color:var(--primary); transform:scale(1.05); }
-        .header-profile img { width:100%; height:100%; object-fit:cover; }
-        .header-profile svg { color:var(--text-secondary); }
         .back-btn { background:none; border:none; color:var(--text); font-size:1.5rem; cursor:pointer; padding:0.5rem; margin-right:0.75rem; }
         .back-btn:hover { opacity:0.6; }
         /* BOTTOM NAV */
@@ -196,15 +188,6 @@
         .input-error label { color:var(--error) !important; }
         .field-error { font-size:0.75rem; color:var(--error); margin-top:0.3rem; display:none; }
         .field-error.show { display:block; }
-        .field-success { font-size:0.75rem; color:var(--success); margin-top:0.3rem; display:none; }
-        .field-success.show { display:block; }
-        .password-strength { height:4px; border-radius:2px; margin-top:0.5rem; background:var(--border); overflow:hidden; display:none; }
-        .password-strength.show { display:block; }
-        .password-strength-bar { height:100%; transition:all 0.3s; border-radius:2px; }
-        .password-strength-weak { width:33%; background:#ef4444; }
-        .password-strength-medium { width:66%; background:#f59e0b; }
-        .password-strength-strong { width:100%; background:#10b981; }
-        .input-error { border-color:var(--error)!important; background:#fef2f2!important; }
         /* INVITE FAB */
         .invite-fab { position:fixed; bottom:80px; right:1rem; width:52px; height:52px; border-radius:50%; background:var(--primary); color:white; border:none; box-shadow:0 4px 14px rgba(37,99,235,0.4); display:none; align-items:center; justify-content:center; z-index:400; cursor:pointer; font-size:1.6rem; transition:transform 0.15s,box-shadow 0.15s; }
         .invite-fab:hover { transform:scale(1.08); box-shadow:0 6px 20px rgba(37,99,235,0.5); }
@@ -225,7 +208,6 @@
     </style>
 </head>
 <body>
-<div class="app-wrapper">
 
 <!-- PANDA MASCOT (normal) -->
 <svg id="mascotSVG" style="display:none" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
@@ -357,10 +339,7 @@
             <button class="back-btn" id="backBtn" style="display:none;">←</button>
             <div><h1>TasteScore</h1><p id="headerSubtitle">Catas de productos en grupo</p></div>
         </div>
-        <div id="headerProfile" class="header-profile" onclick="headerProfileClick()">
-            <svg id="headerLoginIcon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <img id="headerProfileImg" src="" alt="Perfil" style="display:none;">
-        </div>
+        <img id="headerPanda" src="" alt="" class="header-panda" style="cursor:pointer;" onclick="navigateTo('profile')">
     </div>
 </div>
 
@@ -381,6 +360,12 @@
     <button class="nav-btn" id="nav-mytastings" onclick="navigateTo('myTastings')" style="display:none;">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         <span>Mis Catas</span>
+    </button>
+    <button class="nav-btn" id="nav-profile" onclick="navigateTo('auth')">
+        <div id="navAvatar" style="width:24px;height:24px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;overflow:hidden;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="8" r="4"/></svg>
+        </div>
+        <span id="navProfileLabel">Perfil</span>
     </button>
 </nav>
 
@@ -428,29 +413,15 @@
 <!-- HOME -->
 <div class="screen active" id="homeScreen">
     <div class="container">
-        <!-- Auth prompt for non-logged users -->
-        <div class="card" id="homeAuthPrompt" style="display:none;">
-            <div style="text-align:center;margin-bottom:1rem;">
-                <img id="bannerMascot" src="" alt="" style="width:80px;height:auto;margin-bottom:0.75rem;">
-                <h2 style="font-size:1.15rem;font-weight:600;margin-bottom:0.5rem;">¡Bienvenido a TasteScore!</h2>
-                <p style="color:var(--text-secondary);font-size:0.875rem;">Inicia sesión para guardar tus catas y acceder a todas las funciones</p>
-            </div>
-            <button class="btn btn-primary" onclick="navigateTo('auth')" style="margin-bottom:0.6rem;">Iniciar Sesión</button>
-            <button class="btn btn-secondary" onclick="isAuthMode='register'; toggleAuthMode(); navigateTo('auth');">Crear Cuenta</button>
         </div>
-        
         <div class="card">
             <h2 style="margin-bottom:0.75rem;font-size:1.2rem;font-weight:600;text-align:center;">¡Bienvenido!</h2>
             <p style="color:var(--text-secondary);margin-bottom:1.25rem;text-align:center;font-size:0.9rem;">Crea una cata o únete a una existente.</p>
             <button class="btn btn-primary" onclick="showScreen('createScreen')" style="margin-bottom:0.6rem;">Crear Nueva Cata</button>
             <button class="btn btn-secondary" onclick="showScreen('joinScreen')">Unirse a Cata</button>
         </div>
-        
         <div class="card">
-            <h3 style="margin-bottom:0.75rem;font-weight:600;font-size:0.95rem;display:flex;align-items:center;gap:0.5rem;">
-                <span style="font-size:1.25rem;">📋</span>
-                Catas Archivadas
-            </h3>
+            <h3 style="margin-bottom:0.75rem;font-weight:600;font-size:0.95rem;">Catas Archivadas</h3>
             <div id="archivedList"></div>
         </div>
     </div>
@@ -480,25 +451,9 @@
                 </button>
             </div>
             <div class="divider"><span>o</span></div>
-            <div class="input-group" id="nameGroup" style="display:none;">
-                <label>Nombre *</label>
-                <input type="text" id="authName" placeholder="Tu nombre" oninput="clearAuthError('authName')">
-                <p class="field-error" id="errAuthName">Este campo es obligatorio</p>
-            </div>
-            <div class="input-group">
-                <label>Email *</label>
-                <input type="email" id="authEmail" placeholder="tu@email.com" oninput="clearAuthError('authEmail')">
-                <p class="field-error" id="errAuthEmail">Introduce un email válido</p>
-            </div>
-            <div class="input-group">
-                <label>Contraseña *</label>
-                <input type="password" id="authPassword" placeholder="••••••••" oninput="checkPasswordStrength()">
-                <div class="password-strength" id="passwordStrength">
-                    <div class="password-strength-bar" id="passwordStrengthBar"></div>
-                </div>
-                <p class="field-error" id="errAuthPassword">La contraseña debe tener al menos 6 caracteres</p>
-                <p class="field-success" id="passwordStrengthText"></p>
-            </div>
+            <div class="input-group" id="nameGroup" style="display:none;"><label>Nombre</label><input type="text" id="authName" placeholder="Tu nombre"></div>
+            <div class="input-group"><label>Email</label><input type="email" id="authEmail" placeholder="tu@email.com"></div>
+            <div class="input-group"><label>Contraseña</label><input type="password" id="authPassword" placeholder="••••••••"></div>
             <div class="auth-spinner" id="authSpinner"><div class="spinner"></div></div>
             <button class="btn btn-primary" id="authBtn" onclick="loginWithEmail()">Iniciar Sesión</button>
             <p style="text-align:center;margin-top:0.875rem;color:var(--text-secondary);font-size:0.825rem;">
@@ -552,72 +507,28 @@
 </div>
 
 <!-- AVATAR SELECTOR MODAL -->
-<div id="avatarSelectorModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:16000;align-items:center;justify-content:center;overflow-y:auto;">
-    <div style="background:#fff;border-radius:16px;max-width:520px;width:90%;padding:2rem;box-shadow:0 8px 32px rgba(0,0,0,0.25);font-family:'Inter',sans-serif;margin:2rem auto;max-height:90vh;overflow-y:auto;">
+<div id="avatarSelectorModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:16000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;max-width:480px;width:90%;padding:2rem;box-shadow:0 8px 32px rgba(0,0,0,0.25);font-family:'Inter',sans-serif;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
             <h3 style="margin:0;font-size:1.15rem;font-weight:600;">Elige tu avatar</h3>
             <button onclick="closeAvatarSelector()" style="background:none;border:none;font-size:1.5rem;color:#94a3b8;cursor:pointer;">✕</button>
         </div>
-        <h4 style="font-size:0.875rem;color:var(--text-secondary);margin:0 0 0.75rem;font-weight:600;">🐼 Pandas</h4>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;margin-bottom:1.5rem;">
-            <div class="avatar-option" onclick="selectAvatar('panda_normal')" style="border:3px solid transparent;border-radius:12px;padding:0.75rem;cursor:pointer;transition:all 0.2s;text-align:center;">
-                <img src="" id="avatar_panda_normal" style="width:60px;height:60px;margin-bottom:0.35rem;">
-                <p style="font-size:0.75rem;color:var(--text-secondary);margin:0;">Normal</p>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1.5rem;">
+            <div class="avatar-option" onclick="selectAvatar('panda_normal')" style="border:3px solid transparent;border-radius:12px;padding:1rem;cursor:pointer;transition:all 0.2s;text-align:center;">
+                <img src="" id="avatar_panda_normal" style="width:80px;height:80px;margin-bottom:0.5rem;">
+                <p style="font-size:0.8rem;color:var(--text-secondary);margin:0;">Panda Normal</p>
             </div>
-            <div class="avatar-option" onclick="selectAvatar('panda_eating')" style="border:3px solid transparent;border-radius:12px;padding:0.75rem;cursor:pointer;transition:all 0.2s;text-align:center;">
-                <img src="" id="avatar_panda_eating" style="width:60px;height:60px;margin-bottom:0.35rem;">
-                <p style="font-size:0.75rem;color:var(--text-secondary);margin:0;">Comiendo</p>
+            <div class="avatar-option" onclick="selectAvatar('panda_eating')" style="border:3px solid transparent;border-radius:12px;padding:1rem;cursor:pointer;transition:all 0.2s;text-align:center;">
+                <img src="" id="avatar_panda_eating" style="width:80px;height:80px;margin-bottom:0.5rem;">
+                <p style="font-size:0.8rem;color:var(--text-secondary);margin:0;">Panda Comiendo</p>
             </div>
-            <div class="avatar-option" onclick="selectAvatar('panda_waiting')" style="border:3px solid transparent;border-radius:12px;padding:0.75rem;cursor:pointer;transition:all 0.2s;text-align:center;">
-                <img src="" id="avatar_panda_waiting" style="width:60px;height:60px;margin-bottom:0.35rem;">
-                <p style="font-size:0.75rem;color:var(--text-secondary);margin:0;">Esperando</p>
+            <div class="avatar-option" onclick="selectAvatar('panda_waiting')" style="border:3px solid transparent;border-radius:12px;padding:1rem;cursor:pointer;transition:all 0.2s;text-align:center;">
+                <img src="" id="avatar_panda_waiting" style="width:80px;height:80px;margin-bottom:0.5rem;">
+                <p style="font-size:0.8rem;color:var(--text-secondary);margin:0;">Panda Esperando</p>
             </div>
-            <div class="avatar-option" onclick="selectAvatar('panda_head')" style="border:3px solid transparent;border-radius:12px;padding:0.75rem;cursor:pointer;transition:all 0.2s;text-align:center;">
-                <img src="" id="avatar_panda_head" style="width:60px;height:60px;margin-bottom:0.35rem;">
-                <p style="font-size:0.75rem;color:var(--text-secondary);margin:0;">Con Bambú</p>
-            </div>
-        </div>
-        <h4 style="font-size:0.875rem;color:var(--text-secondary);margin:0 0 0.75rem;font-weight:600;">🍕 Comidas</h4>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;">
-            <div class="avatar-option" onclick="selectAvatar('pizza')" style="border:3px solid transparent;border-radius:12px;padding:0.75rem;cursor:pointer;transition:all 0.2s;text-align:center;">
-                <div style="font-size:48px;margin-bottom:0.25rem;">🍕</div>
-                <p style="font-size:0.7rem;color:var(--text-secondary);margin:0;">Pizza</p>
-            </div>
-            <div class="avatar-option" onclick="selectAvatar('burger')" style="border:3px solid transparent;border-radius:12px;padding:0.75rem;cursor:pointer;transition:all 0.2s;text-align:center;">
-                <div style="font-size:48px;margin-bottom:0.25rem;">🍔</div>
-                <p style="font-size:0.7rem;color:var(--text-secondary);margin:0;">Burger</p>
-            </div>
-            <div class="avatar-option" onclick="selectAvatar('taco')" style="border:3px solid transparent;border-radius:12px;padding:0.75rem;cursor:pointer;transition:all 0.2s;text-align:center;">
-                <div style="font-size:48px;margin-bottom:0.25rem;">🌮</div>
-                <p style="font-size:0.7rem;color:var(--text-secondary);margin:0;">Taco</p>
-            </div>
-            <div class="avatar-option" onclick="selectAvatar('sushi')" style="border:3px solid transparent;border-radius:12px;padding:0.75rem;cursor:pointer;transition:all 0.2s;text-align:center;">
-                <div style="font-size:48px;margin-bottom:0.25rem;">🍣</div>
-                <p style="font-size:0.7rem;color:var(--text-secondary);margin:0;">Sushi</p>
-            </div>
-            <div class="avatar-option" onclick="selectAvatar('ramen')" style="border:3px solid transparent;border-radius:12px;padding:0.75rem;cursor:pointer;transition:all 0.2s;text-align:center;">
-                <div style="font-size:48px;margin-bottom:0.25rem;">🍜</div>
-                <p style="font-size:0.7rem;color:var(--text-secondary);margin:0;">Ramen</p>
-            </div>
-            <div class="avatar-option" onclick="selectAvatar('hotdog')" style="border:3px solid transparent;border-radius:12px;padding:0.75rem;cursor:pointer;transition:all 0.2s;text-align:center;">
-                <div style="font-size:48px;margin-bottom:0.25rem;">🌭</div>
-                <p style="font-size:0.7rem;color:var(--text-secondary);margin:0;">Hotdog</p>
-            </div>
-            <div class="avatar-option" onclick="selectAvatar('icecream')" style="border:3px solid transparent;border-radius:12px;padding:0.75rem;cursor:pointer;transition:all 0.2s;text-align:center;">
-                <div style="font-size:48px;margin-bottom:0.25rem;">🍦</div>
-                <p style="font-size:0.7rem;color:var(--text-secondary);margin:0;">Helado</p>
-            </div>
-            <div class="avatar-option" onclick="selectAvatar('donut')" style="border:3px solid transparent;border-radius:12px;padding:0.75rem;cursor:pointer;transition:all 0.2s;text-align:center;">
-                <div style="font-size:48px;margin-bottom:0.25rem;">🍩</div>
-                <p style="font-size:0.7rem;color:var(--text-secondary);margin:0;">Donut</p>
-            </div>
-            <div class="avatar-option" onclick="selectAvatar('cookie')" style="border:3px solid transparent;border-radius:12px;padding:0.75rem;cursor:pointer;transition:all 0.2s;text-align:center;">
-                <div style="font-size:48px;margin-bottom:0.25rem;">🍪</div>
-                <p style="font-size:0.7rem;color:var(--text-secondary);margin:0;">Cookie</p>
-            </div>
-            <div class="avatar-option" onclick="selectAvatar('coffee')" style="border:3px solid transparent;border-radius:12px;padding:0.75rem;cursor:pointer;transition:all 0.2s;text-align:center;">
-                <div style="font-size:48px;margin-bottom:0.25rem;">☕</div>
-                <p style="font-size:0.7rem;color:var(--text-secondary);margin:0;">Café</p>
+            <div class="avatar-option" onclick="selectAvatar('panda_head')" style="border:3px solid transparent;border-radius:12px;padding:1rem;cursor:pointer;transition:all 0.2s;text-align:center;">
+                <img src="" id="avatar_panda_head" style="width:80px;height:80px;margin-bottom:0.5rem;">
+                <p style="font-size:0.8rem;color:var(--text-secondary);margin:0;">Panda con Bambú</p>
             </div>
         </div>
     </div>
@@ -903,17 +814,7 @@ const PANDA_AVATARS = {
     panda_normal: '',
     panda_eating: '',
     panda_waiting: '',
-    panda_head: '',
-    pizza: '🍕',
-    burger: '🍔',
-    taco: '🌮',
-    sushi: '🍣',
-    ramen: '🍜',
-    hotdog: '🌭',
-    icecream: '🍦',
-    donut: '🍩',
-    cookie: '🍪',
-    coffee: '☕'
+    panda_head: ''
 };
 
 function initMascots(){
@@ -973,50 +874,19 @@ async function initApp(){
 }
 
 // ===== NAV BAR =====
-async function updateNavBar(){
+function updateNavBar(){
     const favBtn=document.getElementById('nav-favs'), myBtn=document.getElementById('nav-mytastings');
-    const headerProfile=document.getElementById('headerProfile');
-    const headerProfileImg=document.getElementById('headerProfileImg');
-    const headerLoginIcon=document.getElementById('headerLoginIcon');
-    
+    const profileBtn=document.getElementById('nav-profile'), profileLabel=document.getElementById('navProfileLabel'), navAvatar=document.getElementById('navAvatar');
     if(authenticatedUser){
         favBtn.style.display='flex'; myBtn.style.display='flex';
-        headerLoginIcon.style.display='none';
-        headerProfileImg.style.display='block';
-        
-        // Load user avatar
-        const {data:profile} = await supabaseClient.from('profiles').select('avatar').eq('id',authenticatedUser.id).single();
-        const avatarKey = profile?.avatar || 'panda_normal';
-        
-        if(PANDA_AVATARS[avatarKey]){
-            if(avatarKey.startsWith('panda')){
-                headerProfileImg.src = PANDA_AVATARS[avatarKey];
-                headerProfileImg.style.display='block';
-                // Remove emoji div if it exists
-                const emojiDiv = headerProfile.querySelector('div');
-                if(emojiDiv) emojiDiv.remove();
-            }else{
-                // Food emoji avatar
-                headerProfileImg.style.display='none';
-                headerProfile.innerHTML='<svg id="headerLoginIcon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><img id="headerProfileImg" src="" alt="Perfil" style="display:none;"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;background:white;">'+PANDA_AVATARS[avatarKey]+'</div>';
-                headerProfile.onclick=function(){navigateTo('profile');};
-            }
-        }
+        profileLabel.textContent=authenticatedUser.name.split(' ')[0];
+        navAvatar.innerHTML='<span style="font-size:0.7rem;font-weight:700;color:white;">'+authenticatedUser.name[0].toUpperCase()+'</span>';
+        profileBtn.onclick=function(){navigateTo('profile');};
     } else {
         favBtn.style.display='none'; myBtn.style.display='none';
-        headerLoginIcon.style.display='block';
-        headerProfileImg.style.display='none';
-        // Remove emoji div if it exists
-        const emojiDiv = headerProfile.querySelector('div');
-        if(emojiDiv) emojiDiv.remove();
-    }
-}
-
-function headerProfileClick(){
-    if(authenticatedUser){
-        navigateTo('profile');
-    }else{
-        navigateTo('auth');
+        profileLabel.textContent='Perfil';
+        navAvatar.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="8" r="4"/></svg>';
+        profileBtn.onclick=function(){navigateTo('auth');};
     }
 }
 
@@ -1035,72 +905,27 @@ async function loginWithGoogle(){
 async function loginWithEmail(){
     const email=document.getElementById('authEmail').value.trim();
     const password=document.getElementById('authPassword').value.trim();
-    
-    // Clear previous errors
-    document.querySelectorAll('.field-error').forEach(e=>e.classList.remove('show'));
-    document.querySelectorAll('input').forEach(i=>i.classList.remove('input-error'));
-    
-    let hasError=false;
-    
     if(isAuthMode==='register'){
         const name=document.getElementById('authName').value.trim();
-        
-        // Validate name
-        if(!name){
-            document.getElementById('errAuthName').classList.add('show');
-            document.getElementById('authName').classList.add('input-error');
-            hasError=true;
-        }
-        
-        // Validate email
-        if(!email || !email.includes('@') || !email.includes('.')){
-            document.getElementById('errAuthEmail').classList.add('show');
-            document.getElementById('authEmail').classList.add('input-error');
-            hasError=true;
-        }
-        
-        // Validate password
-        if(password.length<6){
-            document.getElementById('errAuthPassword').classList.add('show');
-            document.getElementById('authPassword').classList.add('input-error');
-            hasError=true;
-        }
-        
-        if(hasError) return;
-        
+        if(!name||!email||!password){alert('Completa todos los campos');return;}
+        if(password.length<6){alert('La contraseña debe tener al menos 6 caracteres');return;}
         showAuthSpinner(true);
         const {data,error} = await supabaseClient.auth.signUp({email:email,password:password});
         showAuthSpinner(false);
         if(error){alert('Error: '+error.message);return;}
         if(data.user){
             await supabaseClient.from('profiles').upsert({id:data.user.id,name:name,email:email,avatar:'panda_normal'});
+            // Show email confirmation modal
             document.getElementById('confirmEmailAddress').textContent=email;
             document.getElementById('emailConfirmModal').style.display='flex';
         }
     } else {
-        // Login validation
-        if(!email){
-            document.getElementById('errAuthEmail').classList.add('show');
-            document.getElementById('authEmail').classList.add('input-error');
-            hasError=true;
-        }
-        if(!password){
-            document.getElementById('errAuthPassword').classList.add('show');
-            document.getElementById('authPassword').classList.add('input-error');
-            hasError=true;
-        }
-        
-        if(hasError) return;
-        
+        if(!email||!password){alert('Completa email y contraseña');return;}
         showAuthSpinner(true);
         const {error} = await supabaseClient.auth.signInWithPassword({email:email,password:password});
         showAuthSpinner(false);
         if(error){
-            if(error.message.includes('Invalid login')){
-                alert('Email o contraseña incorrectos');
-                document.getElementById('authEmail').classList.add('input-error');
-                document.getElementById('authPassword').classList.add('input-error');
-            }
+            if(error.message.includes('Invalid login')) alert('Email o contraseña incorrectos');
             else if(error.message.includes('Email not confirmed')) alert('Confirma tu email antes de iniciar sesión. Revisa tu bandeja de entrada.');
             else alert('Error: '+error.message);
         } else {
@@ -1109,55 +934,8 @@ async function loginWithEmail(){
     }
 }
 
-function clearAuthError(fieldId){
-    const errId='err'+fieldId.charAt(0).toUpperCase()+fieldId.slice(1);
-    document.getElementById(errId).classList.remove('show');
-    document.getElementById(fieldId).classList.remove('input-error');
-}
-
-function checkPasswordStrength(){
-    const pass=document.getElementById('authPassword').value;
-    const strength=document.getElementById('passwordStrength');
-    const bar=document.getElementById('passwordStrengthBar');
-    const text=document.getElementById('passwordStrengthText');
-    
-    if(!pass || isAuthMode==='login'){
-        strength.classList.remove('show');
-        text.classList.remove('show');
-        return;
-    }
-    
-    strength.classList.add('show');
-    let score=0;
-    if(pass.length>=8) score++;
-    if(pass.length>=12) score++;
-    if(/[a-z]/.test(pass) && /[A-Z]/.test(pass)) score++;
-    if(/[0-9]/.test(pass)) score++;
-    if(/[^A-Za-z0-9]/.test(pass)) score++;
-    
-    bar.className='password-strength-bar';
-    if(score<=2){
-        bar.classList.add('password-strength-weak');
-        text.textContent='⚠️ Contraseña débil';
-        text.style.color='#ef4444';
-    }else if(score<=4){
-        bar.classList.add('password-strength-medium');
-        text.textContent='👍 Contraseña media';
-        text.style.color='#f59e0b';
-    }else{
-        bar.classList.add('password-strength-strong');
-        text.textContent='✅ ¡Contraseña fuerte!';
-        text.style.color='#10b981';
-    }
-    text.classList.add('show');
-}
-
 function openEmailApp(){
-    const email=document.getElementById('confirmEmailAddress').textContent;
-    if(email.includes('@gmail.')) window.open('https://mail.google.com','_blank');
-    else if(email.includes('@outlook.') || email.includes('@hotmail.')) window.open('https://outlook.live.com','_blank');
-    else if(email.includes('@yahoo.')) window.open('https://mail.yahoo.com','_blank');
-    else window.location.href='mailto:';
+    window.location.href='mailto:';
 }
 
 function closeEmailModal(){
@@ -1177,12 +955,6 @@ function toggleAuthMode(){
     document.getElementById('authToggleLink').textContent=isAuthMode==='register'?'Inicia sesión':'Regístrate';
     document.getElementById('nameGroup').style.display=isAuthMode==='register'?'block':'none';
     document.getElementById('emailSentMsg').style.display='none';
-    // Clear errors and password strength
-    document.querySelectorAll('.field-error').forEach(e=>e.classList.remove('show'));
-    document.querySelectorAll('input').forEach(i=>i.classList.remove('input-error'));
-    document.getElementById('passwordStrength').classList.remove('show');
-    document.getElementById('passwordStrengthText').classList.remove('show');
-    checkPasswordStrength();
 }
 
 async function logout(){
@@ -1211,13 +983,7 @@ function showScreen(sid){
     document.getElementById(sid).classList.add('active');
     setActiveNav(sid);
     const bb=document.getElementById('backBtn');
-    if(sid==='homeScreen'){
-        bb.style.display='none';
-        document.getElementById('headerSubtitle').textContent='Catas de productos en grupo';
-        loadArchivedTastings();
-        // Show auth prompt if not logged in
-        document.getElementById('homeAuthPrompt').style.display = authenticatedUser ? 'none' : 'block';
-    }
+    if(sid==='homeScreen'){bb.style.display='none';document.getElementById('headerSubtitle').textContent='Catas de productos en grupo';loadArchivedTastings();}
     else if(['rankingScreen','favsScreen','myTastingsScreen','profileScreen','authScreen'].includes(sid)){
         bb.style.display='none';
         const titles={rankingScreen:'Ranking Global',favsScreen:'Favoritos',myTastingsScreen:'Mis Catas',profileScreen:'Mi Perfil',authScreen:'Cuenta'};
@@ -1528,138 +1294,52 @@ function switchProductTab(tab){
 const RESTAURANT_DATA={
     "McDonald's":[
         {name:"Big Mac",brand:"McDonald's",image:"https://images.unsplash.com/photo-1550547660-d9450f859349?w=400"},
-        {name:"Quarter Pounder",brand:"McDonald's",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},
         {name:"McChicken",brand:"McDonald's",image:"https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=400"},
-        {name:"Filet-O-Fish",brand:"McDonald's",image:"https://images.unsplash.com/photo-1580217593608-61931cefc821?w=400"},
-        {name:"McNuggets 6 pcs",brand:"McDonald's",image:"https://images.unsplash.com/photo-1562967914-608f82629710?w=400"},
-        {name:"McNuggets 9 pcs",brand:"McDonald's",image:"https://images.unsplash.com/photo-1562967914-608f82629710?w=400"},
-        {name:"Patatas Medianas",brand:"McDonald's",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"},
-        {name:"Patatas Grandes",brand:"McDonald's",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"},
-        {name:"McFlurry Oreo",brand:"McDonald's",image:"https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400"},
-        {name:"McFlurry KitKat",brand:"McDonald's",image:"https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400"},
-        {name:"Sundae Caramelo",brand:"McDonald's",image:"https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400"},
-        {name:"Big Tasty",brand:"McDonald's",image:"https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400"},
-        {name:"McPollo",brand:"McDonald's",image:"https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=400"},
-        {name:"Happy Meal",brand:"McDonald's",image:"https://images.unsplash.com/photo-1619221882005-6801e8e4d1ff?w=400"},
-        {name:"Coca Cola",brand:"McDonald's",image:"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400"}
+        {name:"McNuggets",brand:"McDonald's",image:"https://images.unsplash.com/photo-1562967914-608f82629710?w=400"},
+        {name:"McFlurry",brand:"McDonald's",image:"https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400"},
+        {name:"Patatas Fritas",brand:"McDonald's",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"}
     ],
     "Burger King":[
         {name:"Whopper",brand:"Burger King",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},
-        {name:"Whopper Cheese",brand:"Burger King",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},
-        {name:"Double Whopper",brand:"Burger King",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},
-        {name:"Bacon King",brand:"Burger King",image:"https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400"},
-        {name:"Long Chicken",brand:"Burger King",image:"https://images.unsplash.com/photo-1513639776629-7b61b0ac49cb?w=400"},
         {name:"Chicken Royale",brand:"Burger King",image:"https://images.unsplash.com/photo-1513639776629-7b61b0ac49cb?w=400"},
-        {name:"Nuggets 6 uds",brand:"Burger King",image:"https://images.unsplash.com/photo-1562967914-608f82629710?w=400"},
-        {name:"Nuggets 9 uds",brand:"Burger King",image:"https://images.unsplash.com/photo-1562967914-608f82629710?w=400"},
-        {name:"Onion Rings",brand:"Burger King",image:"https://images.unsplash.com/photo-1639024471283-03518883512d?w=400"},
-        {name:"Patatas Medianas",brand:"Burger King",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"},
-        {name:"Patatas Grandes",brand:"Burger King",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"},
-        {name:"Sundae Chocolate",brand:"Burger King",image:"https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400"},
-        {name:"King Fusion Oreo",brand:"Burger King",image:"https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400"},
-        {name:"Steakhouse",brand:"Burger King",image:"https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400"}
+        {name:"Bacon King",brand:"Burger King",image:"https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400"},
+        {name:"Nuggets",brand:"Burger King",image:"https://images.unsplash.com/photo-1562967914-608f82629710?w=400"},
+        {name:"Onion Rings",brand:"Burger King",image:"https://images.unsplash.com/photo-1639024471283-03518883512d?w=400"}
     ],
     "KFC":[
-        {name:"Bucket 6 Piezas",brand:"KFC",image:"https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400"},
-        {name:"Bucket 9 Piezas",brand:"KFC",image:"https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400"},
-        {name:"Bucket 14 Piezas",brand:"KFC",image:"https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400"},
-        {name:"Tiras de Pollo 3 uds",brand:"KFC",image:"https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?w=400"},
-        {name:"Hot Wings 6 uds",brand:"KFC",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
-        {name:"Hot Wings 9 uds",brand:"KFC",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
-        {name:"Twister",brand:"KFC",image:"https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400"},
-        {name:"Zinger",brand:"KFC",image:"https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=400"},
-        {name:"Tower Burger",brand:"KFC",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},
-        {name:"Ensalada Coleslaw",brand:"KFC",image:"https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=400"},
-        {name:"Patatas Cajún",brand:"KFC",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"},
-        {name:"Puré de Patata",brand:"KFC",image:"https://images.unsplash.com/photo-1542128962-5d1b5f1b3021?w=400"},
-        {name:"Mazorca de Maíz",brand:"KFC",image:"https://images.unsplash.com/photo-1551462147-37efe4be5eda?w=400"}
+        {name:"Pollo Frito Original",brand:"KFC",image:"https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400"},
+        {name:"Tiras de Pollo",brand:"KFC",image:"https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?w=400"},
+        {name:"Hot Wings",brand:"KFC",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
+        {name:"Bucket Original",brand:"KFC",image:"https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400"},
+        {name:"Ensalada Coleslaw",brand:"KFC",image:"https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=400"}
     ],
     "Domino's Pizza":[
         {name:"Pizza Barbacoa",brand:"Domino's",image:"https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400"},
         {name:"Pizza Carbonara",brand:"Domino's",image:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400"},
         {name:"Pizza 4 Quesos",brand:"Domino's",image:"https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=400"},
-        {name:"Pizza Margarita",brand:"Domino's",image:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400"},
-        {name:"Pizza Pepperoni",brand:"Domino's",image:"https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400"},
-        {name:"Pizza Hawaiana",brand:"Domino's",image:"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400"},
-        {name:"Pizza Vegetal",brand:"Domino's",image:"https://images.unsplash.com/photo-1571407970349-bc81e7e96a47?w=400"},
-        {name:"Alitas Picantes 8 uds",brand:"Domino's",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
-        {name:"Alitas BBQ 8 uds",brand:"Domino's",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
-        {name:"Palitos de Pan",brand:"Domino's",image:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400"},
-        {name:"Nuggets de Pollo",brand:"Domino's",image:"https://images.unsplash.com/photo-1562967914-608f82629710?w=400"},
-        {name:"Patatas Deluxe",brand:"Domino's",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"},
-        {name:"Lava Cake Chocolate",brand:"Domino's",image:"https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400"}
+        {name:"Alitas Picantes",brand:"Domino's",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
+        {name:"Palitos de Pan",brand:"Domino's",image:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400"}
     ],
     "Telepizza":[
         {name:"Pizza Barbacoa",brand:"Telepizza",image:"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400"},
         {name:"Pizza Carbonara",brand:"Telepizza",image:"https://images.unsplash.com/photo-1571407970349-bc81e7e96a47?w=400"},
         {name:"Pizza 4 Estaciones",brand:"Telepizza",image:"https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?w=400"},
-        {name:"Pizza Prosciutto",brand:"Telepizza",image:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400"},
-        {name:"Pizza Pepperoni",brand:"Telepizza",image:"https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400"},
-        {name:"Pizza Margarita",brand:"Telepizza",image:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400"},
-        {name:"Pizza Vegetal",brand:"Telepizza",image:"https://images.unsplash.com/photo-1571407970349-bc81e7e96a47?w=400"},
-        {name:"Alitas de Pollo",brand:"Telepizza",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
-        {name:"Fingers de Pollo",brand:"Telepizza",image:"https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?w=400"},
-        {name:"Pan de Ajo",brand:"Telepizza",image:"https://images.unsplash.com/photo-1573166953836-06864dc70a21?w=400"},
-        {name:"Patatas Gajo",brand:"Telepizza",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"},
-        {name:"Tequeños",brand:"Telepizza",image:"https://images.unsplash.com/photo-1530910082036-25ff0992a0c5?w=400"}
+        {name:"Alitas",brand:"Telepizza",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
+        {name:"Pan de Ajo",brand:"Telepizza",image:"https://images.unsplash.com/photo-1573166953836-06864dc70a21?w=400"}
     ],
     "Subway":[
         {name:"Sub Italiano B.M.T.",brand:"Subway",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},
         {name:"Sub Pollo Teriyaki",brand:"Subway",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},
         {name:"Sub Atún",brand:"Subway",image:"https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400"},
-        {name:"Sub Pavo",brand:"Subway",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},
         {name:"Sub Vegetal",brand:"Subway",image:"https://images.unsplash.com/photo-1587487518314-9fca9e8f4f8d?w=400"},
-        {name:"Sub Steak & Cheese",brand:"Subway",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},
-        {name:"Sub Pulled Pork",brand:"Subway",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},
-        {name:"Cookie Chocolate Chip",brand:"Subway",image:"https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400"},
-        {name:"Cookie Double Chocolate",brand:"Subway",image:"https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400"},
-        {name:"Wrap Pollo Caesar",brand:"Subway",image:"https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400"},
-        {name:"Patatas Fritas",brand:"Subway",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"}
+        {name:"Cookies",brand:"Subway",image:"https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400"}
     ],
     "Taco Bell":[
         {name:"Crunchy Taco",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400"},
-        {name:"Soft Taco",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400"},
         {name:"Burrito Supreme",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400"},
-        {name:"Burrito 7 Capas",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400"},
-        {name:"Quesadilla Pollo",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1571804258955-7b32160d5b25?w=400"},
-        {name:"Quesadilla Carne",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1571804258955-7b32160d5b25?w=400"},
+        {name:"Quesadilla",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1571804258955-7b32160d5b25?w=400"},
         {name:"Nachos Supreme",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=400"},
-        {name:"Nachos BellGrande",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=400"},
-        {name:"Crunchwrap Supreme",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400"},
-        {name:"Chalupa Supreme",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400"},
-        {name:"Gordita Crunch",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400"},
-        {name:"Fries Supreme",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"}
-    ],
-    "Starbucks":[
-        {name:"Cappuccino",brand:"Starbucks",image:"https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=400"},
-        {name:"Latte",brand:"Starbucks",image:"https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400"},
-        {name:"Americano",brand:"Starbucks",image:"https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400"},
-        {name:"Caramel Macchiato",brand:"Starbucks",image:"https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=400"},
-        {name:"Frappuccino Caramelo",brand:"Starbucks",image:"https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400"},
-        {name:"Frappuccino Mocha",brand:"Starbucks",image:"https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400"},
-        {name:"Croissant Mantequilla",brand:"Starbucks",image:"https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400"},
-        {name:"Muffin Chocolate",brand:"Starbucks",image:"https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=400"},
-        {name:"Sandwich Pollo",brand:"Starbucks",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},
-        {name:"Brownie",brand:"Starbucks",image:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400"}
-    ],
-    "100 Montaditos":[
-        {name:"Montadito Lomo",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},
-        {name:"Montadito Tortilla",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},
-        {name:"Montadito Jamón",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},
-        {name:"Montadito Bacon Cheese",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},
-        {name:"Patatas Bravas",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"},
-        {name:"Cerveza Estrella",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=400"},
-        {name:"Nachos con Queso",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=400"},
-        {name:"Alitas de Pollo",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"}
-    ],
-    "Rodilla":[
-        {name:"Bocadillo Jamón Serrano",brand:"Rodilla",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},
-        {name:"Bocadillo Pavo",brand:"Rodilla",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},
-        {name:"Bocadillo Tortilla",brand:"Rodilla",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},
-        {name:"Croissant Mixto",brand:"Rodilla",image:"https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400"},
-        {name:"Ensalada César",brand:"Rodilla",image:"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400"},
-        {name:"Café con Leche",brand:"Rodilla",image:"https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400"},
-        {name:"Zumo Natural Naranja",brand:"Rodilla",image:"https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400"}
+        {name:"Crunchwrap",brand:"Taco Bell",image:"https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400"}
     ]
 };
 
@@ -1940,6 +1620,5 @@ document.getElementById('dismissBanner').addEventListener('click',function(){ins
 document.getElementById('closeIosModal').addEventListener('click',function(){document.getElementById('iosModal').style.display='none';});
 window.addEventListener('load',function(){if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.matchMedia('(display-mode: standalone)').matches&&!sessionStorage.getItem('pwa-banner-dismissed'))setTimeout(function(){document.getElementById('iosModal').style.display='flex';},2000);});
 </script>
-</div>
 </body>
 </html>
