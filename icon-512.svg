@@ -1,0 +1,42 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#10b981"/>
+  
+  <!-- Panda ears -->
+  <ellipse cx="140" cy="150" rx="65" ry="80" fill="#1a1a1a"/>
+  <ellipse cx="372" cy="150" rx="65" ry="80" fill="#1a1a1a"/>
+  
+  <!-- Panda head -->
+  <circle cx="256" cy="256" r="180" fill="white"/>
+  
+  <!-- Eye patches -->
+  <ellipse cx="200" cy="240" rx="60" ry="55" fill="#1a1a1a" transform="rotate(-5 200 240)"/>
+  <ellipse cx="312" cy="240" rx="60" ry="55" fill="#1a1a1a" transform="rotate(5 312 240)"/>
+  
+  <!-- Eyes closed (eating expression) -->
+  <path d="M 170 230 Q 200 220 230 230" stroke="white" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <path d="M 282 230 Q 312 220 342 230" stroke="white" stroke-width="12" fill="none" stroke-linecap="round"/>
+  
+  <!-- Nose -->
+  <ellipse cx="256" cy="280" rx="18" ry="14" fill="#1a1a1a"/>
+  
+  <!-- Mouth eating -->
+  <path d="M 236 300 Q 256 320 276 300" stroke="#1a1a1a" stroke-width="10" fill="#ef4444" stroke-linecap="round"/>
+  
+  <!-- Cheeks (blushing) -->
+  <ellipse cx="140" cy="290" rx="25" ry="15" fill="#f59e0b" opacity="0.5"/>
+  <ellipse cx="372" cy="290" rx="25" ry="15" fill="#f59e0b" opacity="0.5"/>
+  
+  <!-- Bamboo stick (large) -->
+  <rect x="310" y="200" width="20" height="160" rx="10" fill="#4ade80" transform="rotate(30 320 280)"/>
+  
+  <!-- Bamboo segments -->
+  <rect x="305" y="190" width="30" height="25" rx="8" fill="#22c55e" transform="rotate(30 320 200)"/>
+  <rect x="305" y="230" width="30" height="25" rx="8" fill="#22c55e" transform="rotate(30 320 240)"/>
+  <rect x="305" y="270" width="30" height="25" rx="8" fill="#22c55e" transform="rotate(30 320 280)"/>
+  
+  <!-- Bamboo leaves -->
+  <ellipse cx="380" cy="170" rx="35" ry="12" fill="#22c55e" transform="rotate(45 380 170)"/>
+  <ellipse cx="400" cy="190" rx="35" ry="12" fill="#22c55e" transform="rotate(-30 400 190)"/>
+  <ellipse cx="360" cy="185" rx="30" ry="10" fill="#10b981" transform="rotate(60 360 185)"/>
+</svg>

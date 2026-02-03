@@ -4,13 +4,19 @@
   "description": "Catas de productos en grupo",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#2563eb",
-  "theme_color": "#2563eb",
+  "background_color": "#10b981",
+  "theme_color": "#10b981",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='115' fill='%232563eb'/%3E%3Cellipse cx='148' cy='108' rx='42' ry='52' fill='%231a1a1a'/%3E%3Cellipse cx='364' cy='108' rx='42' ry='52' fill='%231a1a1a'/%3E%3Cellipse cx='256' cy='420' rx='140' ry='115' fill='white'/%3E%3Cellipse cx='256' cy='440' rx='72' ry='58' fill='%23dbeafe'/%3E%3Ccircle cx='256' cy='210' r='132' fill='white'/%3E%3Cellipse cx='195' cy='200' rx='44' ry='38' fill='%231a1a1a' transform='rotate(-5 195 200)'/%3E%3Cellipse cx='317' cy='200' rx='44' ry='38' fill='%231a1a1a' transform='rotate(5 317 200)'/%3E%3Cellipse cx='256' cy='212' rx='15' ry='12' fill='%231a1a1a'/%3E%3Ccircle cx='195' cy='195' r='21' fill='white'/%3E%3Ccircle cx='317' cy='195' r='21' fill='white'/%3E%3Ccircle cx='200' cy='196' r='13' fill='%231a1a1a'/%3E%3Ccircle cx='322' cy='196' r='13' fill='%231a1a1a'/%3E%3Ccircle cx='204' cy='192' r='5' fill='white'/%3E%3Ccircle cx='326' cy='192' r='5' fill='white'/%3E%3Cellipse cx='256' cy='238' rx='12' ry='8' fill='%231a1a1a'/%3E%3Cpath d='M243 252 Q256 266 269 252' stroke='%231a1a1a' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='162' cy='240' rx='14' ry='8' fill='%23f59e0b' opacity='0.35'/%3E%3Cellipse cx='350' cy='240' rx='14' ry='8' fill='%23f59e0b' opacity='0.35'/%3E%3Cellipse cx='120' cy='398' rx='34' ry='60' fill='%231a1a1a' transform='rotate(15 120 398)'/%3E%3Cellipse cx='392' cy='398' rx='34' ry='60' fill='%231a1a1a' transform='rotate(-15 392 398)'/%3E%3C/svg%3E",
-      "sizes": "any",
+      "src": "icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.svg",
+      "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
