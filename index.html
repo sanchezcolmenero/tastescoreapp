@@ -78,7 +78,9 @@
         /* INPUTS */
         .input-group { margin-bottom:1.25rem; }
         .input-group label { display:block; font-weight:500; margin-bottom:0.5rem; color:var(--text); font-size:0.875rem; }
-        .input-group input,.input-group textarea { width:100%; padding:0.75rem; border:1px solid var(--border); border-radius:8px; font-size:0.9375rem; font-family:'Inter',sans-serif; transition:all 0.15s; background:var(--bg); color:var(--text); }
+        .input-group input,.input-group textarea,.input-group select { width:100%; padding:0.75rem; border:1px solid var(--border); border-radius:8px; font-size:0.9375rem; font-family:'Inter',sans-serif; transition:all 0.15s; background:var(--bg); color:var(--text); }
+        .input-group select { cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23475569' d='M6 9L1 4h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 0.75rem center; padding-right:2.5rem; }
+        .input-group select:hover { border-color:var(--primary); }
         .input-group input:focus,.input-group textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
         /* PRODUCTS – overflow fix */
         .product-item { background:var(--bg-secondary); padding:1rem; border-radius:8px; margin-bottom:0.75rem; border:1px solid var(--border); transition:all 0.15s; display:flex; gap:0.75rem; align-items:center; cursor:pointer; }
@@ -162,13 +164,16 @@
         .category-tab:hover { border-color:var(--primary); background:var(--bg-secondary); }
         .category-tab.active { background:var(--primary); color:white; border-color:var(--primary); }
         
-        /* Restaurant Products Grid */
-        .restaurant-products-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:1rem; margin-top:1rem; }
-        .restaurant-product-card { border:1.5px solid var(--border); border-radius:10px; padding:0.75rem; text-align:center; background:white; transition:all 0.2s; }
-        .restaurant-product-card img { width:100%; height:90px; object-fit:cover; border-radius:6px; margin-bottom:0.5rem; }
-        .restaurant-product-card h4 { font-size:0.875rem; margin:0 0 0.6rem; color:var(--text); font-weight:600; line-height:1.3; min-height:2.6em; }
-        .restaurant-product-card .add-btn { width:100%; padding:0.5rem; background:var(--primary); color:white; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; font-weight:600; transition:all 0.2s; }
-        .restaurant-product-card .add-btn:hover { background:var(--primary-dark); }
+        /* Restaurant Products Grid - 2 Column Layout */
+        .restaurant-products-grid { display:flex; flex-direction:column; gap:0.75rem; margin-top:1rem; }
+        .restaurant-product-card { display:flex; gap:0.75rem; align-items:center; border:1.5px solid var(--border); border-radius:10px; padding:0.75rem; background:white; transition:all 0.2s; }
+        .restaurant-product-card:hover { border-color:var(--primary); box-shadow:0 2px 8px rgba(37,99,235,0.1); }
+        .restaurant-product-card img { width:80px; height:80px; object-fit:cover; border-radius:8px; flex-shrink:0; }
+        .restaurant-product-info { flex:1; min-width:0; }
+        .restaurant-product-card h4 { font-size:0.95rem; margin:0 0 0.25rem; color:var(--text); font-weight:600; line-height:1.3; }
+        .restaurant-product-card .brand { font-size:0.75rem; color:var(--text-secondary); }
+        .restaurant-product-card .add-btn { width:36px; height:36px; background:var(--primary); color:white; border:none; border-radius:50%; cursor:pointer; font-size:1.2rem; font-weight:300; transition:all 0.2s; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+        .restaurant-product-card .add-btn:hover { background:var(--primary-dark); transform:scale(1.1); }
         
         /* RANKING */
         .ranking-item { display:flex; gap:0.75rem; align-items:center; padding:0.875rem; background:var(--bg-secondary); border-radius:8px; margin-bottom:0.6rem; border:1px solid var(--border); }
@@ -1714,6 +1719,241 @@ const RESTAURANT_DATA = {
             {name:"Lipton Ice Tea",brand:"KFC",image:"https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400"},
             {name:"Agua",brand:"KFC",image:"https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400"}
         ]
+    },
+    "Domino's": {
+        "Pizzas": [
+            {name:"Barbacoa",brand:"Domino's",image:"https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400"},
+            {name:"Carbonara",brand:"Domino's",image:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400"},
+            {name:"4 Quesos",brand:"Domino's",image:"https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=400"},
+            {name:"Margarita",brand:"Domino's",image:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400"},
+            {name:"Pepperoni",brand:"Domino's",image:"https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400"},
+            {name:"Hawaiana",brand:"Domino's",image:"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400"},
+            {name:"Vegetal",brand:"Domino's",image:"https://images.unsplash.com/photo-1571407970349-bc81e7e96a47?w=400"},
+            {name:"Mexicana",brand:"Domino's",image:"https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400"},
+            {name:"Deluxe",brand:"Domino's",image:"https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400"},
+            {name:"Extravaganzza",brand:"Domino's",image:"https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400"}
+        ],
+        "Complementos": [
+            {name:"Alitas Picantes 8",brand:"Domino's",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
+            {name:"Alitas BBQ 8",brand:"Domino's",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
+            {name:"Alitas Picantes 16",brand:"Domino's",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
+            {name:"Palitos de Pan",brand:"Domino's",image:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400"},
+            {name:"Nuggets Pollo",brand:"Domino's",image:"https://images.unsplash.com/photo-1562967914-608f82629710?w=400"},
+            {name:"Patatas Deluxe",brand:"Domino's",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"},
+            {name:"Patatas Gajo",brand:"Domino's",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"},
+            {name:"Pan de Ajo",brand:"Domino's",image:"https://images.unsplash.com/photo-1573166953836-06864dc70a21?w=400"}
+        ],
+        "Salsas": [
+            {name:"Salsa BBQ",brand:"Domino's",image:"https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400"},
+            {name:"Salsa Picante",brand:"Domino's",image:"https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400"},
+            {name:"Salsa Ajo",brand:"Domino's",image:"https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400"},
+            {name:"Salsa Queso",brand:"Domino's",image:"https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400"}
+        ],
+        "Postres": [
+            {name:"Lava Cake Chocolate",brand:"Domino's",image:"https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400"},
+            {name:"Cookies Chocolate",brand:"Domino's",image:"https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400"},
+            {name:"Brownie",brand:"Domino's",image:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400"}
+        ],
+        "Bebidas": [
+            {name:"Coca-Cola",brand:"Domino's",image:"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400"},
+            {name:"Fanta",brand:"Domino's",image:"https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400"},
+            {name:"Sprite",brand:"Domino's",image:"https://images.unsplash.com/photo-1625772452859-1c03d5bf1137?w=400"},
+            {name:"Agua",brand:"Domino's",image:"https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400"}
+        ]
+    },
+    "Telepizza": {
+        "Pizzas": [
+            {name:"Barbacoa",brand:"Telepizza",image:"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400"},
+            {name:"Carbonara",brand:"Telepizza",image:"https://images.unsplash.com/photo-1571407970349-bc81e7e96a47?w=400"},
+            {name:"4 Estaciones",brand:"Telepizza",image:"https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?w=400"},
+            {name:"Prosciutto",brand:"Telepizza",image:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400"},
+            {name:"Pepperoni",brand:"Telepizza",image:"https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400"},
+            {name:"Margarita",brand:"Telepizza",image:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400"},
+            {name:"Vegetal",brand:"Telepizza",image:"https://images.unsplash.com/photo-1571407970349-bc81e7e96a47?w=400"},
+            {name:"Jamón York",brand:"Telepizza",image:"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400"},
+            {name:"Mexicana",brand:"Telepizza",image:"https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400"}
+        ],
+        "Complementos": [
+            {name:"Alitas Pollo 6",brand:"Telepizza",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
+            {name:"Alitas Pollo 12",brand:"Telepizza",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
+            {name:"Fingers Pollo",brand:"Telepizza",image:"https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?w=400"},
+            {name:"Pan de Ajo",brand:"Telepizza",image:"https://images.unsplash.com/photo-1573166953836-06864dc70a21?w=400"},
+            {name:"Patatas Gajo",brand:"Telepizza",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"},
+            {name:"Tequeños",brand:"Telepizza",image:"https://images.unsplash.com/photo-1530910082036-25ff0992a0c5?w=400"},
+            {name:"Ensalada César",brand:"Telepizza",image:"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400"}
+        ],
+        "Salsas": [
+            {name:"Salsa Barbacoa",brand:"Telepizza",image:"https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400"},
+            {name:"Salsa Carbonara",brand:"Telepizza",image:"https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400"},
+            {name:"Salsa Picante",brand:"Telepizza",image:"https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400"}
+        ],
+        "Postres": [
+            {name:"Brownie Chocolate",brand:"Telepizza",image:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400"},
+            {name:"Cookies",brand:"Telepizza",image:"https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400"},
+            {name:"Tarta Queso",brand:"Telepizza",image:"https://images.unsplash.com/photo-1533148277053-27f3e1e3d5ec?w=400"}
+        ],
+        "Bebidas": [
+            {name:"Coca-Cola",brand:"Telepizza",image:"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400"},
+            {name:"Fanta",brand:"Telepizza",image:"https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400"},
+            {name:"Sprite",brand:"Telepizza",image:"https://images.unsplash.com/photo-1625772452859-1c03d5bf1137?w=400"},
+            {name:"Agua",brand:"Telepizza",image:"https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400"}
+        ]
+    },
+    "Papa John's": {
+        "Pizzas": [
+            {name:"Pepperoni",brand:"Papa John's",image:"https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400"},
+            {name:"BBQ Chicken",brand:"Papa John's",image:"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400"},
+            {name:"Vegetariana",brand:"Papa John's",image:"https://images.unsplash.com/photo-1571407970349-bc81e7e96a47?w=400"},
+            {name:"4 Quesos",brand:"Papa John's",image:"https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=400"},
+            {name:"Hawaiana",brand:"Papa John's",image:"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400"},
+            {name:"Deluxe",brand:"Papa John's",image:"https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400"},
+            {name:"Mexicana",brand:"Papa John's",image:"https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400"},
+            {name:"Margarita",brand:"Papa John's",image:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400"}
+        ],
+        "Complementos": [
+            {name:"Alitas Búfalo",brand:"Papa John's",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
+            {name:"Alitas BBQ",brand:"Papa John's",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"},
+            {name:"Pan de Ajo",brand:"Papa John's",image:"https://images.unsplash.com/photo-1573166953836-06864dc70a21?w=400"},
+            {name:"Palitos Queso",brand:"Papa John's",image:"https://images.unsplash.com/photo-1530910082036-25ff0992a0c5?w=400"},
+            {name:"Jalapeño Poppers",brand:"Papa John's",image:"https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=400"}
+        ],
+        "Salsas": [
+            {name:"Salsa Ajo Especial",brand:"Papa John's",image:"https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400"},
+            {name:"Salsa BBQ",brand:"Papa John's",image:"https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400"},
+            {name:"Salsa Búfalo",brand:"Papa John's",image:"https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400"}
+        ],
+        "Postres": [
+            {name:"Brownie",brand:"Papa John's",image:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400"},
+            {name:"Cookies Chocolate",brand:"Papa John's",image:"https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400"}
+        ],
+        "Bebidas": [
+            {name:"Coca-Cola",brand:"Papa John's",image:"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400"},
+            {name:"Pepsi",brand:"Papa John's",image:"https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400"},
+            {name:"Agua",brand:"Papa John's",image:"https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400"}
+        ]
+    }
+    "La Tagliatella": {
+        "Pastas": [
+            {name:"Carbonara",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1612874742237-6526221588e3?w=400"},
+            {name:"Boloñesa",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400"},
+            {name:"Pesto",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=400"},
+            {name:"Amatriciana",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400"},
+            {name:"Frutti di Mare",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400"},
+            {name:"Ravioli Ricotta",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1587740908339-4da5176addf8?w=400"}
+        ],
+        "Pizzas": [
+            {name:"Margarita",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400"},
+            {name:"Prosciutto",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400"},
+            {name:"4 Quesos",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=400"},
+            {name:"Diavola",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400"}
+        ],
+        "Entrantes": [
+            {name:"Bruschetta",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=400"},
+            {name:"Focaccia",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400"},
+            {name:"Ensalada Caprese",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?w=400"},
+            {name:"Pan de Ajo",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1573166953836-06864dc70a21?w=400"}
+        ],
+        "Postres": [
+            {name:"Tiramisú",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=400"},
+            {name:"Panna Cotta",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400"},
+            {name:"Helado Italiano",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400"}
+        ],
+        "Bebidas": [
+            {name:"Agua",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400"},
+            {name:"Coca-Cola",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400"},
+            {name:"Vino Tinto",brand:"La Tagliatella",image:"https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400"}
+        ]
+    },
+    "Ginos": {
+        "Pastas": [
+            {name:"Carbonara",brand:"Ginos",image:"https://images.unsplash.com/photo-1612874742237-6526221588e3?w=400"},
+            {name:"Boloñesa",brand:"Ginos",image:"https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400"},
+            {name:"Pesto",brand:"Ginos",image:"https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=400"},
+            {name:"Alfredo",brand:"Ginos",image:"https://images.unsplash.com/photo-1645112411341-6c4fd023714a?w=400"}
+        ],
+        "Pizzas": [
+            {name:"Margarita",brand:"Ginos",image:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400"},
+            {name:"Pepperoni",brand:"Ginos",image:"https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400"},
+            {name:"4 Quesos",brand:"Ginos",image:"https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=400"},
+            {name:"Vegetariana",brand:"Ginos",image:"https://images.unsplash.com/photo-1571407970349-bc81e7e96a47?w=400"}
+        ],
+        "Ensaladas": [
+            {name:"César",brand:"Ginos",image:"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400"},
+            {name:"Caprese",brand:"Ginos",image:"https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?w=400"},
+            {name:"Mixta",brand:"Ginos",image:"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400"}
+        ],
+        "Postres": [
+            {name:"Tiramisú",brand:"Ginos",image:"https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=400"},
+            {name:"Brownie",brand:"Ginos",image:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400"},
+            {name:"Tarta Queso",brand:"Ginos",image:"https://images.unsplash.com/photo-1533148277053-27f3e1e3d5ec?w=400"}
+        ],
+        "Bebidas": [
+            {name:"Coca-Cola",brand:"Ginos",image:"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400"},
+            {name:"Agua",brand:"Ginos",image:"https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400"}
+        ]
+    },
+    "VIPS": {
+        "Hamburguesas": [
+            {name:"VIPS Burger",brand:"VIPS",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},
+            {name:"Bacon Cheese",brand:"VIPS",image:"https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400"},
+            {name:"Chicken Burger",brand:"VIPS",image:"https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=400"}
+        ],
+        "Ensaladas": [
+            {name:"César",brand:"VIPS",image:"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400"},
+            {name:"Pollo",brand:"VIPS",image:"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400"}
+        ],
+        "Sándwiches": [
+            {name:"Club Sándwich",brand:"VIPS",image:"https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=400"},
+            {name:"Vegetariano",brand:"VIPS",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"}
+        ],
+        "Postres": [
+            {name:"Tarta Zanahoria",brand:"VIPS",image:"https://images.unsplash.com/photo-1621303837174-89787a7d4729?w=400"},
+            {name:"Brownie Helado",brand:"VIPS",image:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400"},
+            {name:"Cheesecake",brand:"VIPS",image:"https://images.unsplash.com/photo-1533148277053-27f3e1e3d5ec?w=400"}
+        ],
+        "Bebidas": [
+            {name:"Batido Fresa",brand:"VIPS",image:"https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400"},
+            {name:"Batido Chocolate",brand:"VIPS",image:"https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400"},
+            {name:"Coca-Cola",brand:"VIPS",image:"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400"}
+        ]
+    }
+    "Foster's Hollywood": {
+        "Hamburguesas": [{name:"Bacon Cheese",brand:"Foster's Hollywood",image:"https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400"},{name:"BBQ Burger",brand:"Foster's Hollywood",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},{name:"Veggie Burger",brand:"Foster's Hollywood",image:"https://images.unsplash.com/photo-1520072959219-c595dc870360?w=400"}],
+        "Costillas": [{name:"Costillas BBQ",brand:"Foster's Hollywood",image:"https://images.unsplash.com/photo-1544025162-d76694265947?w=400"},{name:"Media Costilla",brand:"Foster's Hollywood",image:"https://images.unsplash.com/photo-1544025162-d76694265947?w=400"}],
+        "Complementos": [{name:"Aros Cebolla",brand:"Foster's Hollywood",image:"https://images.unsplash.com/photo-1639024471283-03518883512d?w=400"},{name:"Nachos",brand:"Foster's Hollywood",image:"https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=400"},{name:"Alitas",brand:"Foster's Hollywood",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"}],
+        "Postres": [{name:"Brownie",brand:"Foster's Hollywood",image:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400"},{name:"Tarta Queso",brand:"Foster's Hollywood",image:"https://images.unsplash.com/photo-1533148277053-27f3e1e3d5ec?w=400"}],
+        "Bebidas": [{name:"Coca-Cola",brand:"Foster's Hollywood",image:"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400"},{name:"Cerveza",brand:"Foster's Hollywood",image:"https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=400"}]
+    },
+    "Tony Roma's": {
+        "Costillas": [{name:"Original Baby Back",brand:"Tony Roma's",image:"https://images.unsplash.com/photo-1544025162-d76694265947?w=400"},{name:"St. Louis",brand:"Tony Roma's",image:"https://images.unsplash.com/photo-1544025162-d76694265947?w=400"},{name:"Carolina Honeys",brand:"Tony Roma's",image:"https://images.unsplash.com/photo-1544025162-d76694265947?w=400"}],
+        "Carnes": [{name:"Filete",brand:"Tony Roma's",image:"https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400"},{name:"Pollo BBQ",brand:"Tony Roma's",image:"https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400"}],
+        "Entrantes": [{name:"Aros Cebolla",brand:"Tony Roma's",image:"https://images.unsplash.com/photo-1639024471283-03518883512d?w=400"},{name:"Alitas",brand:"Tony Roma's",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"}],
+        "Postres": [{name:"Brownie",brand:"Tony Roma's",image:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400"},{name:"Tarta",brand:"Tony Roma's",image:"https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400"}],
+        "Bebidas": [{name:"Coca-Cola",brand:"Tony Roma's",image:"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400"},{name:"Cerveza",brand:"Tony Roma's",image:"https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=400"}]
+    },
+    "TGB": {
+        "Hamburguesas": [{name:"The Good Burger",brand:"TGB",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},{name:"Bacon Burger",brand:"TGB",image:"https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400"},{name:"Cheese Burger",brand:"TGB",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},{name:"Veggie",brand:"TGB",image:"https://images.unsplash.com/photo-1520072959219-c595dc870360?w=400"}],
+        "Complementos": [{name:"Patatas",brand:"TGB",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"},{name:"Nuggets",brand:"TGB",image:"https://images.unsplash.com/photo-1562967914-608f82629710?w=400"},{name:"Aros Cebolla",brand:"TGB",image:"https://images.unsplash.com/photo-1639024471283-03518883512d?w=400"}],
+        "Postres": [{name:"Brownie",brand:"TGB",image:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400"},{name:"Helado",brand:"TGB",image:"https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400"}],
+        "Bebidas": [{name:"Coca-Cola",brand:"TGB",image:"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400"},{name:"Batidos",brand:"TGB",image:"https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400"}]
+    },
+    "100 Montaditos": {
+        "Montaditos": [{name:"Lomo",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},{name:"Tortilla",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},{name:"Jamón",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},{name:"Bacon Cheese",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},{name:"Vegetal",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"}],
+        "Complementos": [{name:"Patatas Bravas",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"},{name:"Nachos",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=400"},{name:"Alitas",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400"}],
+        "Postres": [{name:"Brownie",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400"}],
+        "Bebidas": [{name:"Cerveza",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=400"},{name:"Coca-Cola",brand:"100 Montaditos",image:"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400"}]
+    },
+    "Rodilla": {
+        "Bocadillos": [{name:"Jamón Serrano",brand:"Rodilla",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},{name:"Pavo",brand:"Rodilla",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},{name:"Tortilla",brand:"Rodilla",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"},{name:"Vegetal",brand:"Rodilla",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"}],
+        "Complementos": [{name:"Croissant Mixto",brand:"Rodilla",image:"https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400"},{name:"Ensalada César",brand:"Rodilla",image:"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400"}],
+        "Postres": [{name:"Brownie",brand:"Rodilla",image:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400"}],
+        "Bebidas": [{name:"Café con Leche",brand:"Rodilla",image:"https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400"},{name:"Zumo Naranja",brand:"Rodilla",image:"https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400"}]
+    },
+    "Starbucks": {
+        "Cafés": [{name:"Latte",brand:"Starbucks",image:"https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400"},{name:"Cappuccino",brand:"Starbucks",image:"https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=400"},{name:"Americano",brand:"Starbucks",image:"https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400"},{name:"Caramel Macchiato",brand:"Starbucks",image:"https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=400"}],
+        "Frappuccinos": [{name:"Caramelo",brand:"Starbucks",image:"https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400"},{name:"Mocha",brand:"Starbucks",image:"https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400"},{name:"Vainilla",brand:"Starbucks",image:"https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400"}],
+        "Comida": [{name:"Croissant",brand:"Starbucks",image:"https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400"},{name:"Muffin Chocolate",brand:"Starbucks",image:"https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=400"},{name:"Sandwich Pollo",brand:"Starbucks",image:"https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400"}],
+        "Postres": [{name:"Brownie",brand:"Starbucks",image:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400"},{name:"Cookies",brand:"Starbucks",image:"https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400"}]
     }
 };
 
@@ -1779,8 +2019,11 @@ function renderRestaurantProducts() {
     grid.innerHTML = products.map(function(p) {
         return '<div class="restaurant-product-card">' +
             '<img src="' + p.image + '" alt="' + p.name + '">' +
-            '<h4>' + p.name + '</h4>' +
-            '<button class="add-btn" onclick="addRestaurantProduct(\'' + p.name.replace(/'/g, "\\'") + '\',\'' + p.brand.replace(/'/g, "\\'") + '\',\'' + p.image + '\')">Añadir</button>' +
+            '<div class="restaurant-product-info">' +
+                '<h4>' + p.name + '</h4>' +
+                '<div class="brand">' + p.brand + '</div>' +
+            '</div>' +
+            '<button class="add-btn" onclick="addRestaurantProduct(\'' + p.name.replace(/'/g, "\\'") + '\',\'' + p.brand.replace(/'/g, "\\'") + '\',\'' + p.image + '\')">+</button>' +
             '</div>';
     }).join('');
 }
@@ -1808,8 +2051,14 @@ function filterRestaurantProducts() {
     grid.innerHTML = filtered.map(function(p) {
         return '<div class="restaurant-product-card">' +
             '<img src="' + p.image + '" alt="' + p.name + '">' +
-            '<h4>' + p.name + '</h4>' +
-            '<button class="add-btn" onclick="addRestaurantProduct(\'' + p.name.replace(/'/g, "\\'") + '\',\'' + p.brand.replace(/'/g, "\\'") + '\',\'' + p.image + '\')">Añadir</button>' +
+            '<div class="restaurant-product-info">' +
+                '<h4>' + p.name + '</h4>' +
+                '<div class="brand">' + p.brand + '</div>' +
+            '</div>' +
+            '<button class="add-btn" onclick="addRestaurantProduct(\'' + p.name.replace(/'/g, "\\'") + '\',\'' + p.brand.replace(/'/g, "\\'") + '\',\'' + p.image + '\')">+</button>' +
+            '</div>';
+    }).join('');
+}
             '</div>';
     }).join('');
 }
