@@ -78,9 +78,7 @@
         /* INPUTS */
         .input-group { margin-bottom:1.25rem; }
         .input-group label { display:block; font-weight:500; margin-bottom:0.5rem; color:var(--text); font-size:0.875rem; }
-        .input-group input,.input-group textarea,.input-group select { width:100%; padding:0.75rem; border:1px solid var(--border); border-radius:8px; font-size:0.9375rem; font-family:'Inter',sans-serif; transition:all 0.15s; background:var(--bg); color:var(--text); }
-        .input-group select { cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23475569' d='M6 9L1 4h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 0.75rem center; padding-right:2.5rem; }
-        .input-group select:hover { border-color:var(--primary); }
+        .input-group input,.input-group textarea { width:100%; padding:0.75rem; border:1px solid var(--border); border-radius:8px; font-size:0.9375rem; font-family:'Inter',sans-serif; transition:all 0.15s; background:var(--bg); color:var(--text); }
         .input-group input:focus,.input-group textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
         /* PRODUCTS – overflow fix */
         .product-item { background:var(--bg-secondary); padding:1rem; border-radius:8px; margin-bottom:0.75rem; border:1px solid var(--border); transition:all 0.15s; display:flex; gap:0.75rem; align-items:center; cursor:pointer; }
@@ -164,16 +162,13 @@
         .category-tab:hover { border-color:var(--primary); background:var(--bg-secondary); }
         .category-tab.active { background:var(--primary); color:white; border-color:var(--primary); }
         
-        /* Restaurant Products Grid - 2 Column Layout */
-        .restaurant-products-grid { display:flex; flex-direction:column; gap:0.75rem; margin-top:1rem; }
-        .restaurant-product-card { display:flex; gap:0.75rem; align-items:center; border:1.5px solid var(--border); border-radius:10px; padding:0.75rem; background:white; transition:all 0.2s; }
-        .restaurant-product-card:hover { border-color:var(--primary); box-shadow:0 2px 8px rgba(37,99,235,0.1); }
-        .restaurant-product-card img { width:80px; height:80px; object-fit:cover; border-radius:8px; flex-shrink:0; }
-        .restaurant-product-info { flex:1; min-width:0; }
-        .restaurant-product-card h4 { font-size:0.95rem; margin:0 0 0.25rem; color:var(--text); font-weight:600; line-height:1.3; }
-        .restaurant-product-card .brand { font-size:0.75rem; color:var(--text-secondary); }
-        .restaurant-product-card .add-btn { width:36px; height:36px; background:var(--primary); color:white; border:none; border-radius:50%; cursor:pointer; font-size:1.2rem; font-weight:300; transition:all 0.2s; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
-        .restaurant-product-card .add-btn:hover { background:var(--primary-dark); transform:scale(1.1); }
+        /* Restaurant Products Grid */
+        .restaurant-products-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:1rem; margin-top:1rem; }
+        .restaurant-product-card { border:1.5px solid var(--border); border-radius:10px; padding:0.75rem; text-align:center; background:white; transition:all 0.2s; }
+        .restaurant-product-card img { width:100%; height:90px; object-fit:cover; border-radius:6px; margin-bottom:0.5rem; }
+        .restaurant-product-card h4 { font-size:0.875rem; margin:0 0 0.6rem; color:var(--text); font-weight:600; line-height:1.3; min-height:2.6em; }
+        .restaurant-product-card .add-btn { width:100%; padding:0.5rem; background:var(--primary); color:white; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; font-weight:600; transition:all 0.2s; }
+        .restaurant-product-card .add-btn:hover { background:var(--primary-dark); }
         
         /* RANKING */
         .ranking-item { display:flex; gap:0.75rem; align-items:center; padding:0.875rem; background:var(--bg-secondary); border-radius:8px; margin-bottom:0.6rem; border:1px solid var(--border); }
@@ -1587,6 +1582,11 @@ const RESTAURANT_DATA = {
         "Hamburguesas": [
             {name:"Big Mac",brand:"McDonald's",image:"https://images.unsplash.com/photo-1550547660-d9450f859349?w=400"},
             {name:"Quarter Pounder",brand:"McDonald's",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},
+const RESTAURANT_DATA = {
+    "McDonald's": {
+        "Hamburguesas": [
+            {name:"Big Mac",brand:"McDonald's",image:"https://images.unsplash.com/photo-1550547660-d9450f859349?w=400"},
+            {name:"Quarter Pounder",brand:"McDonald's",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},
             {name:"Double Quarter Pounder",brand:"McDonald's",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},
             {name:"Big Tasty",brand:"McDonald's",image:"https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400"},
             {name:"Big Tasty Bacon",brand:"McDonald's",image:"https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400"},
@@ -2059,9 +2059,6 @@ function filterRestaurantProducts() {
             '</div>';
     }).join('');
 }
-            '</div>';
-    }).join('');
-}
 
 // Add product from restaurant
 function addRestaurantProduct(name, brand, image) {
@@ -2082,6 +2079,14 @@ function addRestaurantProduct(name, brand, image) {
     currentTasting.products.push(product);
     saveTasting();
     updateAddedProducts();
+}
+
+    if(!n||!b){alert('Completa nombre y restaurante');return;}
+    addProduct({name:n,brand:b,image:img});
+    document.getElementById('manualRestaurantName').value='';
+    document.getElementById('manualRestaurantBrand').value='';
+    document.getElementById('manualRestaurantImage').value='';
+    toggleManualFormRestaurant();
 }
 
 function addProduct(product){if(currentTasting.products.find(p=>p.name===product.name&&p.brand===product.brand))return;currentTasting.products.push({id:Date.now().toString(),...product});saveTasting();updateAddedProducts();document.getElementById('productSearch').value='';document.getElementById('searchResults').innerHTML='';}
@@ -2318,6 +2323,5 @@ document.getElementById('dismissBanner').addEventListener('click',function(){ins
 document.getElementById('closeIosModal').addEventListener('click',function(){document.getElementById('iosModal').style.display='none';});
 window.addEventListener('load',function(){if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.matchMedia('(display-mode: standalone)').matches&&!sessionStorage.getItem('pwa-banner-dismissed'))setTimeout(function(){document.getElementById('iosModal').style.display='flex';},2000);});
 </script>
-</div>
 </body>
 </html>
