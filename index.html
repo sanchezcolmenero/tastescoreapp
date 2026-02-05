@@ -1003,8 +1003,6 @@ let sortableInstances={};
 // ===== INIT =====
 async function initApp(){
     initMascots();
-    // Check for auto-join parameter in URL
-    checkAutoJoin();
     
     // Supabase auth state listener
     const {data:{session}} = await supabaseClient.auth.getSession();
@@ -1034,6 +1032,11 @@ async function initApp(){
     updateNavBar();
     loadGlobalRanking();
     loadArchivedTastings();
+    
+    // Check for auto-join parameter AFTER everything is loaded
+    setTimeout(() => {
+        checkAutoJoin();
+    }, 500);
 }
 
 // ===== NAV BAR =====
@@ -1460,28 +1463,52 @@ function showToast(message) {
 
 // Auto-join from URL parameter
 async function checkAutoJoin() {
+    console.log('checkAutoJoin called');
+    console.log('Current URL:', window.location.href);
+    console.log('Search params:', window.location.search);
+    
     const urlParams = new URLSearchParams(window.location.search);
     const joinCode = urlParams.get('join');
+    
+    console.log('Join code detected:', joinCode);
     
     if (joinCode) {
         console.log('Auto-join detected with code:', joinCode);
         
-        // Clear the URL parameter
-        window.history.replaceState({}, document.title, window.location.pathname);
+        // Clear the URL parameter to clean up the address bar
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+        console.log('URL cleaned to:', cleanUrl);
         
-        // Pre-fill the join code
-        document.getElementById('joinCode').value = joinCode.toUpperCase();
-        
-        // If user is authenticated, pre-fill name
-        if (authenticatedUser) {
-            document.getElementById('participantName').value = authenticatedUser.name;
-        }
-        
-        // Show join screen
-        showScreen('joinScreen');
-        
-        // Show a message
-        showToast('📋 Introduce tu nombre para unirte a la cata');
+        // Wait a moment for DOM to be ready
+        setTimeout(() => {
+            // Pre-fill the join code
+            const joinCodeInput = document.getElementById('joinCode');
+            if (joinCodeInput) {
+                joinCodeInput.value = joinCode.toUpperCase();
+                console.log('Join code input filled with:', joinCode.toUpperCase());
+            } else {
+                console.error('joinCode input not found!');
+            }
+            
+            // If user is authenticated, pre-fill name
+            if (authenticatedUser) {
+                const participantNameInput = document.getElementById('participantName');
+                if (participantNameInput) {
+                    participantNameInput.value = authenticatedUser.name;
+                    console.log('Participant name pre-filled with:', authenticatedUser.name);
+                }
+            }
+            
+            // Show join screen
+            console.log('Showing join screen');
+            showScreen('joinScreen');
+            
+            // Show a message
+            showToast('📋 Introduce tu nombre para unirte a la cata');
+        }, 100);
+    } else {
+        console.log('No join code in URL');
     }
 }
 

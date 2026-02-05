@@ -4,33 +4,36 @@
     <meta charset="utf-8">
     <title>TasteScore - Redirigiendo...</title>
     <script>
-        // GitHub Pages SPA redirect handler
-        // This script takes the current URL and redirects to the homepage with the parameters preserved
+        // GitHub Pages SPA redirect handler for subdirectories
         (function(){
-            var redirect = sessionStorage.redirect;
-            delete sessionStorage.redirect;
-            if (redirect && redirect != location.href) {
-                history.replaceState(null, null, redirect);
+            // Get the base path (e.g., /tastescoreapp/)
+            var pathSegments = window.location.pathname.split('/').filter(function(segment) {
+                return segment.length > 0;
+            });
+            
+            // Get query parameters
+            var searchParams = window.location.search;
+            
+            // If we have query parameters, redirect to index.html with them
+            if (searchParams) {
+                // Build the correct path: /tastescoreapp/index.html?join=CODE
+                var basePath = '/' + (pathSegments[0] || '') + '/';
+                var redirectUrl = window.location.origin + basePath + searchParams;
+                console.log('Redirecting to:', redirectUrl);
+                window.location.replace(redirectUrl);
+            } else {
+                // No parameters, just go to home
+                var basePath = '/' + (pathSegments[0] || '') + '/';
+                window.location.replace(window.location.origin + basePath);
             }
         })();
-        
-        // If no redirect, capture current path and redirect to index with query params
-        if (!sessionStorage.redirect) {
-            var path = window.location.href;
-            var indexPath = path.split('?')[0].replace(/\/[^\/]*$/, '/index.html');
-            var params = window.location.search;
-            if (params) {
-                window.location.replace(indexPath + params);
-            } else {
-                window.location.replace(indexPath);
-            }
-        }
     </script>
 </head>
 <body>
     <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 100px auto; text-align: center; padding: 20px;">
         <h2>🔄 Redirigiendo...</h2>
         <p>Serás redirigido automáticamente en un momento.</p>
+        <p style="color: #666; font-size: 14px; margin-top: 20px;">Si no eres redirigido, <a href="/" style="color: #2563eb;">haz clic aquí</a>.</p>
     </div>
 </body>
 </html>
