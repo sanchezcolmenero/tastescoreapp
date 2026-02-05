@@ -1509,6 +1509,7 @@ async function createTasting(){
     currentUser={name:hostName,isHost:true};
     
     await saveTasting();
+    subscribeToTastingUpdates(); // Subscribe to realtime updates
     showWaitingRoom();
 }
 
@@ -1523,6 +1524,7 @@ async function joinTasting(){
     if(t.status==='finished'){alert('Esta cata ya finalizó');return;}
     currentTasting=t; currentUser={name,isHost:false};
     if(!currentTasting.participants.find(p=>p.name===name)){currentTasting.participants.push(currentUser);await saveTasting();}
+    subscribeToTastingUpdates(); // Subscribe to realtime updates
     if(currentTasting.status==='waiting') showWaitingRoom();
     else if(currentTasting.status==='voting') showProductSelectionScreen();
     else showWaitingRoom();
@@ -2126,9 +2128,18 @@ async function showResults(){
     }).join('');
     showScreen('resultsScreen');
 }
-function finishTasting(){archiveTasting();currentTasting=null;currentUser=null;userVotes={};showScreen('homeScreen');}
+function finishTasting(){
+    archiveTasting();
+    unsubscribeFromTastingUpdates(); // Clean up realtime subscription
+    currentTasting=null;
+    currentUser=null;
+    userVotes={};
+    showScreen('homeScreen');
+}
 
 // ===== PERSISTENCE =====
+let realtimeChannel = null;
+
 async function saveTasting(){
     // Save to Supabase
     try {
@@ -2238,6 +2249,114 @@ async function loadTastingByCode(code){
         
         // Fallback to localStorage
         return JSON.parse(localStorage.getItem('tastings')||'{}')[code];
+    }
+}
+
+// Subscribe to realtime updates for current tasting
+function subscribeToTastingUpdates() {
+    if (!currentTasting) return;
+    
+    // Unsubscribe from previous channel if exists
+    if (realtimeChannel) {
+        supabaseClient.removeChannel(realtimeChannel);
+    }
+    
+    console.log('Subscribing to realtime updates for:', currentTasting.code);
+    
+    // Subscribe to changes on this specific tasting
+    realtimeChannel = supabaseClient
+        .channel('tasting-' + currentTasting.code)
+        .on(
+            'postgres_changes',
+            {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'tastings',
+                filter: 'code=eq.' + currentTasting.code
+            },
+            (payload) => {
+                console.log('Received realtime update:', payload);
+                handleTastingUpdate(payload.new);
+            }
+        )
+        .subscribe((status) => {
+            console.log('Realtime subscription status:', status);
+        });
+}
+
+// Handle incoming realtime updates
+function handleTastingUpdate(newData) {
+    if (!currentTasting || !newData) return;
+    
+    console.log('Handling tasting update');
+    
+    // Update current tasting with new data
+    const oldParticipantsCount = currentTasting.participants.length;
+    const oldProductsCount = currentTasting.products.length;
+    const oldStatus = currentTasting.status;
+    
+    currentTasting.participants = newData.participants;
+    currentTasting.products = newData.products;
+    currentTasting.votes = newData.votes;
+    currentTasting.status = newData.status;
+    currentTasting.name = newData.name;
+    currentTasting.description = newData.description;
+    currentTasting.date = newData.date;
+    currentTasting.host = newData.host;
+    
+    // Update UI based on current screen
+    const currentScreen = document.querySelector('.screen.active').id;
+    
+    if (currentScreen === 'waitingScreen') {
+        // Update participants list
+        updateParticipantsList();
+        
+        // Show notification if new participant joined
+        if (newData.participants.length > oldParticipantsCount) {
+            const newParticipant = newData.participants[newData.participants.length - 1];
+            showToast('👋 ' + newParticipant.name + ' se ha unido');
+        }
+        
+        // If host started the tasting, move to next screen
+        if (newData.status !== oldStatus && newData.status === 'adding_products' && !currentUser.isHost) {
+            showToast('🎉 ¡El anfitrión ha iniciado la cata!');
+            setTimeout(() => showScreen('addProductsScreen'), 1500);
+        }
+    } else if (currentScreen === 'addProductsScreen') {
+        // Update products list
+        updateAddedProducts();
+        
+        // If products were added, show notification
+        if (newData.products.length > oldProductsCount) {
+            showToast('✨ Se añadió un nuevo producto');
+        }
+        
+        // If voting started
+        if (newData.status !== oldStatus && newData.status === 'voting') {
+            showToast('🗳️ ¡Comienza la votación!');
+            setTimeout(() => showProductSelectionScreen(), 1500);
+        }
+    } else if (currentScreen === 'productSelectionScreen') {
+        // Update product selection list
+        updateProductSelectionList();
+        
+        // Update results if status changed to finished
+        if (newData.status !== oldStatus && newData.status === 'finished') {
+            showToast('🏁 ¡Cata finalizada!');
+            setTimeout(() => showResults(), 1500);
+        }
+    } else if (currentScreen === 'manageParticipantsScreen') {
+        // Update manage participants view
+        renderManageParticipants();
+    }
+}
+
+// Unsubscribe when leaving a tasting
+function unsubscribeFromTastingUpdates() {
+    if (realtimeChannel) {
+        console.log('Unsubscribing from realtime updates');
+        supabaseClient.removeChannel(realtimeChannel);
+        realtimeChannel = null;
     }
 }
 

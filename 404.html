@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>TasteScore - Redirigiendo...</title>
+    <script>
+        // GitHub Pages SPA redirect handler
+        // This script takes the current URL and redirects to the homepage with the parameters preserved
+        (function(){
+            var redirect = sessionStorage.redirect;
+            delete sessionStorage.redirect;
+            if (redirect && redirect != location.href) {
+                history.replaceState(null, null, redirect);
+            }
+        })();
+        
+        // If no redirect, capture current path and redirect to index with query params
+        if (!sessionStorage.redirect) {
+            var path = window.location.href;
+            var indexPath = path.split('?')[0].replace(/\/[^\/]*$/, '/index.html');
+            var params = window.location.search;
+            if (params) {
+                window.location.replace(indexPath + params);
+            } else {
+                window.location.replace(indexPath);
+            }
+        }
+    </script>
+</head>
+<body>
+    <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 100px auto; text-align: center; padding: 20px;">
+        <h2>🔄 Redirigiendo...</h2>
+        <p>Serás redirigido automáticamente en un momento.</p>
+    </div>
+</body>
+</html>
