@@ -64,6 +64,8 @@
         .screen { display:none; animation:fadeIn 0.2s ease; }
         .screen.active { display:block; }
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes slideUp { from{opacity:0;transform:translateX(-50%) translateY(20px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
+        @keyframes slideDown { from{opacity:1;transform:translateX(-50%) translateY(0);} to{opacity:0;transform:translateX(-50%) translateY(20px);} }
         .container { max-width:640px; margin:0 auto; padding:1.5rem 1rem; }
         /* CARDS & BUTTONS */
         .card { background:var(--bg); border-radius:12px; padding:1.5rem; margin-bottom:1rem; border:1px solid var(--border); box-shadow:0 1px 3px var(--shadow); }
@@ -701,6 +703,19 @@
                 <div class="code" id="displayCode"></div>
                 <p>Comparte este código</p>
             </div>
+            
+            <!-- Compartir buttons -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:1rem 0;">
+                <button class="btn btn-secondary btn-small" onclick="shareViaWhatsApp()" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+                    <span style="font-size:1.1rem;">📱</span>
+                    <span>WhatsApp</span>
+                </button>
+                <button class="btn btn-secondary btn-small" onclick="copyShareLink()" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+                    <span style="font-size:1.1rem;">🔗</span>
+                    <span>Copiar enlace</span>
+                </button>
+            </div>
+            
             <h3 style="margin:1.25rem 0 0.75rem;font-size:0.95rem;font-weight:600;">Participantes</h3>
             <div id="participantsList"></div>
             <button class="btn btn-primary" onclick="startTasting()" id="startBtn">Comenzar Cata</button>
@@ -988,6 +1003,9 @@ let sortableInstances={};
 // ===== INIT =====
 async function initApp(){
     initMascots();
+    // Check for auto-join parameter in URL
+    checkAutoJoin();
+    
     // Supabase auth state listener
     const {data:{session}} = await supabaseClient.auth.getSession();
     if(session && session.user){
@@ -1380,7 +1398,92 @@ function deduplicateProducts(products){const seen=new Map();products.forEach(p=>
 // ===== TASTING FLOW =====
 function generateCode(){return Math.random().toString(36).substring(2,8).toUpperCase();}
 
-function createTasting(){
+// Share functionality
+function getShareLink() {
+    const baseUrl = window.location.origin + window.location.pathname;
+    return `${baseUrl}?join=${currentTasting.code}`;
+}
+
+function shareViaWhatsApp() {
+    const link = getShareLink();
+    const message = encodeURIComponent(`¡Únete a mi cata "${currentTasting.name}"! 🍷\n\nCódigo: ${currentTasting.code}\n\nO haz clic aquí para unirte directamente:\n${link}`);
+    window.open(`https://wa.me/?text=${message}`, '_blank');
+}
+
+function copyShareLink() {
+    const link = getShareLink();
+    
+    // Try modern clipboard API first
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(link).then(() => {
+            showToast('✓ Enlace copiado al portapapeles');
+        }).catch(() => {
+            fallbackCopyToClipboard(link);
+        });
+    } else {
+        fallbackCopyToClipboard(link);
+    }
+}
+
+function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        showToast('✓ Enlace copiado al portapapeles');
+    } catch (err) {
+        showToast('❌ No se pudo copiar. Código: ' + currentTasting.code);
+    }
+    document.body.removeChild(textArea);
+}
+
+function showToast(message) {
+    // Remove existing toast if any
+    const existingToast = document.getElementById('toast');
+    if (existingToast) existingToast.remove();
+    
+    const toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.textContent = message;
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:white;padding:0.75rem 1.25rem;border-radius:8px;font-size:0.875rem;z-index:10000;backdrop-filter:blur(10px);animation:slideUp 0.3s ease;';
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideDown 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 2500);
+}
+
+// Auto-join from URL parameter
+async function checkAutoJoin() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const joinCode = urlParams.get('join');
+    
+    if (joinCode) {
+        // Clear the URL parameter
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Pre-fill the join code
+        document.getElementById('joinCode').value = joinCode.toUpperCase();
+        
+        // If user is authenticated, try to join automatically
+        if (authenticatedUser) {
+            document.getElementById('participantName').value = authenticatedUser.name;
+            showScreen('joinScreen');
+            // Show a message
+            showToast('📋 Código de cata detectado. Introduce tu nombre para unirte.');
+        } else {
+            showScreen('joinScreen');
+            showToast('📋 Código de cata detectado. Introduce tu nombre para unirte.');
+        }
+    }
+}
+
+async function createTasting(){
     const name=document.getElementById('tastingName').value.trim();
     let hostName=document.getElementById('hostName').value.trim();
     const desc=document.getElementById('tastingDescription').value.trim();
@@ -1398,22 +1501,26 @@ function createTasting(){
     if(hasError)return;
     // Update field with auto-filled value
     document.getElementById('hostName').value=hostName;
-    currentTasting={id:Date.now().toString(),code:generateCode(),name,description:desc,date:date||null,host:hostName,participants:[{name:hostName,isHost:true}],products:[],votes:{},status:'waiting',createdAt:new Date().toISOString(),userId:authenticatedUser?authenticatedUser.id:null};
+    
+    const code = generateCode();
+    currentTasting={id:Date.now().toString(),code,name,description:desc,date:date||null,host:hostName,participants:[{name:hostName,isHost:true}],products:[],votes:{},status:'waiting',createdAt:new Date().toISOString(),userId:authenticatedUser?authenticatedUser.id:null};
     currentUser={name:hostName,isHost:true};
-    saveTasting(); showWaitingRoom();
+    
+    await saveTasting();
+    showWaitingRoom();
 }
 
-function joinTasting(){
+async function joinTasting(){
     const code=document.getElementById('joinCode').value.trim().toUpperCase();
     let name=document.getElementById('participantName').value.trim();
     // Pre-fill from authenticated user if empty
     if(!name && authenticatedUser) name=authenticatedUser.name;
     if(!code||!name){alert('Completa código y nombre');return;}
-    const t=loadTastingByCode(code);
+    const t=await loadTastingByCode(code);
     if(!t){alert('Código no encontrado');return;}
     if(t.status==='finished'){alert('Esta cata ya finalizó');return;}
     currentTasting=t; currentUser={name,isHost:false};
-    if(!currentTasting.participants.find(p=>p.name===name)){currentTasting.participants.push(currentUser);saveTasting();}
+    if(!currentTasting.participants.find(p=>p.name===name)){currentTasting.participants.push(currentUser);await saveTasting();}
     if(currentTasting.status==='waiting') showWaitingRoom();
     else if(currentTasting.status==='voting') showProductSelectionScreen();
     else showWaitingRoom();
@@ -1441,7 +1548,7 @@ function updateParticipantsList(){
     }).join('');
 }
 
-function promoteToHost(idx){
+async function promoteToHost(idx){
     // remove current host flag
     currentTasting.participants.forEach(p=>p.isHost=false);
     currentTasting.participants[idx].isHost=true;
@@ -1449,23 +1556,23 @@ function promoteToHost(idx){
     // update currentUser
     if(currentUser.name===currentTasting.participants[idx].name) currentUser.isHost=true;
     else currentUser.isHost=false;
-    saveTasting(); updateParticipantsList();
+    await saveTasting(); updateParticipantsList();
     // refresh manage screen if open
     if(document.getElementById('manageParticipantsScreen').classList.contains('active')) renderManageParticipants();
 }
 
-function kickParticipant(idx){
+async function kickParticipant(idx){
     const name=currentTasting.participants[idx].name;
     if(confirm('¿Eliminar a '+name+' de la cata?')){
         currentTasting.participants.splice(idx,1);
-        saveTasting(); updateParticipantsList();
+        await saveTasting(); updateParticipantsList();
         if(document.getElementById('manageParticipantsScreen').classList.contains('active')) renderManageParticipants();
     }
 }
 
-function startTasting(){
+async function startTasting(){
     if(!currentUser.isHost)return;
-    currentTasting.status='adding_products'; saveTasting();
+    currentTasting.status='adding_products'; await saveTasting();
     showScreen('addProductsScreen'); updateAddedProducts();
 }
 
@@ -1914,8 +2021,8 @@ function addRestaurantProduct(name, brand, image) {
     updateAddedProducts();
 }
 
-function addProduct(product){if(currentTasting.products.find(p=>p.name===product.name&&p.brand===product.brand))return;currentTasting.products.push({id:Date.now().toString(),...product});saveTasting();updateAddedProducts();document.getElementById('productSearch').value='';document.getElementById('searchResults').innerHTML='';}
-function addProductFromEdit(product){if(currentTasting.products.find(p=>p.name===product.name&&p.brand===product.brand))return;currentTasting.products.push({id:Date.now().toString(),...product});saveTasting();updateEditProductsList();document.getElementById('editProductSearch').value='';document.getElementById('editSearchResults').innerHTML='';}
+async function addProduct(product){if(currentTasting.products.find(p=>p.name===product.name&&p.brand===product.brand))return;currentTasting.products.push({id:Date.now().toString(),...product});await saveTasting();updateAddedProducts();document.getElementById('productSearch').value='';document.getElementById('searchResults').innerHTML='';}
+async function addProductFromEdit(product){if(currentTasting.products.find(p=>p.name===product.name&&p.brand===product.brand))return;currentTasting.products.push({id:Date.now().toString(),...product});await saveTasting();updateEditProductsList();document.getElementById('editProductSearch').value='';document.getElementById('editSearchResults').innerHTML='';}
 
 function updateAddedProducts(){
     const c=document.getElementById('addedProducts');document.getElementById('productCount').textContent=currentTasting.products.length;
@@ -1931,15 +2038,15 @@ function updateAddedProducts(){
         dragClass: 'dragging',
         forceFallback: true,
         fallbackTolerance: 3,
-        onEnd: function(evt) {
+        onEnd: async function(evt) {
             const item = currentTasting.products.splice(evt.oldIndex, 1)[0];
             currentTasting.products.splice(evt.newIndex, 0, item);
-            saveTasting();
+            await saveTasting();
         }
     });
 }
-function removeProduct(i){currentTasting.products.splice(i,1);saveTasting();updateAddedProducts();}
-function finishAddingProducts(){if(!currentTasting.products.length){alert('Añade al menos un producto');return;}currentTasting.status='voting';saveTasting();showProductSelectionScreen();}
+async function removeProduct(i){currentTasting.products.splice(i,1);await saveTasting();updateAddedProducts();}
+async function finishAddingProducts(){if(!currentTasting.products.length){alert('Añade al menos un producto');return;}currentTasting.status='voting';await saveTasting();showProductSelectionScreen();}
 
 // ===== VOTING =====
 function showProductSelectionScreen(){
@@ -1966,7 +2073,7 @@ function showVotingScreen(){
     document.getElementById('ratingSlider').value=5.0;updateRatingValue();document.getElementById('voteComment').value='';
     updateVoteCount(); showScreen('votingScreen');
 }
-function submitVote(){
+async function submitVote(){
     const score=parseFloat(document.getElementById('ratingSlider').value);
     const comment=document.getElementById('voteComment').value.trim();
     const product=currentTasting.products.find(function(p){return p.id===selectedProductId;});
@@ -1975,7 +2082,7 @@ function submitVote(){
     currentTasting.votes[selectedProductId].push({user:currentUser.name,score:score,comment:comment});
     userVotes[selectedProductId]=true;
     updateGlobalRanking(product.name,product.brand,product.image,score);
-    saveTasting(); showProductSelectionScreen();
+    await saveTasting(); showProductSelectionScreen();
 }
 function updateVoteCount(){const votes=currentTasting.votes[selectedProductId]||[];document.getElementById('votedCount').textContent=votes.length;document.getElementById('votedTotal').textContent=currentTasting.participants.length;}
 
@@ -1997,19 +2104,19 @@ function updateEditProductsList(){
         dragClass: 'dragging',
         forceFallback: true,
         fallbackTolerance: 3,
-        onEnd: function(evt) {
+        onEnd: async function(evt) {
             const item = currentTasting.products.splice(evt.oldIndex, 1)[0];
             currentTasting.products.splice(evt.newIndex, 0, item);
-            saveTasting();
+            await saveTasting();
         }
     });
 }
-function removeProductFromEdit(i){const p=currentTasting.products[i];if(currentTasting.votes[p.id]&&currentTasting.votes[p.id].length){alert('No puedes eliminar un producto con votos');return;}currentTasting.products.splice(i,1);saveTasting();updateEditProductsList();}
+async function removeProductFromEdit(i){const p=currentTasting.products[i];if(currentTasting.votes[p.id]&&currentTasting.votes[p.id].length){alert('No puedes eliminar un producto con votos');return;}currentTasting.products.splice(i,1);await saveTasting();updateEditProductsList();}
 function exitEditMode(){showProductSelectionScreen();}
 
 // ===== RESULTS =====
-function showResults(){
-    currentTasting.status='finished';saveTasting();
+async function showResults(){
+    currentTasting.status='finished';await saveTasting();
     const c=document.getElementById('resultsContainer');
     c.innerHTML=currentTasting.products.map(function(product){
         const votes=currentTasting.votes[product.id]||[];const avg=votes.length?votes.reduce(function(s,v){return s+v.score;},0)/votes.length:0;
@@ -2020,8 +2127,79 @@ function showResults(){
 function finishTasting(){archiveTasting();currentTasting=null;currentUser=null;userVotes={};showScreen('homeScreen');}
 
 // ===== PERSISTENCE =====
-function saveTasting(){const t=JSON.parse(localStorage.getItem('tastings')||'{}');t[currentTasting.code]=currentTasting;localStorage.setItem('tastings',JSON.stringify(t));}
-function loadTastingByCode(code){return JSON.parse(localStorage.getItem('tastings')||'{}')[code];}
+async function saveTasting(){
+    // Save to Supabase
+    try {
+        const {data, error} = await supabaseClient
+            .from('tastings')
+            .upsert({
+                code: currentTasting.code,
+                name: currentTasting.name,
+                description: currentTasting.description,
+                date: currentTasting.date,
+                host: currentTasting.host,
+                participants: currentTasting.participants,
+                products: currentTasting.products,
+                votes: currentTasting.votes,
+                status: currentTasting.status,
+                created_at: currentTasting.createdAt,
+                user_id: currentTasting.userId
+            }, {
+                onConflict: 'code'
+            });
+        
+        if(error) {
+            console.error('Error saving to Supabase:', error);
+            // Fallback to localStorage
+            const t=JSON.parse(localStorage.getItem('tastings')||'{}');
+            t[currentTasting.code]=currentTasting;
+            localStorage.setItem('tastings',JSON.stringify(t));
+        }
+    } catch(e) {
+        console.error('Error in saveTasting:', e);
+        // Fallback to localStorage
+        const t=JSON.parse(localStorage.getItem('tastings')||'{}');
+        t[currentTasting.code]=currentTasting;
+        localStorage.setItem('tastings',JSON.stringify(t));
+    }
+}
+
+async function loadTastingByCode(code){
+    try {
+        const {data, error} = await supabaseClient
+            .from('tastings')
+            .select('*')
+            .eq('code', code)
+            .single();
+        
+        if(error || !data) {
+            console.error('Error loading from Supabase:', error);
+            // Fallback to localStorage
+            return JSON.parse(localStorage.getItem('tastings')||'{}')[code];
+        }
+        
+        // Transform Supabase data back to app format
+        return {
+            id: data.code,
+            code: data.code,
+            name: data.name,
+            description: data.description,
+            date: data.date,
+            host: data.host,
+            participants: data.participants,
+            products: data.products,
+            votes: data.votes,
+            status: data.status,
+            createdAt: data.created_at,
+            userId: data.user_id
+        };
+    } catch(e) {
+        console.error('Error in loadTastingByCode:', e);
+        // Fallback to localStorage
+        return JSON.parse(localStorage.getItem('tastings')||'{}')[code];
+    }
+}
+
 function archiveTasting(){const a=JSON.parse(localStorage.getItem('archivedTastings')||'[]');a.unshift({...currentTasting,archivedAt:new Date().toISOString()});localStorage.setItem('archivedTastings',JSON.stringify(a));}
 
 function loadArchivedTastings(){
