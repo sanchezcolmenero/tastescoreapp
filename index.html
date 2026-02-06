@@ -988,9 +988,14 @@ function initMascots(){
     PANDA_AVATARS.panda_waiting = MASCOT_WAITING_URL;
     PANDA_AVATARS.panda_head = PANDA_HEAD_URL;
     
-    document.getElementById('headerPanda').src=PANDA_HEAD_URL;
-    document.getElementById('authMascot').src=MASCOT_URL;
-    document.getElementById('bannerMascot').src=MASCOT_URL;
+    // Set mascot images safely (check if elements exist first)
+    const headerPanda = document.getElementById('headerPanda');
+    const authMascot = document.getElementById('authMascot');
+    const bannerMascot = document.getElementById('bannerMascot');
+    
+    if (headerPanda) headerPanda.src = PANDA_HEAD_URL;
+    if (authMascot) authMascot.src = MASCOT_URL;
+    if (bannerMascot) bannerMascot.src = MASCOT_URL;
 }
 
 // ===== STATE =====
@@ -1002,7 +1007,11 @@ let sortableInstances={};
 
 // ===== INIT =====
 async function initApp(){
-    initMascots();
+    try {
+        initMascots();
+    } catch(e) {
+        console.error('Error in initMascots:', e);
+    }
     
     // Supabase auth state listener
     const {data:{session}} = await supabaseClient.auth.getSession();
@@ -1034,9 +1043,14 @@ async function initApp(){
     loadArchivedTastings();
     
     // Check for auto-join parameter AFTER everything is loaded
+    // Use a longer delay to ensure DOM is fully ready
     setTimeout(() => {
-        checkAutoJoin();
-    }, 500);
+        try {
+            checkAutoJoin();
+        } catch(e) {
+            console.error('Error in checkAutoJoin:', e);
+        }
+    }, 1000);
 }
 
 // ===== NAV BAR =====
