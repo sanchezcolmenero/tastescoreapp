@@ -242,6 +242,18 @@
         .share-actions button { padding:0.7rem; border-radius:8px; border:1px solid var(--border); background:var(--bg-secondary); cursor:pointer; font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:500; color:var(--text); transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:0.4rem; }
         .share-actions button:hover { border-color:var(--primary); color:var(--primary); background:#fff; }
         .share-close { display:block; width:100%; margin-top:0.85rem; padding:0.6rem; border:none; background:none; color:var(--text-secondary); font-size:0.82rem; cursor:pointer; font-family:'Inter',sans-serif; }
+        /* RECENT TASTINGS */
+        .recent-tasting-item { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:0.875rem 1rem; margin-bottom:0.65rem; display:flex; align-items:center; gap:0.75rem; cursor:pointer; transition:all 0.15s; }
+        .recent-tasting-item:hover { border-color:var(--primary); background:var(--bg-secondary); }
+        .recent-tasting-content { flex:1; min-width:0; }
+        .recent-tasting-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; }
+        .recent-tasting-header h4 { font-size:0.9rem; font-weight:600; margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
+        .status-badge { font-size:0.7rem; padding:0.2rem 0.5rem; border-radius:4px; font-weight:500; white-space:nowrap; }
+        .status-badge.status-waiting { background:#f1f5f9; color:#64748b; }
+        .status-badge.status-adding_products, .status-badge.status-voting { background:#fef3c7; color:#d97706; }
+        .status-badge.status-finished { background:#d1fae5; color:#065f46; }
+        .recent-tasting-meta { display:flex; align-items:center; gap:0.4rem; font-size:0.75rem; color:var(--text-secondary); }
+        .recent-tasting-arrow { font-size:1.4rem; color:var(--text-tertiary); flex-shrink:0; }
     </style>
 </head>
 <body>
@@ -469,7 +481,15 @@
         <div class="card">
             <h3 style="margin-bottom:0.75rem;font-weight:600;font-size:0.95rem;display:flex;align-items:center;gap:0.5rem;">
                 <span style="font-size:1.25rem;">📋</span>
-                Catas Archivadas
+                Tus Últimas Catas
+            </h3>
+            <div id="recentTastingsList"></div>
+        </div>
+        
+        <div class="card">
+            <h3 style="margin-bottom:0.75rem;font-weight:600;font-size:0.95rem;display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:1.25rem;">🗂️</span>
+                Catas Finalizadas
             </h3>
             <div id="archivedList"></div>
         </div>
@@ -1043,10 +1063,12 @@ async function initApp(){
         }
         updateNavBar();
         loadGlobalRanking();
+        loadRecentTastings();
         loadArchivedTastings();
     });
     updateNavBar();
     loadGlobalRanking();
+    loadRecentTastings();
     loadArchivedTastings();
     
     // Check for auto-join parameter AFTER everything is loaded
@@ -1308,6 +1330,7 @@ function showScreen(sid){
     if(sid==='homeScreen'){
         bb.style.display='none';
         document.getElementById('headerSubtitle').textContent='Catas de productos en grupo';
+        loadRecentTastings();
         loadArchivedTastings();
         // Show auth prompt if not logged in
         document.getElementById('homeAuthPrompt').style.display = authenticatedUser ? 'none' : 'block';
@@ -2410,10 +2433,172 @@ function unsubscribeFromTastingUpdates() {
 
 function archiveTasting(){const a=JSON.parse(localStorage.getItem('archivedTastings')||'[]');a.unshift({...currentTasting,archivedAt:new Date().toISOString()});localStorage.setItem('archivedTastings',JSON.stringify(a));}
 
+// ===== LOAD RECENT TASTINGS =====
+async function loadRecentTastings() {
+    const container = document.getElementById('recentTastingsList');
+    
+    try {
+        // Cargar catas del usuario desde Supabase
+        let recentTastings = [];
+        
+        if (authenticatedUser) {
+            const { data, error } = await supabaseClient
+                .from('tastings')
+                .select('*')
+                .eq('user_id', authenticatedUser.id)
+                .neq('status', 'finished')
+                .order('created_at', { ascending: false })
+                .limit(10);
+            
+            if (!error && data) {
+                recentTastings = data.map(t => ({
+                    code: t.code,
+                    name: t.name,
+                    status: t.status,
+                    createdAt: t.created_at,
+                    participants: t.participants,
+                    products: t.products,
+                    votes: t.votes,
+                    host: t.host,
+                    description: t.description,
+                    date: t.date,
+                    userId: t.user_id
+                }));
+            }
+        }
+        
+        // También cargar de localStorage
+        const localTastings = JSON.parse(localStorage.getItem('tastings') || '{}');
+        Object.values(localTastings).forEach(t => {
+            if (t.status !== 'finished' && !recentTastings.find(rt => rt.code === t.code)) {
+                recentTastings.push({
+                    code: t.code,
+                    name: t.name,
+                    status: t.status,
+                    createdAt: t.createdAt,
+                    participants: t.participants,
+                    products: t.products,
+                    votes: t.votes,
+                    host: t.host,
+                    description: t.description,
+                    date: t.date,
+                    userId: t.userId
+                });
+            }
+        });
+        
+        // Ordenar por fecha
+        recentTastings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        
+        if (!recentTastings.length) {
+            container.innerHTML = '<div class="empty-state" style="padding:1.5rem 0;"><div class="icon">📝</div><p>No tienes catas activas</p></div>';
+            return;
+        }
+        
+        // Renderizar lista
+        container.innerHTML = recentTastings.map(t => {
+            const statusInfo = getStatusInfo(t.status);
+            const createdDate = new Date(t.createdAt).toLocaleDateString('es-ES', { 
+                day: 'numeric', 
+                month: 'short',
+                year: 'numeric'
+            });
+            
+            return `
+                <div class="recent-tasting-item" onclick="resumeTasting('${t.code}')">
+                    <div class="recent-tasting-content">
+                        <div class="recent-tasting-header">
+                            <h4>${t.name}</h4>
+                            <span class="status-badge status-${t.status}">${statusInfo.text}</span>
+                        </div>
+                        <div class="recent-tasting-meta">
+                            <span>📅 ${createdDate}</span>
+                            <span>•</span>
+                            <span>Código: ${t.code}</span>
+                        </div>
+                    </div>
+                    <div class="recent-tasting-arrow">›</div>
+                </div>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error loading recent tastings:', error);
+        container.innerHTML = '<div class="empty-state" style="padding:1.5rem 0;"><div class="icon">⚠️</div><p>Error al cargar catas</p></div>';
+    }
+}
+
+function getStatusInfo(status) {
+    const statusMap = {
+        'waiting': { text: 'Sin empezar', color: '#94a3b8' },
+        'adding_products': { text: 'En proceso', color: '#f59e0b' },
+        'voting': { text: 'En proceso', color: '#f59e0b' },
+        'finished': { text: 'Finalizada', color: '#10b981' }
+    };
+    return statusMap[status] || { text: 'Desconocido', color: '#64748b' };
+}
+
+async function resumeTasting(code) {
+    try {
+        const tasting = await loadTastingByCode(code);
+        if (!tasting) {
+            alert('No se pudo cargar la cata');
+            return;
+        }
+        
+        // Pedir nombre si no está autenticado
+        let userName = authenticatedUser ? authenticatedUser.name : null;
+        if (!userName) {
+            userName = prompt('Introduce tu nombre para continuar:');
+            if (!userName) return;
+        }
+        
+        // Configurar la cata actual
+        currentTasting = tasting;
+        
+        // Verificar si el usuario ya está en la cata
+        const existingParticipant = currentTasting.participants.find(p => p.name === userName);
+        if (existingParticipant) {
+            currentUser = existingParticipant;
+        } else {
+            // Añadir como participante
+            currentUser = { name: userName, isHost: false };
+            currentTasting.participants.push(currentUser);
+            await saveTasting();
+        }
+        
+        // Suscribirse a actualizaciones en tiempo real
+        subscribeToTastingUpdates();
+        
+        // Navegar a la pantalla apropiada según el estado
+        switch (currentTasting.status) {
+            case 'waiting':
+                showWaitingRoom();
+                break;
+            case 'adding_products':
+                if (currentUser.isHost) {
+                    updateAddedProducts();
+                    showScreen('addProductsScreen');
+                } else {
+                    showWaitingRoom();
+                }
+                break;
+            case 'voting':
+                showProductSelectionScreen();
+                break;
+            default:
+                showWaitingRoom();
+        }
+    } catch (error) {
+        console.error('Error resuming tasting:', error);
+        alert('Error al cargar la cata');
+    }
+}
+
 function loadArchivedTastings(){
     const archived=JSON.parse(localStorage.getItem('archivedTastings')||'[]');
     const c=document.getElementById('archivedList');
-    if(!archived.length){c.innerHTML='<div class="empty-state" style="padding:1.5rem 0;"><div class="icon">📋</div><p>No tienes catas archivadas</p></div>';return;}
+    if(!archived.length){c.innerHTML='<div class="empty-state" style="padding:1.5rem 0;"><div class="icon">🗂️</div><p>No tienes catas finalizadas</p></div>';return;}
     c.innerHTML=archived.map(function(t,i){
         return '<div class="archive-item"><div class="archive-icon" onclick="viewArchive('+i+')"><img src="'+MASCOT_WAITING_URL+'" alt=""></div><div class="archive-content" onclick="viewArchive('+i+')"><h3>'+t.name+'</h3><div class="archive-meta"><span>📅 '+new Date(t.archivedAt).toLocaleDateString('es-ES')+'</span><span>👥 '+t.participants.length+' part.</span><span>🍽️ '+t.products.length+' prod.</span></div></div><button class="archive-delete" onclick="deleteArchive('+i+',event)" title="Eliminar">🗑️</button></div>';
     }).join('');
@@ -2534,10 +2719,9 @@ document.getElementById('dismissBanner').addEventListener('click',function(){ins
 document.getElementById('closeIosModal').addEventListener('click',function(){document.getElementById('iosModal').style.display='none';});
 window.addEventListener('load',function(){if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.matchMedia('(display-mode: standalone)').matches&&!sessionStorage.getItem('pwa-banner-dismissed'))setTimeout(function(){document.getElementById('iosModal').style.display='flex';},2000);});
 
-// ===== BLOQUEADOR DE share-modal.js =====
-// Este script previene que share-modal.js se cargue o ejecute
+// ===== BLOQUEADOR DE share-modal.js Y ERRORES DE EXTENSIONES =====
 (function() {
-    console.log('🛡️ Bloqueador de share-modal.js activado');
+    console.log('🛡️ Bloqueador de scripts y errores de extensiones activado');
     
     // 1. Interceptar todas las peticiones de scripts
     const originalCreateElement = document.createElement;
@@ -2548,7 +2732,7 @@ window.addEventListener('load',function(){if(/iphone|ipad|ipod/i.test(navigator.
             element.setAttribute = function(name, value) {
                 if (name === 'src' && value && value.includes('share-modal')) {
                     console.warn('🚫 Bloqueado intento de cargar share-modal.js');
-                    return; // No establecer el src
+                    return;
                 }
                 return originalSetAttribute.call(this, name, value);
             };
@@ -2558,14 +2742,38 @@ window.addEventListener('load',function(){if(/iphone|ipad|ipod/i.test(navigator.
     
     // 2. Sobrescribir el objeto global que share-modal.js podría usar
     window.addEventListener('error', function(e) {
-        if (e.filename && e.filename.includes('share-modal')) {
-            console.warn('🚫 Error de share-modal.js capturado y silenciado');
+        const errorMsg = e.message || '';
+        const filename = e.filename || '';
+        
+        // Silenciar errores de extensiones
+        if (filename.includes('share-modal') ||
+            filename.includes('chrome-extension') ||
+            errorMsg.includes('runtime.lastError') ||
+            errorMsg.includes('message channel closed') ||
+            errorMsg.includes('extension port')) {
             e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
             return true;
         }
     }, true);
     
-    // 3. Remover cualquier script de share-modal que ya exista
+    // 3. Capturar errores de promesas rechazadas (extensiones)
+    window.addEventListener('unhandledrejection', function(e) {
+        const reason = e.reason ? e.reason.toString() : '';
+        
+        // Silenciar rechazos de promesas de extensiones
+        if (reason.includes('runtime.lastError') ||
+            reason.includes('message channel closed') ||
+            reason.includes('extension port') ||
+            reason.includes('asynchronous response')) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+    });
+    
+    // 4. Remover cualquier script de share-modal que ya exista
     document.addEventListener('DOMContentLoaded', function() {
         const scripts = document.querySelectorAll('script');
         scripts.forEach(function(script) {
@@ -2576,7 +2784,7 @@ window.addEventListener('load',function(){if(/iphone|ipad|ipod/i.test(navigator.
         });
     });
     
-    // 4. Monitorear mutaciones del DOM
+    // 5. Monitorear mutaciones del DOM
     const observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
             mutation.addedNodes.forEach(function(node) {
@@ -2593,7 +2801,37 @@ window.addEventListener('load',function(){if(/iphone|ipad|ipod/i.test(navigator.
         subtree: true
     });
     
-    console.log('✅ Protección contra share-modal.js instalada');
+    // 6. Silenciar errores de console.error
+    const originalConsoleError = console.error;
+    console.error = function(...args) {
+        const errorMsg = args.join(' ');
+        
+        // Filtrar errores conocidos de extensiones
+        if (errorMsg.includes('runtime.lastError') || 
+            errorMsg.includes('back/forward cache') ||
+            errorMsg.includes('extension port') ||
+            errorMsg.includes('message channel closed') ||
+            errorMsg.includes('asynchronous response')) {
+            return;
+        }
+        
+        originalConsoleError.apply(console, args);
+    };
+    
+    // 7. Filtrar warnings también
+    const originalConsoleWarn = console.warn;
+    console.warn = function(...args) {
+        const warnMsg = args.join(' ');
+        
+        if (warnMsg.includes('runtime.lastError') || 
+            warnMsg.includes('extension')) {
+            return;
+        }
+        
+        originalConsoleWarn.apply(console, args);
+    };
+    
+    console.log('✅ Protección completa contra errores de extensiones instalada');
 })();
 </script>
 </div>
