@@ -8,8 +8,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="TasteScore">
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
+    <link rel="manifest" href="manifest.json?v=2">
     <title>TasteScore</title>
 
     <!-- Supabase -->
@@ -2533,6 +2533,68 @@ document.getElementById('installBtn').addEventListener('click',async function(){
 document.getElementById('dismissBanner').addEventListener('click',function(){installBanner.style.display='none';sessionStorage.setItem('pwa-banner-dismissed','true');});
 document.getElementById('closeIosModal').addEventListener('click',function(){document.getElementById('iosModal').style.display='none';});
 window.addEventListener('load',function(){if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.matchMedia('(display-mode: standalone)').matches&&!sessionStorage.getItem('pwa-banner-dismissed'))setTimeout(function(){document.getElementById('iosModal').style.display='flex';},2000);});
+
+// ===== BLOQUEADOR DE share-modal.js =====
+// Este script previene que share-modal.js se cargue o ejecute
+(function() {
+    console.log('🛡️ Bloqueador de share-modal.js activado');
+    
+    // 1. Interceptar todas las peticiones de scripts
+    const originalCreateElement = document.createElement;
+    document.createElement = function(tagName) {
+        const element = originalCreateElement.call(document, tagName);
+        if (tagName.toLowerCase() === 'script') {
+            const originalSetAttribute = element.setAttribute;
+            element.setAttribute = function(name, value) {
+                if (name === 'src' && value && value.includes('share-modal')) {
+                    console.warn('🚫 Bloqueado intento de cargar share-modal.js');
+                    return; // No establecer el src
+                }
+                return originalSetAttribute.call(this, name, value);
+            };
+        }
+        return element;
+    };
+    
+    // 2. Sobrescribir el objeto global que share-modal.js podría usar
+    window.addEventListener('error', function(e) {
+        if (e.filename && e.filename.includes('share-modal')) {
+            console.warn('🚫 Error de share-modal.js capturado y silenciado');
+            e.preventDefault();
+            return true;
+        }
+    }, true);
+    
+    // 3. Remover cualquier script de share-modal que ya exista
+    document.addEventListener('DOMContentLoaded', function() {
+        const scripts = document.querySelectorAll('script');
+        scripts.forEach(function(script) {
+            if (script.src && script.src.includes('share-modal')) {
+                console.warn('🚫 Removiendo script share-modal.js del DOM');
+                script.remove();
+            }
+        });
+    });
+    
+    // 4. Monitorear mutaciones del DOM
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+                if (node.tagName === 'SCRIPT' && node.src && node.src.includes('share-modal')) {
+                    console.warn('🚫 Script share-modal.js detectado y removido por MutationObserver');
+                    node.remove();
+                }
+            });
+        });
+    });
+    
+    observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true
+    });
+    
+    console.log('✅ Protección contra share-modal.js instalada');
+})();
 </script>
 </div>
 </body>

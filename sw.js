@@ -1,21 +1,25 @@
-// Service Worker for TasteScore PWA
-const CACHE_NAME = 'tastescore-v2'; // Incrementado para forzar limpieza
+// Service Worker for TasteScore PWA - Anti share-modal.js
+const CACHE_NAME = 'tastescore-v3'; // Incrementado para forzar limpieza
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json'
 ];
 
+// Lista negra de archivos
+const BLOCKED_FILES = ['share-modal.js', 'share-modal'];
+
 // Install event - cache resources
 self.addEventListener('install', event => {
+  console.log('[SW] Installing service worker v3');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
+        console.log('[SW] Opened cache');
         return cache.addAll(urlsToCache);
       })
       .catch(err => {
-        console.error('Cache install failed:', err);
+        console.error('[SW] Cache install failed:', err);
       })
   );
   self.skipWaiting();
@@ -23,22 +27,38 @@ self.addEventListener('install', event => {
 
 // Activate event - clean old caches AND remove share-modal.js
 self.addEventListener('activate', event => {
+  console.log('[SW] Activating service worker v3');
   event.waitUntil(
     Promise.all([
-      // Delete old caches
+      // Delete ALL old caches
       caches.keys().then(cacheNames => {
         return Promise.all(
           cacheNames.map(cacheName => {
             if (cacheName !== CACHE_NAME) {
-              console.log('Deleting old cache:', cacheName);
+              console.log('[SW] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
       }),
-      // Clear any cached share-modal.js
-      caches.open(CACHE_NAME).then(cache => {
-        return cache.delete('./share-modal.js');
+      // Clear any cached share-modal.js from ALL caches
+      caches.keys().then(cacheNames => {
+        return Promise.all(
+          cacheNames.map(cacheName => {
+            return caches.open(cacheName).then(cache => {
+              return cache.keys().then(requests => {
+                return Promise.all(
+                  requests.map(request => {
+                    if (BLOCKED_FILES.some(blocked => request.url.includes(blocked))) {
+                      console.log('[SW] 🚫 Removing blocked file from cache:', request.url);
+                      return cache.delete(request);
+                    }
+                  })
+                );
+              });
+            });
+          })
+        );
       })
     ])
   );
@@ -47,9 +67,18 @@ self.addEventListener('activate', event => {
 
 // Fetch event - serve from cache, fall back to network
 self.addEventListener('fetch', event => {
-  // Block share-modal.js explicitly
-  if (event.request.url.includes('share-modal.js')) {
-    event.respondWith(new Response('', { status: 404 }));
+  const url = event.request.url;
+  
+  // Block share-modal.js explicitly - return 404
+  if (BLOCKED_FILES.some(blocked => url.includes(blocked))) {
+    console.log('[SW] 🚫 BLOCKED request to:', url);
+    event.respondWith(
+      new Response('// File blocked by service worker', {
+        status: 404,
+        statusText: 'Blocked by SW',
+        headers: { 'Content-Type': 'application/javascript' }
+      })
+    );
     return;
   }
 
@@ -59,7 +88,14 @@ self.addEventListener('fetch', event => {
   }
 
   // Skip Supabase API calls
-  if (event.request.url.includes('supabase.co')) {
+  if (url.includes('supabase.co')) {
+    return;
+  }
+  
+  // Skip external CDN calls
+  if (url.includes('cdn.jsdelivr.net') || 
+      url.includes('unpkg.com') || 
+      url.includes('cdnjs.cloudflare.com')) {
     return;
   }
 
@@ -96,4 +132,21 @@ self.addEventListener('fetch', event => {
       })
   );
 });
+
+// Message handler para limpiar cache manualmente
+self.addEventListener('message', event => {
+  if (event.data === 'skipWaiting') {
+    self.skipWaiting();
+  }
+  if (event.data === 'clearCache') {
+    event.waitUntil(
+      caches.keys().then(cacheNames => {
+        return Promise.all(
+          cacheNames.map(cacheName => caches.delete(cacheName))
+        );
+      })
+    );
+  }
+});
+
 
