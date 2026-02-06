@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpiar Cache - TasteScore</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+        }
+        button:hover {
+            background: #1e40af;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .instructions {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .instructions strong {
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🧹 Limpieza de Cache</h1>
+        <p>Esta página te ayudará a eliminar archivos antiguos cacheados, incluyendo <code>share-modal.js</code></p>
+        
+        <div class="instructions">
+            <strong>¿Por qué necesito esto?</strong><br>
+            Tu navegador puede tener cacheados archivos antiguos de versiones anteriores de TasteScore. Esta herramienta los eliminará.
+        </div>
+
+        <button onclick="clearAllCaches()">🗑️ Limpiar Todo el Cache</button>
+        <button onclick="unregisterServiceWorkers()">🔄 Reiniciar Service Workers</button>
+        <button onclick="clearAllAndReload()">✨ Limpieza Completa + Recargar</button>
+        
+        <div id="status" class="status"></div>
+
+        <div class="instructions" style="margin-top: 30px;">
+            <strong>Pasos adicionales si el error persiste:</strong><br>
+            1. Presiona <strong>Ctrl+Shift+Delete</strong> (Cmd+Shift+Delete en Mac)<br>
+            2. Selecciona "Imágenes y archivos en caché"<br>
+            3. Haz clic en "Borrar datos"<br>
+            4. Recarga la página con <strong>Ctrl+F5</strong>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(message, isSuccess) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + (isSuccess ? 'success' : 'error');
+            status.style.display = 'block';
+        }
+
+        async function clearAllCaches() {
+            try {
+                const cacheNames = await caches.keys();
+                await Promise.all(
+                    cacheNames.map(cacheName => caches.delete(cacheName))
+                );
+                showStatus('✅ Cache limpiado exitosamente. Eliminados ' + cacheNames.length + ' caches.', true);
+            } catch (error) {
+                showStatus('❌ Error al limpiar cache: ' + error.message, false);
+            }
+        }
+
+        async function unregisterServiceWorkers() {
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(
+                    registrations.map(registration => registration.unregister())
+                );
+                showStatus('✅ Service Workers desregistrados. Total: ' + registrations.length, true);
+            } catch (error) {
+                showStatus('❌ Error al desregistrar Service Workers: ' + error.message, false);
+            }
+        }
+
+        async function clearAllAndReload() {
+            try {
+                // Clear caches
+                const cacheNames = await caches.keys();
+                await Promise.all(
+                    cacheNames.map(cacheName => caches.delete(cacheName))
+                );
+                
+                // Unregister service workers
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(
+                    registrations.map(registration => registration.unregister())
+                );
+                
+                showStatus('✅ Limpieza completa. Redirigiendo en 2 segundos...', true);
+                
+                setTimeout(() => {
+                    window.location.href = './index.html';
+                }, 2000);
+            } catch (error) {
+                showStatus('❌ Error: ' + error.message, false);
+            }
+        }
+
+        // Auto-detect and remove share-modal.js from cache on page load
+        window.addEventListener('load', async () => {
+            try {
+                const cacheNames = await caches.keys();
+                for (const cacheName of cacheNames) {
+                    const cache = await caches.open(cacheName);
+                    const requests = await cache.keys();
+                    for (const request of requests) {
+                        if (request.url.includes('share-modal')) {
+                            await cache.delete(request);
+                            console.log('Removed share-modal.js from cache:', cacheName);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking caches:', error);
+            }
+        });
+    </script>
+</body>
+</html>
