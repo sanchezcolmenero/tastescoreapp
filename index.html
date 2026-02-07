@@ -490,17 +490,6 @@
 <!-- HOME -->
 <div class="screen active" id="homeScreen">
     <div class="container">
-        <!-- Auth prompt for non-logged users -->
-        <div class="card" id="homeAuthPrompt" style="display:none;">
-            <div style="text-align:center;margin-bottom:1rem;">
-                <img id="authPromptMascot" src="" alt="" style="width:80px;height:auto;margin-bottom:0.75rem;">
-                <h2 style="font-size:1.15rem;font-weight:600;margin-bottom:0.5rem;">¡Bienvenido a TasteScore!</h2>
-                <p style="color:var(--text-secondary);font-size:0.875rem;">Inicia sesión para guardar tus catas y acceder a todas las funciones</p>
-            </div>
-            <button class="btn btn-primary" onclick="navigateTo('auth')" style="margin-bottom:0.6rem;">Iniciar Sesión</button>
-            <button class="btn btn-secondary" onclick="isAuthMode='register'; toggleAuthMode(); navigateTo('auth');">Crear Cuenta</button>
-        </div>
-        
         <div class="card">
             <h2 style="margin-bottom:0.75rem;font-size:1.2rem;font-weight:600;text-align:center;">¡Bienvenido!</h2>
             <p style="color:var(--text-secondary);margin-bottom:1.25rem;text-align:center;font-size:0.9rem;">Crea una cata o únete a una existente.</p>
@@ -1352,8 +1341,6 @@ function showScreen(sid){
         bb.style.display='none';
         document.getElementById('headerSubtitle').textContent='Catas de productos en grupo';
         loadRecentTastings();
-        // Show auth prompt if not logged in
-        document.getElementById('homeAuthPrompt').style.display = authenticatedUser ? 'none' : 'block';
     }
     else if(['rankingScreen','favsScreen','myTastingsScreen','profileScreen','authScreen'].includes(sid)){
         bb.style.display='none';
@@ -2644,13 +2631,17 @@ async function resumeTasting(code) {
             if (authenticatedUser) {
                 // Si está autenticado, buscar por nombre o si es el creador
                 return p.name === userName || (currentTasting.userId && authenticatedUser.id === currentTasting.userId);
+            } else {
+                // Si no está autenticado, buscar por el host name
+                // (asumimos que si eres el host, es tu cata)
+                return p.isHost && p.name === currentTasting.host;
             }
-            return false;
         });
         
         if (existingParticipant) {
             // Usuario ya está en la cata
             currentUser = existingParticipant;
+            console.log('Found existing participant:', currentUser.name, 'isHost:', currentUser.isHost);
         } else {
             // Usuario nuevo - pedir nombre si no está autenticado
             if (!userName) {
