@@ -2264,59 +2264,47 @@ function finishTasting(){
 let realtimeChannel = null;
 
 async function saveTasting(){
-    // Save to Supabase
-    try {
-        console.log('Saving tasting to Supabase:', currentTasting.code);
-        
-        const tastingData = {
-            code: currentTasting.code,
-            name: currentTasting.name,
-            description: currentTasting.description || null,
-            date: currentTasting.date || null,
-            host: currentTasting.host,
-            participants: currentTasting.participants,
-            products: currentTasting.products,
-            votes: currentTasting.votes,
-            status: currentTasting.status,
-            created_at: currentTasting.createdAt,
-            user_id: currentTasting.userId || null
-        };
-        
-        console.log('Data to save:', tastingData);
-        
-        const {data, error} = await supabaseClient
-            .from('tastings')
-            .upsert(tastingData, {
-                onConflict: 'code'
-            });
-        
-        if(error) {
-            console.error('Supabase error details:', error);
-            console.error('Error message:', error.message);
-            console.error('Error details:', error.details);
-            console.error('Error hint:', error.hint);
+    // SIEMPRE guardar en localStorage primero
+    const t = JSON.parse(localStorage.getItem('tastings') || '{}');
+    t[currentTasting.code] = currentTasting;
+    localStorage.setItem('tastings', JSON.stringify(t));
+    console.log('Saved to localStorage:', currentTasting.code);
+    
+    // Intentar guardar en Supabase SOLO si está autenticado
+    if (authenticatedUser && authenticatedUser.id) {
+        try {
+            console.log('Saving tasting to Supabase:', currentTasting.code);
             
-            // Show user-friendly error
+            const tastingData = {
+                code: currentTasting.code,
+                name: currentTasting.name,
+                description: currentTasting.description || null,
+                date: currentTasting.date || null,
+                host: currentTasting.host,
+                participants: currentTasting.participants,
+                products: currentTasting.products,
+                votes: currentTasting.votes,
+                status: currentTasting.status,
+                created_at: currentTasting.createdAt,
+                user_id: currentTasting.userId || null
+            };
+            
+            const {data, error} = await supabaseClient
+                .from('tastings')
+                .upsert(tastingData, {
+                    onConflict: 'code'
+                });
+            
+            if(error) {
+                console.error('Supabase error:', error.message);
+                showToast('⚠️ Error al guardar en la nube. Guardado localmente.');
+            } else {
+                console.log('Successfully saved to Supabase');
+            }
+        } catch(e) {
+            console.error('Exception in saveTasting:', e.message);
             showToast('⚠️ Error al guardar en la nube. Guardado localmente.');
-            
-            // Fallback to localStorage
-            const t=JSON.parse(localStorage.getItem('tastings')||'{}');
-            t[currentTasting.code]=currentTasting;
-            localStorage.setItem('tastings',JSON.stringify(t));
-        } else {
-            console.log('Successfully saved to Supabase');
         }
-    } catch(e) {
-        console.error('Exception in saveTasting:', e);
-        console.error('Exception message:', e.message);
-        console.error('Exception stack:', e.stack);
-        
-        showToast('⚠️ Error al guardar. Usando almacenamiento local.');
-        
-        // Fallback to localStorage
-        const t=JSON.parse(localStorage.getItem('tastings')||'{}');
-        t[currentTasting.code]=currentTasting;
-        localStorage.setItem('tastings',JSON.stringify(t));
     }
 }
 
@@ -2490,11 +2478,13 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
     const container = document.getElementById(containerId);
     if (!container) return;
     
+    console.log('=== loadRecentTastings START ===');
     let recentTastings = [];
     
     try {
         // 1. Cargar catas archivadas (finalizadas) de localStorage
         const archived = JSON.parse(localStorage.getItem('archivedTastings') || '[]');
+        console.log('Archived tastings from localStorage:', archived.length);
         archived.forEach(t => {
             recentTastings.push({
                 code: t.code || 'N/A',
@@ -2514,8 +2504,11 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
         
         // 2. Cargar catas activas de localStorage
         const localTastings = JSON.parse(localStorage.getItem('tastings') || '{}');
+        console.log('Active tastings from localStorage:', Object.keys(localTastings).length);
+        console.log('Active tastings:', localTastings);
         Object.values(localTastings).forEach(t => {
             if (!recentTastings.find(rt => rt.code === t.code)) {
+                console.log('Adding tasting:', t.name, t.status);
                 recentTastings.push({
                     code: t.code,
                     name: t.name,
@@ -2536,6 +2529,7 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
         // 3. Cargar desde Supabase si está autenticado
         if (authenticatedUser && authenticatedUser.id) {
             try {
+                console.log('Loading from Supabase for user:', authenticatedUser.id);
                 const { data, error } = await supabaseClient
                     .from('tastings')
                     .select('*')
@@ -2546,6 +2540,7 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
                 if (error) {
                     console.error('Error loading from Supabase:', error.message);
                 } else if (data) {
+                    console.log('Loaded from Supabase:', data.length);
                     data.forEach(t => {
                         if (!recentTastings.find(rt => rt.code === t.code)) {
                             recentTastings.push({
@@ -2573,11 +2568,16 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
         console.error('Error loading tastings:', error);
     }
     
+    console.log('Total tastings before sort:', recentTastings.length);
+    
     // Ordenar por fecha (más recientes primero)
     recentTastings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
     // Limitar a las 20 más recientes
     recentTastings = recentTastings.slice(0, 20);
+    
+    console.log('Final tastings to display:', recentTastings.length);
+    console.log('=== loadRecentTastings END ===');
     
     if (!recentTastings.length) {
         container.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>No tienes catas</p></div>';
