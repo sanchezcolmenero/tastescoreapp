@@ -744,6 +744,7 @@
             <h3 style="margin:1.25rem 0 0.75rem;font-size:0.95rem;font-weight:600;">Participantes</h3>
             <div id="participantsList"></div>
             <button class="btn btn-primary" onclick="startTasting()" id="startBtn">Comenzar Cata</button>
+            <button class="btn btn-primary" onclick="continueTasting()" id="continueBtn" style="display:none;">Continuar Cata</button>
         </div>
     </div>
 </div>
@@ -1609,8 +1610,45 @@ function showWaitingRoom(){
         document.getElementById('waitingDateText').textContent=new Date(currentTasting.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
     } else { document.getElementById('waitingTastingDate').style.display='none'; }
     updateParticipantsList();
-    document.getElementById('startBtn').style.display=currentUser.isHost?'block':'none';
+    
+    // Mostrar botón apropiado según el estado y si es el host
+    const startBtn = document.getElementById('startBtn');
+    const continueBtn = document.getElementById('continueBtn');
+    
+    if (currentUser.isHost) {
+        if (currentTasting.status === 'waiting') {
+            // Cata sin empezar - mostrar "Comenzar Cata"
+            startBtn.style.display = 'block';
+            continueBtn.style.display = 'none';
+        } else if (currentTasting.status === 'adding_products') {
+            // Cata en proceso de añadir productos - mostrar "Continuar"
+            startBtn.style.display = 'none';
+            continueBtn.style.display = 'block';
+        } else {
+            // Otros estados
+            startBtn.style.display = 'none';
+            continueBtn.style.display = 'none';
+        }
+    } else {
+        // No es el host - ocultar ambos botones
+        startBtn.style.display = 'none';
+        continueBtn.style.display = 'none';
+    }
+    
     showScreen('waitingScreen');
+}
+
+function continueTasting() {
+    if (!currentUser.isHost) return;
+    
+    // Navegar según el estado actual
+    if (currentTasting.status === 'adding_products') {
+        updateAddedProducts();
+        showScreen('addProductsScreen');
+    } else if (currentTasting.status === 'voting') {
+        updateProductSelectionList();
+        showProductSelectionScreen();
+    }
 }
 
 function updateParticipantsList(){
@@ -2546,26 +2584,39 @@ async function resumeTasting(code) {
             return;
         }
         
-        // Pedir nombre si no está autenticado
-        let userName = authenticatedUser ? authenticatedUser.name : null;
-        if (!userName) {
-            userName = prompt('Introduce tu nombre para continuar:');
-            if (!userName) return;
-        }
-        
         // Configurar la cata actual
         currentTasting = tasting;
         
-        // Verificar si el usuario ya está en la cata
-        const existingParticipant = currentTasting.participants.find(p => p.name === userName);
+        // Determinar el usuario actual
+        let userName = authenticatedUser ? authenticatedUser.name : null;
+        
+        // Buscar si el usuario ya está en la cata
+        const existingParticipant = currentTasting.participants.find(p => {
+            if (authenticatedUser) {
+                // Si está autenticado, buscar por nombre o si es el creador
+                return p.name === userName || (currentTasting.userId && authenticatedUser.id === currentTasting.userId);
+            }
+            return false;
+        });
+        
         if (existingParticipant) {
+            // Usuario ya está en la cata
             currentUser = existingParticipant;
         } else {
-            // Añadir como participante
+            // Usuario nuevo - pedir nombre si no está autenticado
+            if (!userName) {
+                userName = prompt('Introduce tu nombre para continuar:');
+                if (!userName) return;
+            }
+            
+            // Añadir como participante nuevo
             currentUser = { name: userName, isHost: false };
             currentTasting.participants.push(currentUser);
             await saveTasting();
         }
+        
+        // Resetear votos del usuario
+        userVotes = {};
         
         // Suscribirse a actualizaciones en tiempo real
         subscribeToTastingUpdates();
@@ -2573,19 +2624,28 @@ async function resumeTasting(code) {
         // Navegar a la pantalla apropiada según el estado
         switch (currentTasting.status) {
             case 'waiting':
+                // Ir a la sala de espera
                 showWaitingRoom();
                 break;
+                
             case 'adding_products':
                 if (currentUser.isHost) {
+                    // El host puede continuar añadiendo productos
                     updateAddedProducts();
                     showScreen('addProductsScreen');
                 } else {
+                    // Los participantes esperan
                     showWaitingRoom();
+                    showToast('⏳ El anfitrión está añadiendo productos...');
                 }
                 break;
+                
             case 'voting':
+                // Todos pueden votar
+                updateProductSelectionList();
                 showProductSelectionScreen();
                 break;
+                
             default:
                 showWaitingRoom();
         }
