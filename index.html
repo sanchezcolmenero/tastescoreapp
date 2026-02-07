@@ -128,7 +128,18 @@
         .result-card h3 { margin-bottom:0.75rem; font-size:1.05rem; font-weight:600; word-break:break-word; }
         .rating-result { display:flex; justify-content:space-between; align-items:center; padding:0.875rem; background:var(--bg-secondary); border-radius:8px; margin-bottom:0.5rem; border:1px solid var(--border); }
         .rating-score { font-size:1.5rem; font-weight:700; color:var(--primary); flex-shrink:0; }
-        .avg-score { font-size:3rem; font-weight:700; text-align:center; margin:1.5rem 0; color:var(--primary); }
+        .avg-score { 
+            font-size:3rem; 
+            font-weight:700; 
+            text-align:center; 
+            margin:1.5rem 0; 
+            color:white; 
+            padding:0.5rem 1rem; 
+            border-radius:12px; 
+            display:inline-block; 
+            min-width:120px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
         /* BADGES */
         .status-badge { display:inline-block; padding:0.25rem 0.75rem; border-radius:6px; font-size:0.75rem; font-weight:500; border:1px solid; }
         .status-active { background:rgba(16,185,129,0.1); color:var(--success); border-color:var(--success); }
@@ -2233,8 +2244,12 @@ async function showResults(){
     currentTasting.status='finished';await saveTasting();
     const c=document.getElementById('resultsContainer');
     c.innerHTML=currentTasting.products.map(function(product){
-        const votes=currentTasting.votes[product.id]||[];const avg=votes.length?votes.reduce(function(s,v){return s+v.score;},0)/votes.length:0;
-        return '<div class="result-card"><div style="display:flex;gap:0.75rem;align-items:center;margin-bottom:1rem;"><img src="'+(product.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div><h3 style="margin:0 0 0.15rem;">'+product.name+'</h3><p style="color:var(--text-secondary);margin:0;font-size:0.825rem;">'+product.brand+'</p></div></div><div class="avg-score">'+avg.toFixed(1)+'</div>'+(votes.length?'<h4 style="margin:0.75rem 0 0.5rem;font-size:0.825rem;font-weight:600;">Puntuaciones</h4>'+votes.map(function(v){return '<div class="rating-result"><div><strong style="font-size:0.875rem;">'+v.user+'</strong>'+(v.comment?'<p style="font-size:0.775rem;color:var(--text-secondary);margin-top:0.15rem;">'+v.comment+'</p>':'')+' </div><div class="rating-score">'+v.score.toFixed(1)+'</div></div>';}).join(''):'<p style="text-align:center;color:var(--text-secondary);padding:0.75rem;">Sin votos</p>')+'</div>';
+        const votes=currentTasting.votes[product.id]||[];
+        const avg=votes.length?votes.reduce(function(s,v){return s+v.score;},0)/votes.length:0;
+        const scoreColor = getScoreColor(avg);
+        const scoreBorder = getScoreBorder(avg);
+        
+        return '<div class="result-card" style="' + scoreBorder + '"><div style="display:flex;gap:0.75rem;align-items:center;margin-bottom:1rem;"><img src="'+(product.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div><h3 style="margin:0 0 0.15rem;">'+product.name+'</h3><p style="color:var(--text-secondary);margin:0;font-size:0.825rem;">'+product.brand+'</p></div></div><div class="avg-score" style="background: ' + scoreColor + ';">'+avg.toFixed(1)+'</div>'+(votes.length?'<h4 style="margin:0.75rem 0 0.5rem;font-size:0.825rem;font-weight:600;">Puntuaciones</h4>'+votes.map(function(v){return '<div class="rating-result"><div><strong style="font-size:0.875rem;">'+v.user+'</strong>'+(v.comment?'<p style="font-size:0.775rem;color:var(--text-secondary);margin-top:0.15rem;">'+v.comment+'</p>':'')+' </div><div class="rating-score">'+v.score.toFixed(1)+'</div></div>';}).join(''):'<p style="text-align:center;color:var(--text-secondary);padding:0.75rem;">Sin votos</p>')+'</div>';
     }).join('');
     showScreen('resultsScreen');
 }
@@ -2596,6 +2611,37 @@ function getStatusInfo(status) {
     return statusMap[status] || { text: 'Desconocido', color: '#64748b' };
 }
 
+// Obtener color según puntuación (con degradados)
+function getScoreColor(score) {
+    if (score >= 0 && score < 2.5) {
+        // Rojo (0-2.5): degradado de rojo oscuro a rojo claro
+        const percent = score / 2.5;
+        return `linear-gradient(135deg, #dc2626 ${percent * 100}%, #ef4444 100%)`;
+    } else if (score >= 2.5 && score < 5) {
+        // Naranja (2.5-5): degradado de rojo a naranja
+        const percent = (score - 2.5) / 2.5;
+        return `linear-gradient(135deg, #ef4444 0%, #f97316 ${percent * 100}%)`;
+    } else if (score >= 5 && score < 7.5) {
+        // Amarillo (5-7.5): degradado de naranja a amarillo
+        const percent = (score - 5) / 2.5;
+        return `linear-gradient(135deg, #f97316 0%, #eab308 ${percent * 100}%)`;
+    } else if (score >= 7.5 && score <= 10) {
+        // Verde (7.5-10): degradado de amarillo a verde
+        const percent = (score - 7.5) / 2.5;
+        return `linear-gradient(135deg, #eab308 0%, #22c55e ${percent * 100}%)`;
+    }
+    return 'linear-gradient(135deg, #64748b, #94a3b8)'; // Gris por defecto
+}
+
+// Obtener estilo de borde según puntuación
+function getScoreBorder(score) {
+    const hasPerfectScore = score === 10;
+    if (hasPerfectScore) {
+        return 'border: 3px solid transparent; background-image: linear-gradient(white, white), linear-gradient(135deg, #fbbf24, #f59e0b, #fbbf24); background-origin: border-box; background-clip: padding-box, border-box; box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);';
+    }
+    return '';
+}
+
 function viewArchivedTasting(code) {
     const archived = JSON.parse(localStorage.getItem('archivedTastings') || '[]');
     const tasting = archived.find(t => t.code === code);
@@ -2607,7 +2653,10 @@ function viewArchivedTasting(code) {
     c.innerHTML = tasting.products.map(function(product) {
         const votes = tasting.votes[product.id] || [];
         const avg = votes.length ? votes.reduce(function(s,v) { return s + v.score; }, 0) / votes.length : 0;
-        return '<div class="result-card"><div style="display:flex;gap:0.75rem;align-items:center;margin-bottom:1rem;"><img src="' + (product.image || '') + '" class="product-image" onerror="this.style.display=\'none\'"><div><h3 style="margin:0 0 0.15rem;">' + product.name + '</h3><p style="color:var(--text-secondary);margin:0;font-size:0.825rem;">' + product.brand + '</p></div></div><div class="avg-score">' + avg.toFixed(1) + '</div>' + (votes.length ? '<h4 style="margin:0.75rem 0 0.5rem;font-size:0.825rem;font-weight:600;">Puntuaciones</h4>' + votes.map(function(v) { return '<div class="rating-result"><div><strong style="font-size:0.875rem;">' + v.user + '</strong>' + (v.comment ? '<p style="font-size:0.775rem;color:var(--text-secondary);margin-top:0.15rem;">' + v.comment + '</p>' : '') + '</div><div class="rating-score">' + v.score.toFixed(1) + '</div></div>'; }).join('') : '<p style="text-align:center;color:var(--text-secondary);padding:0.75rem;">Sin votos</p>') + '</div>';
+        const scoreColor = getScoreColor(avg);
+        const scoreBorder = getScoreBorder(avg);
+        
+        return '<div class="result-card" style="' + scoreBorder + '"><div style="display:flex;gap:0.75rem;align-items:center;margin-bottom:1rem;"><img src="' + (product.image || '') + '" class="product-image" onerror="this.style.display=\'none\'"><div><h3 style="margin:0 0 0.15rem;">' + product.name + '</h3><p style="color:var(--text-secondary);margin:0;font-size:0.825rem;">' + product.brand + '</p></div></div><div class="avg-score" style="background: ' + scoreColor + ';">' + avg.toFixed(1) + '</div>' + (votes.length ? '<h4 style="margin:0.75rem 0 0.5rem;font-size:0.825rem;font-weight:600;">Puntuaciones</h4>' + votes.map(function(v) { return '<div class="rating-result"><div><strong style="font-size:0.875rem;">' + v.user + '</strong>' + (v.comment ? '<p style="font-size:0.775rem;color:var(--text-secondary);margin-top:0.15rem;">' + v.comment + '</p>' : '') + '</div><div class="rating-score">' + v.score.toFixed(1) + '</div></div>'; }).join('') : '<p style="text-align:center;color:var(--text-secondary);padding:0.75rem;">Sin votos</p>') + '</div>';
     }).join('');
     showScreen('archiveScreen');
 }
@@ -2719,8 +2768,12 @@ function viewArchiveFromIndex(i){
     document.getElementById('archiveDate').textContent='Finalizada el '+new Date(t.archivedAt).toLocaleDateString('es-ES');
     const c=document.getElementById('archiveResults');
     c.innerHTML=t.products.map(function(product){
-        const votes=t.votes[product.id]||[];const avg=votes.length?votes.reduce(function(s,v){return s+v.score;},0)/votes.length:0;
-        return '<div class="result-card"><div style="display:flex;gap:0.75rem;align-items:center;margin-bottom:1rem;"><img src="'+(product.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div><h3 style="margin:0 0 0.15rem;">'+product.name+'</h3><p style="color:var(--text-secondary);margin:0;font-size:0.825rem;">'+product.brand+'</p></div></div><div class="avg-score">'+avg.toFixed(1)+'</div>'+(votes.length?'<h4 style="margin:0.75rem 0 0.5rem;font-size:0.825rem;font-weight:600;">Puntuaciones</h4>'+votes.map(function(v){return '<div class="rating-result"><div><strong style="font-size:0.875rem;">'+v.user+'</strong>'+(v.comment?'<p style="font-size:0.775rem;color:var(--text-secondary);margin-top:0.15rem;">'+v.comment+'</p>':'')+' </div><div class="rating-score">'+v.score.toFixed(1)+'</div></div>';}).join(''):'<p style="text-align:center;color:var(--text-secondary);padding:0.75rem;">Sin votos</p>')+'</div>';
+        const votes=t.votes[product.id]||[];
+        const avg=votes.length?votes.reduce(function(s,v){return s+v.score;},0)/votes.length:0;
+        const scoreColor = getScoreColor(avg);
+        const scoreBorder = getScoreBorder(avg);
+        
+        return '<div class="result-card" style="' + scoreBorder + '"><div style="display:flex;gap:0.75rem;align-items:center;margin-bottom:1rem;"><img src="'+(product.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div><h3 style="margin:0 0 0.15rem;">'+product.name+'</h3><p style="color:var(--text-secondary);margin:0;font-size:0.825rem;">'+product.brand+'</p></div></div><div class="avg-score" style="background: ' + scoreColor + ';">'+avg.toFixed(1)+'</div>'+(votes.length?'<h4 style="margin:0.75rem 0 0.5rem;font-size:0.825rem;font-weight:600;">Puntuaciones</h4>'+votes.map(function(v){return '<div class="rating-result"><div><strong style="font-size:0.875rem;">'+v.user+'</strong>'+(v.comment?'<p style="font-size:0.775rem;color:var(--text-secondary);margin-top:0.15rem;">'+v.comment+'</p>':'')+' </div><div class="rating-score">'+v.score.toFixed(1)+'</div></div>';}).join(''):'<p style="text-align:center;color:var(--text-secondary);padding:0.75rem;">Sin votos</p>')+'</div>';
     }).join('');
     showScreen('archiveScreen');
 }
