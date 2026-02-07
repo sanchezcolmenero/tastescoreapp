@@ -515,7 +515,6 @@
             </h3>
             <div id="recentTastingsList"></div>
         </div>
-        </div>
     </div>
 </div>
 
@@ -2491,9 +2490,9 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
     const container = document.getElementById(containerId);
     if (!container) return;
     
+    let recentTastings = [];
+    
     try {
-        let recentTastings = [];
-        
         // 1. Cargar catas archivadas (finalizadas) de localStorage
         const archived = JSON.parse(localStorage.getItem('archivedTastings') || '[]');
         archived.forEach(t => {
@@ -2535,7 +2534,7 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
         });
         
         // 3. Cargar desde Supabase si está autenticado
-        if (authenticatedUser) {
+        if (authenticatedUser && authenticatedUser.id) {
             try {
                 const { data, error } = await supabaseClient
                     .from('tastings')
@@ -2544,7 +2543,9 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
                     .order('created_at', { ascending: false })
                     .limit(20);
                 
-                if (!error && data) {
+                if (error) {
+                    console.error('Error loading from Supabase:', error.message);
+                } else if (data) {
                     data.forEach(t => {
                         if (!recentTastings.find(rt => rt.code === t.code)) {
                             recentTastings.push({
@@ -2565,46 +2566,37 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
                     });
                 }
             } catch (err) {
-                console.error('Error loading from Supabase:', err);
+                console.error('Exception loading from Supabase:', err.message || err);
             }
         }
-        
-        // Ordenar por fecha (más recientes primero)
-        recentTastings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        
-        // Limitar a las 20 más recientes
-        recentTastings = recentTastings.slice(0, 20);
-        
-        if (!recentTastings.length) {
-            container.innerHTML = '<div class="empty-state" style="padding:1.5rem 0;"><div class="icon">📝</div><p>No tienes catas</p></div>';
-            return;
-        }
-        
-        // Renderizar con diseño horizontal
-        container.innerHTML = recentTastings.map(t => {
-            const statusInfo = getStatusInfo(t.status);
-            const createdDate = new Date(t.createdAt).toLocaleDateString('es-ES', { 
-                day: 'numeric', 
-                month: 'short',
-                year: 'numeric'
-            });
-            
-            const onclick = t.isArchived ? `viewArchivedTasting('${t.code}')` : `resumeTasting('${t.code}')`;
-            
-            return `
-                <div class="recent-tasting-item-new" onclick="${onclick}">
-                    <div class="recent-tasting-name">${t.name}</div>
-                    <div class="recent-tasting-date">📅 ${createdDate}</div>
-                    <div class="status-badge status-${t.status}">${statusInfo.text}</div>
-                    <div class="recent-tasting-arrow">›</div>
-                </div>
-            `;
-        }).join('');
-        
     } catch (error) {
-        console.error('Error loading recent tastings:', error);
-        container.innerHTML = '<div class="empty-state" style="padding:1.5rem 0;"><div class="icon">⚠️</div><p>Error al cargar catas</p></div>';
+        console.error('Error loading tastings:', error);
     }
+    
+    // Ordenar por fecha (más recientes primero)
+    recentTastings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    // Limitar a las 20 más recientes
+    recentTastings = recentTastings.slice(0, 20);
+    
+    if (!recentTastings.length) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>No tienes catas</p></div>';
+        return;
+    }
+    
+    // Renderizar con diseño horizontal
+    container.innerHTML = recentTastings.map(t => {
+        const statusInfo = getStatusInfo(t.status);
+        const createdDate = new Date(t.createdAt).toLocaleDateString('es-ES', { 
+            day: 'numeric', 
+            month: 'short',
+            year: 'numeric'
+        });
+        
+        const onclick = t.isArchived ? `viewArchivedTasting('${t.code}')` : `resumeTasting('${t.code}')`;
+        
+        return `<div class="recent-tasting-item-new" onclick="${onclick}"><div class="recent-tasting-name">${t.name}</div><div class="recent-tasting-date">📅 ${createdDate}</div><div class="status-badge status-${t.status}">${statusInfo.text}</div><div class="recent-tasting-arrow">›</div></div>`;
+    }).join('');
 }
 
 function getStatusInfo(status) {
