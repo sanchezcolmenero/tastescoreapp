@@ -136,31 +136,31 @@
         }
         .rating-value-popup {
             position: absolute;
-            top: -35px;
+            top: -28px;
             left: 50%;
             transform: translate(-50%, 0);
             background: white;
             border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 0.3rem 0.6rem;
-            font-size: 1rem;
+            border-radius: 6px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.95rem;
             font-weight: 700;
             color: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
             pointer-events: none;
             z-index: 10;
         }
         .rating-value-popup::after {
             content: '';
             position: absolute;
-            bottom: -5px;
+            bottom: -4px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-top: 5px solid #e5e7eb;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid #e5e7eb;
         }
         .rating-value { 
             text-align:center; 
@@ -390,6 +390,10 @@
         .share-actions button { padding:0.7rem; border-radius:8px; border:1px solid var(--border); background:var(--bg-secondary); cursor:pointer; font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:500; color:var(--text); transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:0.4rem; }
         .share-actions button:hover { border-color:var(--primary); color:var(--primary); background:#fff; }
         .share-close { display:block; width:100%; margin-top:0.85rem; padding:0.6rem; border:none; background:none; color:var(--text-secondary); font-size:0.82rem; cursor:pointer; font-family:'Inter',sans-serif; }
+        /* MODAL OVERLAY */
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:3000; display:flex; align-items:center; justify-content:center; padding:1rem; }
+        .modal-content { background:#fff; border-radius:16px; padding:1.5rem; max-width:400px; width:100%; box-shadow:0 8px 32px rgba(0,0,0,0.2); animation:modalSlideIn 0.2s ease-out; }
+        @keyframes modalSlideIn { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
         /* RECENT TASTINGS - NUEVO DISEÑO HORIZONTAL */
         .recent-tasting-item-new { 
             background:var(--bg); 
@@ -1118,6 +1122,21 @@
 <!-- INVITE FAB (shown during active tasting) -->
 <button class="invite-fab" id="inviteFab" onclick="openShareModal()">+</button>
 
+<!-- CONFIRM DELETE MODAL -->
+<div class="modal-overlay" id="confirmDeleteModal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-icon" style="width:60px;height:60px;margin:0 auto 1rem;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;">
+            <span style="font-size:2rem;">🗑️</span>
+        </div>
+        <h3 style="margin:0 0 0.5rem;font-size:1.1rem;font-weight:600;text-align:center;">Eliminar Producto</h3>
+        <p id="confirmDeleteText" style="color:var(--text-secondary);margin:0 0 1.5rem;text-align:center;font-size:0.9rem;line-height:1.5;"></p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <button class="btn btn-secondary" onclick="closeConfirmDeleteModal()">Cancelar</button>
+            <button class="btn" onclick="confirmDeleteProduct()" style="background:var(--error);color:white;border-color:var(--error);">Eliminar</button>
+        </div>
+    </div>
+</div>
+
 <!-- SHARE MODAL -->
 <div class="share-overlay" id="shareOverlay">
     <div class="share-sheet">
@@ -1141,6 +1160,22 @@
         <div style="width:40px;height:40px;border-radius:10px;background:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><img id="bannerMascot" src="" alt="" style="width:32px;height:32px;"></div>
         <div style="flex:1;min-width:0;"><p style="font-weight:600;font-size:0.85rem;margin:0;color:#1a1a1a;">Añadir TasteScore a tu móvil</p><p style="font-size:0.75rem;color:#64748b;margin:0.1rem 0 0;">Acceso rápido desde pantalla de inicio</p></div>
         <button id="installBtn" style="background:#2563eb;color:white;border:none;padding:0.5rem 0.9rem;border-radius:8px;font-weight:600;font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;">Añadir</button>
+        <button id="dismissBanner" style="background:none;border:none;color:#94a3b8;font-size:1.1rem;cursor:pointer;">✕</button>
+    </div>
+</div>
+
+<!-- UPDATE AVAILABLE BANNER -->
+<div id="updateBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:0.875rem;z-index:10000;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+    <div style="max-width:640px;margin:0 auto;display:flex;align-items:center;gap:0.75rem;">
+        <div style="font-size:1.5rem;">🎉</div>
+        <div style="flex:1;min-width:0;">
+            <p style="font-weight:600;font-size:0.85rem;margin:0;">Nueva versión disponible</p>
+            <p style="font-size:0.75rem;opacity:0.9;margin:0.1rem 0 0;">Actualiza para obtener las últimas mejoras</p>
+        </div>
+        <button id="updateBtn" onclick="updateApp()" style="background:white;color:#059669;border:none;padding:0.5rem 0.9rem;border-radius:8px;font-weight:600;font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;">Actualizar</button>
+        <button onclick="dismissUpdateBanner()" style="background:none;border:none;color:white;font-size:1.1rem;cursor:pointer;opacity:0.8;">✕</button>
+    </div>
+</div>
         <button id="dismissBanner" style="background:none;border:none;color:#94a3b8;font-size:1.1rem;cursor:pointer;">✕</button>
     </div>
 </div>
@@ -2355,10 +2390,12 @@ let longPressProductId = null;
 function startLongPress(productId) {
     longPressProductId = productId;
     longPressTimer = setTimeout(function() {
-        // Mantener pulsado durante 800ms → mostrar confirmación de eliminar
+        // Mostrar modal de confirmación
         const product = currentTasting.products.find(p => p.id === productId);
-        if (product && confirm('¿Eliminar "' + product.name + '" de la cata?\n\nEsto eliminará también todos los votos de este producto.')) {
-            deleteProductFromVoting(productId);
+        if (product) {
+            document.getElementById('confirmDeleteText').textContent = 
+                `¿Eliminar "${product.name}"?\n\nEsto eliminará también todos los votos de este producto.`;
+            document.getElementById('confirmDeleteModal').style.display = 'flex';
         }
         longPressTimer = null;
     }, 800);
@@ -2371,10 +2408,29 @@ function cancelLongPress() {
     }
 }
 
-async function deleteProductFromVoting(productId) {
+function closeConfirmDeleteModal() {
+    document.getElementById('confirmDeleteModal').style.display = 'none';
+    longPressProductId = null;
+}
+
+async function confirmDeleteProduct() {
+    if (!longPressProductId) return;
+    
     // Eliminar producto
-    currentTasting.products = currentTasting.products.filter(p => p.id !== productId);
+    currentTasting.products = currentTasting.products.filter(p => p.id !== longPressProductId);
     // Eliminar votos del producto
+    delete currentTasting.votes[longPressProductId];
+    delete userVotes[longPressProductId];
+    
+    await saveTasting();
+    updateProductSelectionList();
+    showToast('Producto eliminado');
+    closeConfirmDeleteModal();
+}
+
+async function deleteProductFromVoting(productId) {
+    // Esta función ya no se usa, pero la mantenemos por compatibilidad
+    currentTasting.products = currentTasting.products.filter(p => p.id !== productId);
     delete currentTasting.votes[productId];
     delete userVotes[productId];
     
@@ -3169,7 +3225,76 @@ async function deleteAccount(){
 initApp();
 
 // ===== PWA =====
-if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+// Service Worker registration with update detection
+if('serviceWorker' in navigator){
+    window.addEventListener('load',function(){
+        navigator.serviceWorker.register('sw.js')
+            .then(function(registration){
+                console.log('SW registered');
+                
+                // Check for updates every 30 seconds
+                setInterval(function(){
+                    registration.update();
+                }, 30000);
+                
+                // Listen for new service worker
+                registration.addEventListener('updatefound', function(){
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', function(){
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // New version available
+                            showUpdateBanner();
+                        }
+                    });
+                });
+            })
+            .catch(function(err){
+                console.log('SW registration failed:', err);
+            });
+        
+        // Listen for messages from service worker
+        navigator.serviceWorker.addEventListener('message', function(event){
+            if (event.data && event.data.type === 'UPDATE_AVAILABLE') {
+                showUpdateBanner();
+            }
+        });
+    });
+}
+
+function showUpdateBanner() {
+    const banner = document.getElementById('updateBanner');
+    if (banner) {
+        banner.style.display = 'block';
+    }
+}
+
+function dismissUpdateBanner() {
+    document.getElementById('updateBanner').style.display = 'none';
+}
+
+function updateApp() {
+    // Clear cache and reload
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for (let registration of registrations) {
+                registration.unregister();
+            }
+        });
+        
+        caches.keys().then(function(cacheNames) {
+            return Promise.all(
+                cacheNames.map(function(cacheName) {
+                    return caches.delete(cacheName);
+                })
+            );
+        }).then(function() {
+            window.location.reload(true);
+        });
+    } else {
+        window.location.reload(true);
+    }
+}
+
 let deferredPrompt=null;
 const installBanner=document.getElementById('installBanner');
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredPrompt=e;if(!sessionStorage.getItem('pwa-banner-dismissed'))installBanner.style.display='block';});

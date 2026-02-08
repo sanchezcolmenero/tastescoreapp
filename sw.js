@@ -1,5 +1,5 @@
-// Service Worker for TasteScore PWA - Anti share-modal.js
-const CACHE_NAME = 'tastescore-v3'; // Incrementado para forzar limpieza
+// Service Worker for TasteScore PWA - Anti share-modal.js + Auto-update
+const CACHE_NAME = 'tastescore-v4'; // Incrementar con cada actualización
 const urlsToCache = [
   './',
   './index.html',
@@ -11,7 +11,7 @@ const BLOCKED_FILES = ['share-modal.js', 'share-modal'];
 
 // Install event - cache resources
 self.addEventListener('install', event => {
-  console.log('[SW] Installing service worker v3');
+  console.log('[SW] Installing service worker v4');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -22,12 +22,13 @@ self.addEventListener('install', event => {
         console.error('[SW] Cache install failed:', err);
       })
   );
+  // Force the waiting service worker to become active
   self.skipWaiting();
 });
 
 // Activate event - clean old caches AND remove share-modal.js
 self.addEventListener('activate', event => {
-  console.log('[SW] Activating service worker v3');
+  console.log('[SW] Activating service worker v4');
   event.waitUntil(
     Promise.all([
       // Delete ALL old caches
@@ -149,4 +150,19 @@ self.addEventListener('message', event => {
   }
 });
 
+// Notify clients when a new version is available
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    self.clients.claim().then(() => {
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'UPDATE_AVAILABLE',
+            version: CACHE_NAME
+          });
+        });
+      });
+    })
+  );
+});
 
