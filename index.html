@@ -100,11 +100,75 @@
         .product-grid { display:grid; gap:0.75rem; }
         /* RATING */
         .rating-container { margin:2rem 0; }
-        .rating-slider-container { position:relative; padding:1.5rem 0; }
-        .rating-slider { width:100%; height:6px; border-radius:3px; background:var(--border); outline:none; -webkit-appearance:none; appearance:none; }
-        .rating-slider::-webkit-slider-thumb { -webkit-appearance:none; width:28px; height:28px; border-radius:50%; background:var(--primary); cursor:pointer; border:none; box-shadow:0 2px 8px rgba(37,99,235,0.3); }
-        .rating-slider::-moz-range-thumb { width:28px; height:28px; border-radius:50%; background:var(--primary); cursor:pointer; border:none; box-shadow:0 2px 8px rgba(37,99,235,0.3); }
-        .rating-value { text-align:center; font-size:3rem; font-weight:700; margin:1rem 0; color:var(--primary); }
+        .rating-slider-container { position:relative; padding:3rem 0 1.5rem; }
+        .rating-slider { 
+            width:100%; 
+            height:8px; 
+            border-radius:4px; 
+            background:linear-gradient(to right, #dc2626 0%, #ef4444 12.5%, #f97316 25%, #f97316 50%, #eab308 62.5%, #22c55e 100%); 
+            outline:none; 
+            -webkit-appearance:none; 
+            appearance:none; 
+        }
+        .rating-slider::-webkit-slider-thumb { 
+            -webkit-appearance:none; 
+            width:32px; 
+            height:32px; 
+            border-radius:50%; 
+            background:white; 
+            cursor:pointer; 
+            border:3px solid var(--primary); 
+            box-shadow:0 2px 12px rgba(0,0,0,0.2); 
+            transition: all 0.2s;
+        }
+        .rating-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow:0 4px 16px rgba(0,0,0,0.3);
+        }
+        .rating-slider::-moz-range-thumb { 
+            width:32px; 
+            height:32px; 
+            border-radius:50%; 
+            background:white; 
+            cursor:pointer; 
+            border:3px solid var(--primary); 
+            box-shadow:0 2px 12px rgba(0,0,0,0.2); 
+        }
+        .rating-value-popup {
+            position: absolute;
+            top: -45px;
+            left: 50%;
+            transform: translate(-50%, 0);
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.4rem 0.8rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            pointer-events: none;
+            z-index: 10;
+        }
+        .rating-value-popup::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid #e5e7eb;
+        }
+        .rating-value { 
+            text-align:center; 
+            font-size:3rem; 
+            font-weight:700; 
+            margin:1rem 0; 
+            transition: all 0.3s ease;
+        }
         .rating-labels { display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-tertiary); margin-top:0.5rem; }
         /* PARTICIPANTS */
         .participant { display:flex; align-items:center; padding:0.7rem; background:var(--bg-secondary); border-radius:8px; margin-bottom:0.5rem; border:1px solid var(--border); gap:0.75rem; }
@@ -124,7 +188,80 @@
         .search-result-item:hover { background:var(--bg-tertiary); border-color:var(--primary); }
         .search-result-item .product-info h4,.search-result-item .product-info strong { font-weight:600; font-size:0.9rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; }
         /* RESULTS */
-        .result-card { background:var(--bg); border-radius:12px; padding:1.5rem; margin-bottom:1rem; border:1px solid var(--border); box-shadow:0 1px 3px var(--shadow); }
+        .result-card { 
+            background:var(--bg); 
+            border-radius:12px; 
+            padding:1.5rem; 
+            margin-bottom:1rem; 
+            border:1px solid var(--border); 
+            box-shadow:0 1px 3px var(--shadow); 
+            transition: all 0.3s ease;
+        }
+        .result-card.collapsed {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+        }
+        .result-card.collapsed:hover {
+            background: var(--bg-secondary);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+        .result-card-compact {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .result-card-compact .product-image {
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+        }
+        .result-card-compact-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .result-card-compact-info h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 0 0 0.15rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .result-card-compact-info p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+        .result-card-compact-score {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            padding: 0.3rem 0.7rem;
+            border-radius: 6px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+            flex-shrink: 0;
+        }
+        .result-card-arrow {
+            font-size: 1.2rem;
+            color: var(--text-tertiary);
+            transition: transform 0.3s;
+            flex-shrink: 0;
+        }
+        .result-card.collapsed .result-card-arrow {
+            transform: rotate(0deg);
+        }
+        .result-card:not(.collapsed) .result-card-arrow {
+            transform: rotate(90deg);
+        }
+        .result-card-details {
+            display: none;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+        .result-card:not(.collapsed) .result-card-details {
+            display: block;
+        }
         .result-card h3 { margin-bottom:0.75rem; font-size:1.05rem; font-weight:600; word-break:break-word; }
         .rating-result { display:flex; justify-content:space-between; align-items:center; padding:0.875rem; background:var(--bg-secondary); border-radius:8px; margin-bottom:0.5rem; border:1px solid var(--border); }
         .rating-score { font-size:1.5rem; font-weight:700; color:var(--primary); flex-shrink:0; }
@@ -853,14 +990,12 @@
 <!-- PRODUCT SELECTION (during voting) -->
 <div class="screen" id="productSelectionScreen">
     <div class="container">
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
-                <h2 class="section-title" style="margin:0;">Selecciona Producto</h2>
-                <button class="btn btn-secondary btn-small" onclick="showEditMode()" id="editBtn" style="display:none;">✏️</button>
-            </div>
+        <div class="card" style="position:relative;">
+            <button onclick="showEditMode()" id="editBtn" style="display:none;position:absolute;top:1rem;right:1rem;width:36px;height:36px;border-radius:50%;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);font-size:0.9rem;cursor:pointer;transition:all 0.2s;padding:0;display:flex;align-items:center;justify-content:center;z-index:10;" onmouseover="this.style.background='var(--primary)';this.style.color='white';this.style.borderColor='var(--primary)';" onmouseout="this.style.background='var(--bg-secondary)';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)';" title="Editar cata">✏️</button>
+            <h2 class="section-title" style="margin:0 0 1.25rem;">Selecciona Producto</h2>
             <div class="product-grid" id="productSelectionList"></div>
             <div class="stats-bar"><p><strong id="votedProductsCount">0</strong> de <strong id="totalProductsCount">0</strong> productos votados</p></div>
-            <button class="btn btn-primary" onclick="showResults()" style="margin-top:1rem;">Ver Resultados</button>
+            <button class="btn btn-primary" onclick="confirmFinishTasting()" style="margin-top:1rem;">Finalizar Cata</button>
         </div>
     </div>
 </div>
@@ -915,15 +1050,16 @@
                 <h3 style="font-weight:600;font-size:0.95rem;">Votando Producto</h3>
                 <span class="status-badge status-active">En votación</span>
             </div>
-            <div class="product-item" style="background:var(--bg-secondary);border-color:var(--primary);margin-bottom:1.5rem;cursor:default;">
+            <div class="product-item" style="background:var(--bg-secondary);border-color:var(--primary);margin-bottom:1.5rem;cursor:default;display:flex;align-items:center;">
                 <img id="votingProductImage" class="product-image" src="" alt="">
-                <div class="product-info"><h4 id="votingProductName"></h4><p id="votingProductBrand"></p></div>
+                <div class="product-info" style="flex:1;"><h4 id="votingProductName"></h4><p id="votingProductBrand"></p></div>
+                <div id="votingProductScore" style="font-size:1.1rem;font-weight:600;color:white;padding:0.3rem 0.7rem;border-radius:6px;text-shadow:0 1px 2px rgba(0,0,0,0.15);flex-shrink:0;display:none;"></div>
             </div>
             <div class="rating-container">
                 <label style="font-weight:500;display:block;margin-bottom:0.5rem;font-size:0.875rem;">Tu Puntuación</label>
-                <div class="rating-value" id="ratingValue">5.0</div>
                 <div class="rating-slider-container">
-                    <input type="range" id="ratingSlider" class="rating-slider" min="0" max="10" step="0.1" value="5.0" oninput="updateRatingValue()">
+                    <div class="rating-value-popup" id="ratingValuePopup" style="display:none;">5.0</div>
+                    <input type="range" id="ratingSlider" class="rating-slider" min="0" max="10" step="0.1" value="5.0" oninput="updateRatingValue()" onmousedown="showRatingPopup()" onmouseup="hideRatingPopup()" ontouchstart="showRatingPopup()" ontouchend="hideRatingPopup()">
                     <div class="rating-labels"><span>0</span><span>5</span><span>10</span></div>
                 </div>
             </div>
@@ -937,9 +1073,21 @@
 <!-- WAITING VOTES -->
 <div class="screen" id="waitingVotesScreen">
     <div class="container">
-        <div class="card" style="margin-top:1rem;text-align:center;">
-            <h2 style="margin-bottom:0.75rem;font-size:1.1rem;font-weight:600;">Voto Enviado ✓</h2>
-            <p style="color:var(--text-secondary);margin-bottom:1.5rem;">Esperando a que todos voten...</p>
+        <div class="card" style="margin-top:1rem;">
+            <h2 style="margin-bottom:0.75rem;font-size:1.1rem;font-weight:600;text-align:center;">Voto Enviado ✓</h2>
+            
+            <!-- Mostrar producto votado con puntuación -->
+            <div id="votedProductCard" style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.75rem;">
+                <img id="votedProductImage" class="product-image" src="" alt="" style="width:50px;height:50px;flex-shrink:0;">
+                <div style="flex:1;min-width:0;">
+                    <h4 id="votedProductName" style="font-size:0.9rem;font-weight:600;margin:0 0 0.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></h4>
+                    <p id="votedProductBrand" style="font-size:0.75rem;color:var(--text-secondary);margin:0;"></p>
+                </div>
+                <div id="votedProductScore" style="font-size:1.1rem;font-weight:600;color:white;padding:0.3rem 0.7rem;border-radius:6px;text-shadow:0 1px 2px rgba(0,0,0,0.15);flex-shrink:0;"></div>
+                <button onclick="editVote()" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:0.9rem;padding:0.25rem;flex-shrink:0;" title="Editar voto">✏️</button>
+            </div>
+            
+            <p style="color:var(--text-secondary);margin-bottom:1.5rem;text-align:center;">Esperando a que todos voten...</p>
             <div class="loading"><div style="font-size:2.5rem;">⏳</div><p style="margin-top:0.75rem;"><strong id="waitingVotedCount">0</strong> de <strong id="waitingVotedTotal">0</strong> votos</p></div>
         </div>
     </div>
@@ -2185,18 +2333,83 @@ function updateProductSelectionList(){
     document.getElementById('totalProductsCount').textContent=currentTasting.products.length;
     c.innerHTML=currentTasting.products.map(function(p){
         const voted=userVotes[p.id];
-        return '<div class="product-item '+(voted?'selected':'')+'" onclick="'+(voted?'':'selectProduct(\''+p.id+'\')')+'" style="'+(voted?'cursor:default;opacity:0.6;':'')+'" ><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+p.name+'</h4><p>'+p.brand+'</p></div>'+(voted?'<span style="color:var(--success);font-weight:600;font-size:0.9rem;flex-shrink:0;">✓</span>':'')+' </div>';
+        const userVote = voted ? (currentTasting.votes[p.id] || []).find(v => v.user === currentUser.name) : null;
+        const voteScore = userVote ? userVote.score : 0;
+        const scoreColor = userVote ? getScoreColor(voteScore) : '';
+        
+        return `<div class="product-item ${voted ? 'selected' : ''}" onclick="${voted ? 'selectProduct(\'' + p.id + '\')' : 'selectProduct(\'' + p.id + '\')'}" style="${voted ? 'cursor:pointer;' : ''}">
+            <img src="${p.image || ''}" class="product-image" onerror="this.style.display='none'">
+            <div class="product-info"><h4>${p.name}</h4><p>${p.brand}</p></div>
+            ${voted ? `<div style="font-size:1.1rem;font-weight:600;color:white;padding:0.3rem 0.7rem;border-radius:6px;text-shadow:0 1px 2px rgba(0,0,0,0.15);flex-shrink:0;background:${scoreColor};">${voteScore.toFixed(1)}</div>` : ''}
+            ${voted && currentTasting.status !== 'finished' ? '<span style="color:var(--text-secondary);font-size:0.8rem;margin-left:0.5rem;flex-shrink:0;">✏️</span>' : ''}
+        </div>`;
     }).join('');
 }
 function selectProduct(id){selectedProductId=id;showVotingScreen();}
-function updateRatingValue(){document.getElementById('ratingValue').textContent=parseFloat(document.getElementById('ratingSlider').value).toFixed(1);}
+function updateRatingValue(){
+    const value = parseFloat(document.getElementById('ratingSlider').value);
+    const popupEl = document.getElementById('ratingValuePopup');
+    const productScoreEl = document.getElementById('votingProductScore');
+    
+    // Obtener color
+    let bgColor;
+    if (value < 2.5) bgColor = '#dc2626';
+    else if (value < 5) bgColor = '#f97316';
+    else if (value < 7.5) bgColor = '#eab308';
+    else bgColor = '#22c55e';
+    
+    // Actualizar popup
+    if (popupEl) {
+        popupEl.textContent = value.toFixed(1);
+        popupEl.style.background = bgColor;
+        popupEl.style.borderColor = bgColor;
+        
+        // Posicionar el popup según el valor del slider
+        const percent = (value / 10) * 100;
+        popupEl.style.left = `calc(${percent}% - 2px)`;
+    }
+    
+    // Actualizar puntuación al lado del producto
+    if (productScoreEl) {
+        productScoreEl.textContent = value.toFixed(1);
+        productScoreEl.style.background = bgColor;
+        productScoreEl.style.display = 'block';
+    }
+}
+
+function showRatingPopup() {
+    const popup = document.getElementById('ratingValuePopup');
+    if (popup) {
+        popup.style.display = 'block';
+        updateRatingValue();
+    }
+}
+
+function hideRatingPopup() {
+    const popup = document.getElementById('ratingValuePopup');
+    if (popup) {
+        popup.style.display = 'none';
+    }
+}
 function showVotingScreen(){
     const p=currentTasting.products.find(function(x){return x.id===selectedProductId;});if(!p)return;
     document.getElementById('votingProductName').textContent=p.name;
     document.getElementById('votingProductBrand').textContent=p.brand;
     document.getElementById('votingProductImage').src=p.image||'';
-    document.getElementById('ratingSlider').value=5.0;updateRatingValue();document.getElementById('voteComment').value='';
-    updateVoteCount(); showScreen('votingScreen');
+    
+    // Cargar voto existente si ya votaste este producto
+    const existingVote = (currentTasting.votes[selectedProductId] || []).find(v => v.user === currentUser.name);
+    if (existingVote) {
+        document.getElementById('ratingSlider').value = existingVote.score;
+        document.getElementById('voteComment').value = existingVote.comment || '';
+    } else {
+        document.getElementById('ratingSlider').value = 5.0;
+        document.getElementById('voteComment').value = '';
+    }
+    
+    updateRatingValue();
+    updateVoteCount(); 
+    showScreen('votingScreen');
 }
 async function submitVote(){
     const score=parseFloat(document.getElementById('ratingSlider').value);
@@ -2207,7 +2420,25 @@ async function submitVote(){
     currentTasting.votes[selectedProductId].push({user:currentUser.name,score:score,comment:comment});
     userVotes[selectedProductId]=true;
     updateGlobalRanking(product.name,product.brand,product.image,score);
+    
+    // Actualizar tarjeta de producto votado
+    document.getElementById('votedProductImage').src = product.image || '';
+    document.getElementById('votedProductName').textContent = product.name;
+    document.getElementById('votedProductBrand').textContent = product.brand;
+    const scoreEl = document.getElementById('votedProductScore');
+    scoreEl.textContent = score.toFixed(1);
+    scoreEl.style.background = getScoreColor(score);
+    
     await saveTasting(); showProductSelectionScreen();
+}
+
+function editVote() {
+    if (currentTasting.status === 'finished') {
+        alert('La cata ya ha finalizado. No se pueden editar votos.');
+        return;
+    }
+    // Volver a la pantalla de votación
+    showVotingScreen();
 }
 function updateVoteCount(){const votes=currentTasting.votes[selectedProductId]||[];document.getElementById('votedCount').textContent=votes.length;document.getElementById('votedTotal').textContent=currentTasting.participants.length;}
 
@@ -2240,18 +2471,72 @@ async function removeProductFromEdit(i){const p=currentTasting.products[i];if(cu
 function exitEditMode(){showProductSelectionScreen();}
 
 // ===== RESULTS =====
+function confirmFinishTasting() {
+    const allVoted = currentTasting.participants.every(participant => {
+        return currentTasting.products.every(product => {
+            const votes = currentTasting.votes[product.id] || [];
+            return votes.some(v => v.user === participant.name);
+        });
+    });
+    
+    let message = '¿Estás seguro de que quieres finalizar la cata?';
+    if (!allVoted) {
+        message += '\n\nAún hay participantes que no han votado todos los productos.';
+    }
+    message += '\n\nUna vez finalizada, no se podrán editar los votos.';
+    
+    if (confirm(message)) {
+        showResults();
+    }
+}
+
 async function showResults(){
     currentTasting.status='finished';await saveTasting();
     const c=document.getElementById('resultsContainer');
-    c.innerHTML=currentTasting.products.map(function(product){
+    c.innerHTML=currentTasting.products.map(function(product, index){
         const votes=currentTasting.votes[product.id]||[];
         const avg=votes.length?votes.reduce(function(s,v){return s+v.score;},0)/votes.length:0;
         const scoreColor = getScoreColor(avg);
         const scoreBorder = getScoreBorder(avg);
         
-        return '<div class="result-card" style="' + scoreBorder + '"><div style="display:flex;gap:0.75rem;align-items:center;margin-bottom:1rem;"><img src="'+(product.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div><h3 style="margin:0 0 0.15rem;">'+product.name+'</h3><p style="color:var(--text-secondary);margin:0;font-size:0.825rem;">'+product.brand+'</p></div></div><div class="avg-score" style="background: ' + scoreColor + ';">'+avg.toFixed(1)+'</div>'+(votes.length?'<h4 style="margin:0.75rem 0 0.5rem;font-size:0.825rem;font-weight:600;">Puntuaciones</h4>'+votes.map(function(v){return '<div class="rating-result"><div><strong style="font-size:0.875rem;">'+v.user+'</strong>'+(v.comment?'<p style="font-size:0.775rem;color:var(--text-secondary);margin-top:0.15rem;">'+v.comment+'</p>':'')+' </div><div class="rating-score">'+v.score.toFixed(1)+'</div></div>';}).join(''):'<p style="text-align:center;color:var(--text-secondary);padding:0.75rem;">Sin votos</p>')+'</div>';
+        return `
+            <div class="result-card collapsed" style="${scoreBorder}" onclick="toggleResultCard(this)" data-product-id="${product.id}">
+                <!-- Vista compacta -->
+                <div class="result-card-compact">
+                    <img src="${product.image || ''}" class="product-image" onerror="this.style.display='none'">
+                    <div class="result-card-compact-info">
+                        <h4>${product.name}</h4>
+                        <p>${product.brand}</p>
+                    </div>
+                    <div class="result-card-compact-score" style="background: ${scoreColor};">
+                        ${avg.toFixed(1)}
+                    </div>
+                    <div class="result-card-arrow">›</div>
+                </div>
+                
+                <!-- Detalles expandidos -->
+                <div class="result-card-details">
+                    ${votes.length ? `
+                        <h4 style="margin:0 0 0.75rem;font-size:0.875rem;font-weight:600;color:var(--text-secondary);">Puntuaciones de participantes</h4>
+                        ${votes.map(function(v){
+                            return `<div class="rating-result">
+                                <div>
+                                    <strong style="font-size:0.875rem;">${v.user}</strong>
+                                    ${v.comment ? `<p style="font-size:0.775rem;color:var(--text-secondary);margin-top:0.15rem;">${v.comment}</p>` : ''}
+                                </div>
+                                <div class="rating-score">${v.score.toFixed(1)}</div>
+                            </div>`;
+                        }).join('')}
+                    ` : '<p style="text-align:center;color:var(--text-secondary);padding:0.75rem;">Sin votos</p>'}
+                </div>
+            </div>
+        `;
     }).join('');
     showScreen('resultsScreen');
+}
+
+function toggleResultCard(card) {
+    card.classList.toggle('collapsed');
 }
 function finishTasting(){
     archiveTasting();
@@ -2611,26 +2896,18 @@ function getStatusInfo(status) {
     return statusMap[status] || { text: 'Desconocido', color: '#64748b' };
 }
 
-// Obtener color según puntuación (con degradados)
+// Obtener color según puntuación (color sólido, más sutil)
 function getScoreColor(score) {
     if (score >= 0 && score < 2.5) {
-        // Rojo (0-2.5): degradado de rojo oscuro a rojo claro
-        const percent = score / 2.5;
-        return `linear-gradient(135deg, #dc2626 ${percent * 100}%, #ef4444 100%)`;
+        return '#dc2626'; // Rojo
     } else if (score >= 2.5 && score < 5) {
-        // Naranja (2.5-5): degradado de rojo a naranja
-        const percent = (score - 2.5) / 2.5;
-        return `linear-gradient(135deg, #ef4444 0%, #f97316 ${percent * 100}%)`;
+        return '#f97316'; // Naranja
     } else if (score >= 5 && score < 7.5) {
-        // Amarillo (5-7.5): degradado de naranja a amarillo
-        const percent = (score - 5) / 2.5;
-        return `linear-gradient(135deg, #f97316 0%, #eab308 ${percent * 100}%)`;
+        return '#eab308'; // Amarillo
     } else if (score >= 7.5 && score <= 10) {
-        // Verde (7.5-10): degradado de amarillo a verde
-        const percent = (score - 7.5) / 2.5;
-        return `linear-gradient(135deg, #eab308 0%, #22c55e ${percent * 100}%)`;
+        return '#22c55e'; // Verde
     }
-    return 'linear-gradient(135deg, #64748b, #94a3b8)'; // Gris por defecto
+    return '#64748b'; // Gris por defecto
 }
 
 // Obtener estilo de borde según puntuación
