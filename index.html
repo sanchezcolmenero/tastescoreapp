@@ -136,14 +136,14 @@
         }
         .rating-value-popup {
             position: absolute;
-            top: -45px;
+            top: -35px;
             left: 50%;
             transform: translate(-50%, 0);
             background: white;
             border: 2px solid #e5e7eb;
             border-radius: 8px;
-            padding: 0.4rem 0.8rem;
-            font-size: 1.2rem;
+            padding: 0.3rem 0.6rem;
+            font-size: 1rem;
             font-weight: 700;
             color: white;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -153,14 +153,14 @@
         .rating-value-popup::after {
             content: '';
             position: absolute;
-            bottom: -6px;
+            bottom: -5px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 6px solid transparent;
-            border-right: 6px solid transparent;
-            border-top: 6px solid #e5e7eb;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid #e5e7eb;
         }
         .rating-value { 
             text-align:center; 
@@ -718,7 +718,7 @@
             <h2 id="profileName" style="font-size:1.2rem;font-weight:600;margin-bottom:0.2rem;"></h2>
             <p id="profileEmail" style="color:var(--text-secondary);font-size:0.825rem;margin-bottom:1.25rem;"></p>
             <div style="display:grid;gap:0.75rem;max-width:300px;margin:0 auto;">
-                <button class="btn btn-secondary" onclick="showEditProfile()">✏️ Editar Perfil</button>
+                <button class="btn btn-secondary" onclick="showEditProfile()">✎ Editar Perfil</button>
                 <button class="btn btn-secondary" onclick="logout()">🚪 Cerrar Sesión</button>
                 <button class="btn" onclick="deleteAccount()" style="color:var(--error);border-color:var(--error);">🗑️ Eliminar Cuenta</button>
             </div>
@@ -991,7 +991,7 @@
 <div class="screen" id="productSelectionScreen">
     <div class="container">
         <div class="card" style="position:relative;">
-            <button onclick="showEditMode()" id="editBtn" style="display:none;position:absolute;top:1rem;right:1rem;width:36px;height:36px;border-radius:50%;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);font-size:0.9rem;cursor:pointer;transition:all 0.2s;padding:0;display:flex;align-items:center;justify-content:center;z-index:10;" onmouseover="this.style.background='var(--primary)';this.style.color='white';this.style.borderColor='var(--primary)';" onmouseout="this.style.background='var(--bg-secondary)';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)';" title="Editar cata">✏️</button>
+            <button onclick="showEditMode()" id="editBtn" style="display:none;position:absolute;top:1rem;right:1rem;width:36px;height:36px;border-radius:50%;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);font-size:0.9rem;cursor:pointer;transition:all 0.2s;padding:0;display:flex;align-items:center;justify-content:center;z-index:10;" onmouseover="this.style.background='var(--primary)';this.style.color='white';this.style.borderColor='var(--primary)';" onmouseout="this.style.background='var(--bg-secondary)';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)';" title="Editar cata">✎</button>
             <h2 class="section-title" style="margin:0 0 1.25rem;">Selecciona Producto</h2>
             <div class="product-grid" id="productSelectionList"></div>
             <div class="stats-bar"><p><strong id="votedProductsCount">0</strong> de <strong id="totalProductsCount">0</strong> productos votados</p></div>
@@ -1058,8 +1058,8 @@
             <div class="rating-container">
                 <label style="font-weight:500;display:block;margin-bottom:0.5rem;font-size:0.875rem;">Tu Puntuación</label>
                 <div class="rating-slider-container">
-                    <div class="rating-value-popup" id="ratingValuePopup" style="display:none;">5.0</div>
-                    <input type="range" id="ratingSlider" class="rating-slider" min="0" max="10" step="0.1" value="5.0" oninput="updateRatingValue()" onmousedown="showRatingPopup()" onmouseup="hideRatingPopup()" ontouchstart="showRatingPopup()" ontouchend="hideRatingPopup()">
+                    <div class="rating-value-popup" id="ratingValuePopup">5.0</div>
+                    <input type="range" id="ratingSlider" class="rating-slider" min="0" max="10" step="0.1" value="5.0" oninput="updateRatingValue()">
                     <div class="rating-labels"><span>0</span><span>5</span><span>10</span></div>
                 </div>
             </div>
@@ -1084,7 +1084,7 @@
                     <p id="votedProductBrand" style="font-size:0.75rem;color:var(--text-secondary);margin:0;"></p>
                 </div>
                 <div id="votedProductScore" style="font-size:1.1rem;font-weight:600;color:white;padding:0.3rem 0.7rem;border-radius:6px;text-shadow:0 1px 2px rgba(0,0,0,0.15);flex-shrink:0;"></div>
-                <button onclick="editVote()" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:0.9rem;padding:0.25rem;flex-shrink:0;" title="Editar voto">✏️</button>
+                <button onclick="editVote()" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:0.9rem;padding:0.25rem;flex-shrink:0;" title="Editar voto">✎</button>
             </div>
             
             <p style="color:var(--text-secondary);margin-bottom:1.5rem;text-align:center;">Esperando a que todos voten...</p>
@@ -2337,15 +2337,59 @@ function updateProductSelectionList(){
         const voteScore = userVote ? userVote.score : 0;
         const scoreColor = userVote ? getScoreColor(voteScore) : '';
         
-        return `<div class="product-item ${voted ? 'selected' : ''}" onclick="${voted ? 'selectProduct(\'' + p.id + '\')' : 'selectProduct(\'' + p.id + '\')'}" style="${voted ? 'cursor:pointer;' : ''}">
+        // Eventos para mantener pulsado (solo para host)
+        const longPressEvents = currentUser.isHost && currentTasting.status !== 'finished' ? 
+            `onmousedown="startLongPress('${p.id}')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress('${p.id}')" ontouchend="cancelLongPress()"` : '';
+        
+        return `<div class="product-item ${voted ? 'selected' : ''}" onclick="selectProduct('${p.id}')" ${longPressEvents} style="cursor:pointer;">
             <img src="${p.image || ''}" class="product-image" onerror="this.style.display='none'">
             <div class="product-info"><h4>${p.name}</h4><p>${p.brand}</p></div>
             ${voted ? `<div style="font-size:1.1rem;font-weight:600;color:white;padding:0.3rem 0.7rem;border-radius:6px;text-shadow:0 1px 2px rgba(0,0,0,0.15);flex-shrink:0;background:${scoreColor};">${voteScore.toFixed(1)}</div>` : ''}
-            ${voted && currentTasting.status !== 'finished' ? '<span style="color:var(--text-secondary);font-size:0.8rem;margin-left:0.5rem;flex-shrink:0;">✏️</span>' : ''}
         </div>`;
     }).join('');
 }
-function selectProduct(id){selectedProductId=id;showVotingScreen();}
+
+let longPressTimer = null;
+let longPressProductId = null;
+
+function startLongPress(productId) {
+    longPressProductId = productId;
+    longPressTimer = setTimeout(function() {
+        // Mantener pulsado durante 800ms → mostrar confirmación de eliminar
+        const product = currentTasting.products.find(p => p.id === productId);
+        if (product && confirm('¿Eliminar "' + product.name + '" de la cata?\n\nEsto eliminará también todos los votos de este producto.')) {
+            deleteProductFromVoting(productId);
+        }
+        longPressTimer = null;
+    }, 800);
+}
+
+function cancelLongPress() {
+    if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+    }
+}
+
+async function deleteProductFromVoting(productId) {
+    // Eliminar producto
+    currentTasting.products = currentTasting.products.filter(p => p.id !== productId);
+    // Eliminar votos del producto
+    delete currentTasting.votes[productId];
+    delete userVotes[productId];
+    
+    await saveTasting();
+    updateProductSelectionList();
+    showToast('Producto eliminado');
+}
+
+function selectProduct(id){
+    // Solo seleccionar si no estamos en un long press
+    if (!longPressTimer) {
+        selectedProductId=id;
+        showVotingScreen();
+    }
+}
 function updateRatingValue(){
     const value = parseFloat(document.getElementById('ratingSlider').value);
     const popupEl = document.getElementById('ratingValuePopup');
@@ -2374,21 +2418,6 @@ function updateRatingValue(){
         productScoreEl.textContent = value.toFixed(1);
         productScoreEl.style.background = bgColor;
         productScoreEl.style.display = 'block';
-    }
-}
-
-function showRatingPopup() {
-    const popup = document.getElementById('ratingValuePopup');
-    if (popup) {
-        popup.style.display = 'block';
-        updateRatingValue();
-    }
-}
-
-function hideRatingPopup() {
-    const popup = document.getElementById('ratingValuePopup');
-    if (popup) {
-        popup.style.display = 'none';
     }
 }
 function showVotingScreen(){
