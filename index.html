@@ -136,32 +136,32 @@
         }
         .rating-value-popup {
             position: absolute;
-            top: -18px;
+            top: -16px;
             left: 50%;
             transform: translate(-50%, 0);
             background: white;
-            border: 1.5px solid #e5e7eb;
-            border-radius: 5px;
-            padding: 0.15rem 0.4rem;
-            font-size: 0.8rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 0.25rem 0.6rem;
+            font-size: 1rem;
             font-weight: 700;
             color: white;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
             pointer-events: none;
             z-index: 10;
-            line-height: 1;
+            line-height: 1.2;
         }
         .rating-value-popup::after {
             content: '';
             position: absolute;
-            bottom: -2.5px;
+            bottom: -4px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 3px solid transparent;
-            border-right: 3px solid transparent;
-            border-top: 3px solid #e5e7eb;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid #e5e7eb;
         }
         .rating-value { 
             text-align:center; 
@@ -3294,52 +3294,57 @@ function showUpdateBanner() {
 function dismissUpdateBanner() {
     const banner = document.getElementById('updateBanner');
     if (banner) {
-        banner.style.setProperty('display', 'none', 'important');
+        banner.remove();
     }
 }
 
 function updateApp() {
-    // Ocultar banner inmediatamente con !important
+    // Eliminar completamente el banner del DOM
     const banner = document.getElementById('updateBanner');
     if (banner) {
-        banner.style.setProperty('display', 'none', 'important');
+        banner.remove();
     }
     
-    // Mostrar mensaje
-    if (typeof showToast === 'function') {
-        showToast('Actualizando app...');
-    }
+    // Mostrar mensaje antes de recargar
+    const body = document.body;
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:white;';
+    overlay.innerHTML = '<div style="text-align:center;"><div style="font-size:3rem;margin-bottom:1rem;">⏳</div><div style="font-size:1.2rem;font-weight:600;">Actualizando...</div></div>';
+    body.appendChild(overlay);
     
-    // Small delay to ensure banner is hidden
+    // Delay para mostrar el mensaje
     setTimeout(function() {
         // Clear cache and reload
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                const unregisterPromises = registrations.map(function(reg) {
-                    return reg.unregister();
+            navigator.serviceWorker.getRegistrations()
+                .then(function(registrations) {
+                    const unregisterPromises = registrations.map(function(reg) {
+                        return reg.unregister();
+                    });
+                    return Promise.all(unregisterPromises);
+                })
+                .then(function() {
+                    return caches.keys();
+                })
+                .then(function(cacheNames) {
+                    return Promise.all(
+                        cacheNames.map(function(cacheName) {
+                            return caches.delete(cacheName);
+                        })
+                    );
+                })
+                .then(function() {
+                    // Force reload bypassing cache
+                    window.location.replace(window.location.href);
+                })
+                .catch(function(err) {
+                    console.error('Update error:', err);
+                    window.location.replace(window.location.href);
                 });
-                
-                return Promise.all(unregisterPromises);
-            }).then(function() {
-                return caches.keys();
-            }).then(function(cacheNames) {
-                return Promise.all(
-                    cacheNames.map(function(cacheName) {
-                        return caches.delete(cacheName);
-                    })
-                );
-            }).then(function() {
-                // Hard reload
-                window.location.href = window.location.href;
-            }).catch(function(err) {
-                console.error('Update error:', err);
-                // Reload anyway
-                window.location.href = window.location.href;
-            });
         } else {
-            window.location.href = window.location.href;
+            window.location.replace(window.location.href);
         }
-    }, 100);
+    }, 300);
 }
 
 let deferredPrompt=null;
