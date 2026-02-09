@@ -1,5 +1,5 @@
 // Service Worker for TasteScore PWA - Anti share-modal.js + Auto-update
-const CACHE_NAME = 'tastescore-v4'; // Incrementar con cada actualización
+const CACHE_NAME = 'tastescore-v5'; // Incrementar con cada actualización
 const urlsToCache = [
   './',
   './index.html',
