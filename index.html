@@ -100,7 +100,7 @@
         .product-grid { display:grid; gap:0.75rem; }
         /* RATING */
         .rating-container { margin:2rem 0; }
-        .rating-slider-container { position:relative; padding:3rem 0 1.5rem; }
+        .rating-slider-container { position:relative; padding:2rem 0 1.5rem; }
         .rating-slider { 
             width:100%; 
             height:8px; 
@@ -136,31 +136,32 @@
         }
         .rating-value-popup {
             position: absolute;
-            top: -28px;
+            top: -18px;
             left: 50%;
             transform: translate(-50%, 0);
             background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 0.25rem 0.5rem;
-            font-size: 0.95rem;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 5px;
+            padding: 0.15rem 0.4rem;
+            font-size: 0.8rem;
             font-weight: 700;
             color: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
             pointer-events: none;
             z-index: 10;
+            line-height: 1;
         }
         .rating-value-popup::after {
             content: '';
             position: absolute;
-            bottom: -4px;
+            bottom: -2.5px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-top: 4px solid #e5e7eb;
+            border-left: 3px solid transparent;
+            border-right: 3px solid transparent;
+            border-top: 3px solid #e5e7eb;
         }
         .rating-value { 
             text-align:center; 
@@ -1543,11 +1544,35 @@ function showScreen(sid){
     } else {
         bb.style.display='block';
         bb.onclick=function(){
-            if(sid==='manageParticipantsScreen') showProductSelectionScreen();
-            else if(currentTasting&&currentTasting.status==='voting') showProductSelectionScreen();
-            else showScreen('homeScreen');
+            if(sid==='manageParticipantsScreen') {
+                showProductSelectionScreen();
+            }
+            else if(sid==='votingScreen') {
+                showProductSelectionScreen();
+            }
+            else if(sid==='waitingVotesScreen') {
+                showProductSelectionScreen();
+            }
+            else if(sid==='resultsScreen') {
+                showProductSelectionScreen();
+            }
+            else if(sid==='editCataScreen') {
+                showProductSelectionScreen();
+            }
+            else if(sid==='archiveScreen') {
+                showScreen('myTastingsScreen');
+            }
+            else if(sid==='editProfileScreen') {
+                showScreen('profileScreen');
+            }
+            else if(sid==='waitingScreen' || sid==='addProductsScreen' || sid==='productSelectionScreen') {
+                showScreen('homeScreen');
+            }
+            else {
+                showScreen('homeScreen');
+            }
         };
-        const subtitles={waitingScreen:'Sala de espera',addProductsScreen:'Añadir productos',productSelectionScreen:'Cata en curso',editCataScreen:'Editar cata',votingScreen:'Votar producto',resultsScreen:'Resultados',archiveScreen:'Cata archivada',manageParticipantsScreen:'Participantes',editProfileScreen:'Editar perfil'};
+        const subtitles={waitingScreen:'Sala de espera',addProductsScreen:'Añadir productos',productSelectionScreen:'Cata en curso',editCataScreen:'Editar cata',votingScreen:'Votar producto',resultsScreen:'Resultados',archiveScreen:'Cata archivada',manageParticipantsScreen:'Participantes',editProfileScreen:'Editar perfil',waitingVotesScreen:'Esperando votos'};
         document.getElementById('headerSubtitle').textContent=subtitles[sid]||'';
     }
     if(sid==='profileScreen'&&authenticatedUser){
@@ -3267,42 +3292,54 @@ function showUpdateBanner() {
 }
 
 function dismissUpdateBanner() {
-    document.getElementById('updateBanner').style.display = 'none';
+    const banner = document.getElementById('updateBanner');
+    if (banner) {
+        banner.style.setProperty('display', 'none', 'important');
+    }
 }
 
 function updateApp() {
-    // Ocultar banner inmediatamente
-    dismissUpdateBanner();
+    // Ocultar banner inmediatamente con !important
+    const banner = document.getElementById('updateBanner');
+    if (banner) {
+        banner.style.setProperty('display', 'none', 'important');
+    }
     
     // Mostrar mensaje
-    showToast('Actualizando app...');
-    
-    // Clear cache and reload
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            for (let registration of registrations) {
-                registration.unregister();
-            }
-            
-            // Clear all caches
-            return caches.keys();
-        }).then(function(cacheNames) {
-            return Promise.all(
-                cacheNames.map(function(cacheName) {
-                    return caches.delete(cacheName);
-                })
-            );
-        }).then(function() {
-            // Reload with force refresh
-            window.location.reload(true);
-        }).catch(function(err) {
-            console.error('Update error:', err);
-            // Reload anyway
-            window.location.reload(true);
-        });
-    } else {
-        window.location.reload(true);
+    if (typeof showToast === 'function') {
+        showToast('Actualizando app...');
     }
+    
+    // Small delay to ensure banner is hidden
+    setTimeout(function() {
+        // Clear cache and reload
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                const unregisterPromises = registrations.map(function(reg) {
+                    return reg.unregister();
+                });
+                
+                return Promise.all(unregisterPromises);
+            }).then(function() {
+                return caches.keys();
+            }).then(function(cacheNames) {
+                return Promise.all(
+                    cacheNames.map(function(cacheName) {
+                        return caches.delete(cacheName);
+                    })
+                );
+            }).then(function() {
+                // Hard reload
+                window.location.href = window.location.href;
+            }).catch(function(err) {
+                console.error('Update error:', err);
+                // Reload anyway
+                window.location.href = window.location.href;
+            });
+        } else {
+            window.location.href = window.location.href;
+        }
+    }, 100);
 }
 
 let deferredPrompt=null;
