@@ -2682,53 +2682,51 @@ async function saveTasting(){
 
 async function loadTastingByCode(code){
     try {
-        console.log('Loading tasting from Supabase:', code);
+        console.log('Loading tasting:', code);
         
-        const {data, error} = await supabaseClient
-            .from('tastings')
-            .select('*')
-            .eq('code', code)
-            .single();
+        // Primero intentar localStorage (más rápido)
+        const localTasting = JSON.parse(localStorage.getItem('tastings')||'{}')[code];
+        if(localTasting) {
+            console.log('Found in localStorage');
+            return localTasting;
+        }
         
-        if(error) {
-            console.error('Error loading from Supabase:', error);
-            console.error('Error message:', error.message);
+        // Si no está en localStorage, buscar en Supabase
+        if (authenticatedUser) {
+            console.log('Checking Supabase for:', code);
+            const {data, error} = await supabaseClient
+                .from('tastings')
+                .select('*')
+                .eq('code', code)
+                .maybeSingle(); // maybeSingle() no da error si no hay resultados
             
-            // Fallback to localStorage
-            const localTasting = JSON.parse(localStorage.getItem('tastings')||'{}')[code];
-            if(localTasting) {
-                console.log('Found in localStorage');
-                return localTasting;
+            if(error) {
+                console.error('Supabase error:', error.message);
+                return null;
             }
-            return null;
+            
+            if(data) {
+                console.log('Found in Supabase');
+                return {
+                    code: data.code,
+                    name: data.name,
+                    description: data.description,
+                    date: data.date,
+                    host: data.host,
+                    participants: data.participants,
+                    products: data.products,
+                    votes: data.votes,
+                    status: data.status,
+                    createdAt: data.created_at,
+                    userId: data.user_id
+                };
+            }
         }
         
-        if(!data) {
-            console.log('No data found in Supabase, checking localStorage');
-            // Fallback to localStorage
-            return JSON.parse(localStorage.getItem('tastings')||'{}')[code];
-        }
-        
-        console.log('Successfully loaded from Supabase');
-        
-        // Transform Supabase data back to app format
-        return {
-            id: data.code,
-            code: data.code,
-            name: data.name,
-            description: data.description,
-            date: data.date,
-            host: data.host,
-            participants: data.participants,
-            products: data.products,
-            votes: data.votes,
-            status: data.status,
-            createdAt: data.created_at,
-            userId: data.user_id
-        };
+        console.log('Tasting not found');
+        return null;
     } catch(e) {
-        console.error('Exception in loadTastingByCode:', e);
-        console.error('Exception message:', e.message);
+        console.error('Exception in loadTastingByCode:', e.message);
         
         // Fallback to localStorage
         return JSON.parse(localStorage.getItem('tastings')||'{}')[code];
@@ -3273,21 +3271,33 @@ function dismissUpdateBanner() {
 }
 
 function updateApp() {
+    // Ocultar banner inmediatamente
+    dismissUpdateBanner();
+    
+    // Mostrar mensaje
+    showToast('Actualizando app...');
+    
     // Clear cache and reload
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
             for (let registration of registrations) {
                 registration.unregister();
             }
-        });
-        
-        caches.keys().then(function(cacheNames) {
+            
+            // Clear all caches
+            return caches.keys();
+        }).then(function(cacheNames) {
             return Promise.all(
                 cacheNames.map(function(cacheName) {
                     return caches.delete(cacheName);
                 })
             );
         }).then(function() {
+            // Reload with force refresh
+            window.location.reload(true);
+        }).catch(function(err) {
+            console.error('Update error:', err);
+            // Reload anyway
             window.location.reload(true);
         });
     } else {
