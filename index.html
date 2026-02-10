@@ -546,10 +546,10 @@
             from { opacity: 0; transform: translateX(30px); }
             to { opacity: 1; transform: translateX(0); }
         }
-        .onboarding-mascot {
-            font-size: 8rem;
-            margin-bottom: 2rem;
-            line-height: 1;
+        .onboarding-illustration {
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 2rem;
         }
         .onboarding-title {
             font-size: 1.5rem;
@@ -613,6 +613,89 @@
         .onboarding-skip:hover {
             color: var(--text);
         }
+        
+        /* FLOATING ACTION BUTTON PRINCIPAL */
+        .main-fab {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-size: 2rem;
+            font-weight: 300;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .main-fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(37,99,235,0.5);
+        }
+        .main-fab.active {
+            transform: rotate(45deg);
+        }
+        .fab-menu {
+            position: fixed;
+            bottom: 150px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        .fab-menu.show {
+            opacity: 1;
+            pointer-events: all;
+            bottom: 145px;
+        }
+        .fab-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        .fab-menu-label {
+            background: white;
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            white-space: nowrap;
+        }
+        .fab-menu-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .fab-menu-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
@@ -621,7 +704,15 @@
 <div id="onboardingOverlay" class="onboarding-overlay" style="display:none;">
     <div class="onboarding-slides">
         <div class="onboarding-slide active" data-slide="1">
-            <div class="onboarding-mascot">🐼</div>
+            <svg class="onboarding-illustration" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="100" cy="100" r="80" fill="#E0F2FE"/>
+                <path d="M60 100C60 100 70 80 100 80C130 80 140 100 140 100" stroke="#2563EB" stroke-width="4" stroke-linecap="round"/>
+                <circle cx="80" cy="95" r="8" fill="#2563EB"/>
+                <circle cx="120" cy="95" r="8" fill="#2563EB"/>
+                <path d="M75 120C75 120 85 130 100 130C115 130 125 120 125 120" stroke="#2563EB" stroke-width="4" stroke-linecap="round"/>
+                <rect x="40" y="60" width="30" height="60" rx="15" fill="#FEF3C7"/>
+                <rect x="130" y="60" width="30" height="60" rx="15" fill="#FEF3C7"/>
+            </svg>
             <h2 class="onboarding-title">Bienvenido a TasteScore</h2>
             <p class="onboarding-description">
                 Crea catas de productos en grupo, vota y descubre cuáles son los favoritos.
@@ -630,7 +721,18 @@
         </div>
         
         <div class="onboarding-slide" data-slide="2">
-            <div class="onboarding-mascot">🐼📷</div>
+            <svg class="onboarding-illustration" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="50" y="40" width="100" height="120" rx="10" fill="#F3F4F6" stroke="#2563EB" stroke-width="3"/>
+                <rect x="70" y="60" width="60" height="15" fill="#1F2937"/>
+                <rect x="70" y="85" width="60" height="3" fill="#1F2937"/>
+                <rect x="70" y="92" width="60" height="3" fill="#1F2937"/>
+                <rect x="70" y="99" width="60" height="3" fill="#1F2937"/>
+                <rect x="70" y="106" width="60" height="3" fill="#1F2937"/>
+                <rect x="70" y="113" width="60" height="3" fill="#1F2937"/>
+                <path d="M80 130L90 140L110 120" stroke="#22C55E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="160" cy="50" r="25" fill="#2563EB" opacity="0.2"/>
+                <path d="M160 40V60M150 50H170" stroke="#2563EB" stroke-width="3" stroke-linecap="round"/>
+            </svg>
             <h2 class="onboarding-title">Escanea el código de barras</h2>
             <p class="onboarding-description">
                 Añade productos rápidamente escaneando su código de barras.
@@ -639,7 +741,14 @@
         </div>
         
         <div class="onboarding-slide" data-slide="3">
-            <div class="onboarding-mascot">🐼🏆</div>
+            <svg class="onboarding-illustration" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="60" y="130" width="80" height="40" fill="#FEF3C7"/>
+                <rect x="65" y="100" width="70" height="30" fill="#FDE047"/>
+                <rect x="70" y="70" width="60" height="30" fill="#FACC15"/>
+                <path d="M100 30L110 55L137 60L118 78L123 105L100 92L77 105L82 78L63 60L90 55L100 30Z" fill="#EAB308"/>
+                <circle cx="100" cy="45" r="15" fill="#FEF3C7"/>
+                <path d="M95 45L98 50L103 47L100 52L105 52L100 56L103 60L98 57L95 62L95 57L90 60L93 56L88 52L93 52L95 45Z" fill="#EAB308"/>
+            </svg>
             <h2 class="onboarding-title">Ranking Global</h2>
             <p class="onboarding-description">
                 Consulta el ranking global de todos los productos probados.
@@ -661,7 +770,15 @@
 <!-- FORCED AUTH SCREEN -->
 <div id="forcedAuthScreen" class="onboarding-overlay" style="display:none;">
     <div style="text-align:center;max-width:360px;">
-        <div class="onboarding-mascot">🐼🔐</div>
+        <svg class="onboarding-illustration" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="50" y="70" width="100" height="90" rx="10" fill="#DBEAFE" stroke="#2563EB" stroke-width="3"/>
+            <circle cx="100" cy="50" r="20" fill="#2563EB"/>
+            <rect x="90" y="42" width="7" height="15" rx="3.5" fill="#DBEAFE"/>
+            <circle cx="93.5" cy="50" r="3.5" fill="#2563EB"/>
+            <path d="M85 110C85 110 90 120 100 120C110 120 115 110 115 110" stroke="#2563EB" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="90" cy="100" r="3" fill="#2563EB"/>
+            <circle cx="110" cy="100" r="3" fill="#2563EB"/>
+        </svg>
         <h2 class="onboarding-title">Inicia sesión para continuar</h2>
         <p class="onboarding-description">
             Crea una cuenta o inicia sesión para guardar tus catas y acceder desde cualquier dispositivo.
@@ -874,19 +991,25 @@
 <div class="screen active" id="homeScreen">
     <div class="container">
         <div class="card">
-            <h2 style="margin-bottom:0.75rem;font-size:1.2rem;font-weight:600;text-align:center;">¡Bienvenido!</h2>
-            <p style="color:var(--text-secondary);margin-bottom:1.25rem;text-align:center;font-size:0.9rem;">Crea una cata o únete a una existente.</p>
-            <button class="btn btn-primary" onclick="showScreen('createScreen')" style="margin-bottom:0.6rem;">Crear Nueva Cata</button>
-            <button class="btn btn-secondary" onclick="showScreen('joinScreen')">Unirse a Cata</button>
-        </div>
-        
-        <div class="card">
             <h3 style="margin-bottom:0.75rem;font-weight:600;font-size:0.95rem;display:flex;align-items:center;gap:0.5rem;">
                 <span style="font-size:1.25rem;">📋</span>
                 Tus Últimas Catas
             </h3>
             <div id="recentTastingsList"></div>
         </div>
+    </div>
+</div>
+
+<!-- FLOATING ACTION BUTTON -->
+<button class="main-fab" id="mainFab" onclick="toggleFabMenu()">+</button>
+<div class="fab-menu" id="fabMenu">
+    <div class="fab-menu-item">
+        <span class="fab-menu-label">Crear nueva cata</span>
+        <button class="fab-menu-btn" onclick="createNewTasting()">📝</button>
+    </div>
+    <div class="fab-menu-item">
+        <span class="fab-menu-label">Unirse a cata</span>
+        <button class="fab-menu-btn" onclick="joinTasting()">🔗</button>
     </div>
 </div>
 
@@ -1900,12 +2023,47 @@ function updateGlobalRanking(name,brand,image,score){
 }
 function displayGlobalRanking(){
     const c=document.getElementById('rankingList');
-    const sorted=Object.values(globalRanking).sort((a,b)=>b.avgScore-a.avgScore).slice(0,50);
-    if(!sorted.length){c.innerHTML='<div class="empty-state"><div class="icon">🏆</div><p>Aún no hay productos.<br>¡Sé el primero en votar!</p></div>';return;}
-    c.innerHTML=sorted.map((p,i)=>{
-        const cls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
-        return `<div class="ranking-item"><div class="ranking-position ${cls}">${i+1}</div><img src="${p.image||''}" class="product-image" onerror="this.style.display='none'"><div class="product-info"><h4>${p.name}</h4><p>${p.brand} • ${p.voteCount} voto${p.voteCount===1?'':'s'}</p></div><div class="product-score">${p.avgScore.toFixed(1)}</div>${authenticatedUser?'<button onclick="toggleFav(\''+p.name.replace(/'/g,"\\'")+'\',' + "'"+p.brand.replace(/'/g,"\\'")+"'" + ',\''+((p.image||'')).replace(/'/g,"\\'")+'\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">'+(isFav(p.name,p.brand)?'❤️':'🤍')+'</button>':''}</div>`;
-    }).join('');
+    const allProducts = Object.values(globalRanking);
+    
+    // Separar en supermercado y restaurante
+    const supermarketProducts = allProducts.filter(p => p.image && p.image.trim() !== '');
+    const restaurantProducts = allProducts.filter(p => !p.image || p.image.trim() === '');
+    
+    // Ordenar cada categoría
+    const sortedSupermarket = supermarketProducts.sort((a,b)=>b.avgScore-a.avgScore).slice(0,25);
+    const sortedRestaurant = restaurantProducts.sort((a,b)=>b.avgScore-a.avgScore).slice(0,25);
+    
+    if(!allProducts.length){
+        c.innerHTML='<div class="empty-state"><div class="icon">🏆</div><p>Aún no hay productos.<br>¡Sé el primero en votar!</p></div>';
+        return;
+    }
+    
+    let html = '';
+    
+    // Ranking Supermercado
+    if(sortedSupermarket.length > 0){
+        html += '<h3 style="font-size:1rem;font-weight:600;margin:0 0 1rem;color:var(--text);display:flex;align-items:center;gap:0.5rem;"><span>🛒</span>Supermercado</h3>';
+        html += sortedSupermarket.map((p,i)=>{
+            const cls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
+            return `<div class="ranking-item"><div class="ranking-position ${cls}">${i+1}</div><div class="product-info" style="flex:1;"><h4>${p.name}</h4><p>${p.brand} • ${p.voteCount} voto${p.voteCount===1?'':'s'}</p></div><div class="product-score">${p.avgScore.toFixed(1)}</div>${authenticatedUser?'<button onclick="toggleFav(\''+p.name.replace(/'/g,"\\'")+'\',' + "'"+p.brand.replace(/'/g,"\\'")+"'" + ',\''+((p.image||'')).replace(/'/g,"\\'")+'\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">'+(isFav(p.name,p.brand)?'❤️':'🤍')+'</button>':''}</div>`;
+        }).join('');
+    }
+    
+    // Separador
+    if(sortedSupermarket.length > 0 && sortedRestaurant.length > 0){
+        html += '<div style="margin:2rem 0 1.5rem;border-top:1px solid var(--border);"></div>';
+    }
+    
+    // Ranking Restaurante
+    if(sortedRestaurant.length > 0){
+        html += '<h3 style="font-size:1rem;font-weight:600;margin:0 0 1rem;color:var(--text);display:flex;align-items:center;gap:0.5rem;"><span>🍔</span>Restaurantes</h3>';
+        html += sortedRestaurant.map((p,i)=>{
+            const cls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
+            return `<div class="ranking-item"><div class="ranking-position ${cls}">${i+1}</div><div class="product-info" style="flex:1;"><h4>${p.name}</h4><p>${p.brand} • ${p.voteCount} voto${p.voteCount===1?'':'s'}</p></div><div class="product-score">${p.avgScore.toFixed(1)}</div>${authenticatedUser?'<button onclick="toggleFav(\''+p.name.replace(/'/g,"\\'")+'\',' + "'"+p.brand.replace(/'/g,"\\'")+"'" + ',\'\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">'+(isFav(p.name,p.brand)?'❤️':'🤍')+'</button>':''}</div>`;
+        }).join('');
+    }
+    
+    c.innerHTML = html;
 }
 
 // ===== MY TASTINGS =====
@@ -3974,6 +4132,36 @@ window.addEventListener('load',function(){if(/iphone|ipad|ipod/i.test(navigator.
     
     console.log('✅ Protección completa contra errores de extensiones instalada');
 })();
+// ===== FLOATING ACTION BUTTON =====
+function toggleFabMenu() {
+    const fab = document.getElementById('mainFab');
+    const menu = document.getElementById('fabMenu');
+    
+    fab.classList.toggle('active');
+    menu.classList.toggle('show');
+}
+
+function createNewTasting() {
+    toggleFabMenu();
+    showScreen('createScreen');
+}
+
+function joinTasting() {
+    toggleFabMenu();
+    showScreen('joinScreen');
+}
+
+// Cerrar menú FAB al hacer click fuera
+document.addEventListener('click', function(e) {
+    const fab = document.getElementById('mainFab');
+    const menu = document.getElementById('fabMenu');
+    
+    if (fab && menu && !fab.contains(e.target) && !menu.contains(e.target)) {
+        fab.classList.remove('active');
+        menu.classList.remove('show');
+    }
+});
+
 // ===== ONBOARDING =====
 let currentSlide = 1;
 
