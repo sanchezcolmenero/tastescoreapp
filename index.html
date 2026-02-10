@@ -94,6 +94,7 @@
         .product-item:hover { background:var(--bg-tertiary); border-color:var(--primary); }
         .product-item.selected { border-color:var(--primary); background:var(--bg); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
         .product-image { width:56px; height:56px; border-radius:6px; object-fit:cover; background:var(--bg-tertiary); border:1px solid var(--border); flex-shrink:0; }
+        .product-image[style*="display: none"] { width:0; height:0; margin:0; border:0; }
         .product-info { flex:1; min-width:0; overflow:hidden; }
         .product-info h4 { font-weight:600; font-size:0.9rem; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; margin-bottom:0.15rem; }
         .product-info p { font-size:0.78rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -137,9 +138,9 @@
         }
         .rating-value-popup {
             position: absolute;
-            top: -16px;
+            top: -32px;
             left: 50%;
-            transform: translate(-50%, 0);
+            transform: translateX(-50%);
             background: white;
             border: 2px solid #e5e7eb;
             border-radius: 6px;
@@ -151,18 +152,25 @@
             pointer-events: none;
             z-index: 10;
             line-height: 1.2;
+            opacity: 0;
+            transition: opacity 0.2s, left 0.1s;
+        }
+        .rating-slider:active + .rating-labels + .rating-value-popup,
+        .rating-slider:focus + .rating-labels + .rating-value-popup {
+            opacity: 1;
         }
         .rating-value-popup::after {
             content: '';
             position: absolute;
-            bottom: -4px;
+            bottom: -5px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-top: 4px solid #e5e7eb;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid;
+            border-top-color: inherit;
         }
         .rating-value { 
             text-align:center; 
@@ -316,12 +324,54 @@
         .category-tab.active { background:var(--primary); color:white; border-color:var(--primary); }
         
         /* Restaurant Products Grid */
-        .restaurant-products-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:1rem; margin-top:1rem; }
-        .restaurant-product-card { border:1.5px solid var(--border); border-radius:10px; padding:0.75rem; text-align:center; background:white; transition:all 0.2s; }
+        .restaurant-products-grid { 
+            border: 1px solid var(--border); 
+            border-radius: 8px; 
+            margin-top: 1rem; 
+            background: white;
+            overflow: hidden;
+        }
+        .restaurant-product-card { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 0.75rem; 
+            border-bottom: 1px solid var(--border); 
+            background: white; 
+            transition: all 0.15s;
+        }
+        .restaurant-product-card:hover { background: var(--bg-secondary); }
+        .restaurant-product-card:last-child { border-bottom: none; }
         .restaurant-product-card img { display:none; }
-        .restaurant-product-card h4 { font-size:0.875rem; margin:0 0 0.6rem; color:var(--text); font-weight:600; line-height:1.3; min-height:2.6em; }
-        .restaurant-product-card .add-btn { width:100%; padding:0.5rem; background:var(--primary); color:white; border:none; border-radius:6px; cursor:pointer; font-size:0.85rem; font-weight:600; transition:all 0.2s; }
-        .restaurant-product-card .add-btn:hover { background:var(--primary-dark); }
+        .restaurant-product-card h4 { 
+            font-size: 0.9rem; 
+            margin: 0; 
+            color: var(--text); 
+            font-weight: 500; 
+            flex: 1;
+        }
+        .restaurant-product-card .add-btn { 
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            padding: 0;
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 50%; 
+            cursor: pointer; 
+            font-size: 1.2rem; 
+            font-weight: 400;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s; 
+        }
+        .restaurant-product-card .add-btn:hover { 
+            background: var(--primary-dark);
+            transform: scale(1.1);
+        }
         
         /* RANKING */
         .ranking-item { display:flex; gap:0.75rem; align-items:center; padding:0.875rem; background:var(--bg-secondary); border-radius:8px; margin-bottom:0.6rem; border:1px solid var(--border); }
@@ -397,29 +447,59 @@
         .modal-content { background:#fff; border-radius:16px; padding:1.5rem; max-width:400px; width:100%; box-shadow:0 8px 32px rgba(0,0,0,0.2); animation:modalSlideIn 0.2s ease-out; }
         @keyframes modalSlideIn { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
         /* RECENT TASTINGS - NUEVO DISEÑO HORIZONTAL */
-        .recent-tasting-item-new { 
-            background:var(--bg); 
+        .recent-tasting-simple { 
+            background:white; 
             border:1px solid var(--border); 
-            border-radius:10px; 
-            padding:0.75rem 1rem; 
-            margin-bottom:0.65rem; 
-            display:grid; 
-            grid-template-columns:1fr auto auto auto; 
-            align-items:center; 
-            gap:0.75rem; 
+            border-radius:8px; 
+            padding:0.875rem 1rem; 
+            margin-bottom:0.5rem; 
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:1rem; 
             cursor:pointer; 
             transition:all 0.15s; 
         }
-        .recent-tasting-item-new:hover { border-color:var(--primary); background:var(--bg-secondary); }
+        .recent-tasting-simple:hover { 
+            border-color:var(--primary); 
+            background:var(--bg-secondary); 
+            transform: translateX(2px);
+        }
+        .recent-tasting-simple:last-child { margin-bottom:0; }
         .recent-tasting-name { 
-            font-size:0.9rem; 
+            font-size:0.925rem; 
             font-weight:600; 
+            color:var(--text);
             overflow:hidden; 
             text-overflow:ellipsis; 
             white-space:nowrap; 
+            flex:1;
+            min-width:0;
+        }
+        .recent-tasting-status-group {
+            display:flex;
+            align-items:center;
+            gap:0.5rem;
+            flex-shrink:0;
+        }
+        .recent-tasting-status-ring {
+            width:18px;
+            height:18px;
+            border-radius:50%;
+            border:2px solid;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            flex-shrink:0;
+        }
+        .recent-tasting-status-dot {
+            width:8px;
+            height:8px;
+            border-radius:50%;
+            flex-shrink:0;
         }
         .recent-tasting-date { 
-            font-size:0.8rem; 
+            font-size:0.75rem; 
             color:var(--text-secondary); 
             white-space:nowrap; 
         }
@@ -1098,9 +1178,9 @@
             <div class="rating-container">
                 <label style="font-weight:500;display:block;margin-bottom:0.5rem;font-size:0.875rem;">Tu Puntuación</label>
                 <div class="rating-slider-container">
-                    <div class="rating-value-popup" id="ratingValuePopup">5.0</div>
-                    <input type="range" id="ratingSlider" class="rating-slider" min="0" max="10" step="0.1" value="5.0" oninput="updateRatingValue()">
+                    <input type="range" id="ratingSlider" class="rating-slider" min="0" max="10" step="0.1" value="5.0" oninput="updateRatingValue()" onmousedown="showRatingPopup()" onmouseup="hideRatingPopup()" ontouchstart="showRatingPopup()" ontouchend="hideRatingPopup()">
                     <div class="rating-labels"><span>0</span><span>5</span><span>10</span></div>
+                    <div class="rating-value-popup" id="ratingValuePopup">5.0</div>
                 </div>
             </div>
             <div class="input-group"><label>Comentarios (opcional)</label><textarea id="voteComment" rows="2" placeholder="Tus impresiones..."></textarea></div>
@@ -1212,9 +1292,7 @@
         <button onclick="dismissUpdateBanner()" style="background:none;border:none;color:white;font-size:1.1rem;cursor:pointer;opacity:0.8;">✕</button>
     </div>
 </div>
-        <button id="dismissBanner" style="background:none;border:none;color:#94a3b8;font-size:1.1rem;cursor:pointer;">✕</button>
-    </div>
-</div>
+
 <div id="iosModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:flex-end;justify-content:center;">
     <div style="background:#fff;border-radius:16px 16px 0 0;padding:1.5rem;max-width:500px;width:100%;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h3 style="margin:0;font-size:1.1rem;font-weight:600;">Añadir a pantalla de inicio</h3><button id="closeIosModal" style="background:none;border:none;font-size:1.5rem;color:#64748b;cursor:pointer;">✕</button></div>
@@ -2110,9 +2188,8 @@ function renderEditRestaurantProducts() {
     
     const html = filteredProducts.map(product => `
         <div class="restaurant-product-card">
-            <img src="${product.image}" alt="${product.name}" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'">
             <h4>${product.name}</h4>
-            <button class="add-btn" onclick='addProductFromEdit({name:"${product.name}",brand:"${product.brand}"})'>+ Añadir</button>
+            <button class="add-btn" onclick='addProductFromEdit({name:"${product.name}",brand:"${product.brand}"})'> +</button>
         </div>
     `).join('');
     
@@ -2541,9 +2618,8 @@ function renderRestaurantProducts() {
     
     grid.innerHTML = products.map(function(p) {
         return '<div class="restaurant-product-card">' +
-            '<img src="' + p.image + '" alt="' + p.name + '">' +
             '<h4>' + p.name + '</h4>' +
-            '<button class="add-btn" onclick="addRestaurantProduct(\'' + p.name.replace(/'/g, "\\'") + '\',\'' + p.brand.replace(/'/g, "\\'") + '\',\'' + p.image + '\')">Añadir</button>' +
+            '<button class="add-btn" onclick="addRestaurantProduct(\'' + p.name.replace(/'/g, "\\'") + '\',\'' + p.brand.replace(/'/g, "\\'") + '\',\'\')">+</button>' +
             '</div>';
     }).join('');
 }
@@ -2733,9 +2809,10 @@ function updateRatingValue(){
         popupEl.style.background = bgColor;
         popupEl.style.borderColor = bgColor;
         
-        // Posicionar el popup según el valor del slider
-        const percent = (value / 10) * 100;
-        popupEl.style.left = `calc(${percent}% - 2px)`;
+        // Centrar el popup en el thumb del slider
+        const slider = document.getElementById('ratingSlider');
+        const percent = ((value - slider.min) / (slider.max - slider.min)) * 100;
+        popupEl.style.left = `${percent}%`;
     }
     
     // Actualizar puntuación al lado del producto
@@ -2745,11 +2822,35 @@ function updateRatingValue(){
         productScoreEl.style.display = 'block';
     }
 }
+
+function showRatingPopup() {
+    const popupEl = document.getElementById('ratingValuePopup');
+    if (popupEl) {
+        popupEl.style.opacity = '1';
+    }
+}
+
+function hideRatingPopup() {
+    const popupEl = document.getElementById('ratingValuePopup');
+    if (popupEl) {
+        popupEl.style.opacity = '0';
+    }
+}
+
 function showVotingScreen(){
     const p=currentTasting.products.find(function(x){return x.id===selectedProductId;});if(!p)return;
     document.getElementById('votingProductName').textContent=p.name;
     document.getElementById('votingProductBrand').textContent=p.brand;
-    document.getElementById('votingProductImage').src=p.image||'';
+    
+    // Ocultar imagen si no existe (productos de restaurante)
+    const imgElement = document.getElementById('votingProductImage');
+    if (p.image && p.image.trim() !== '' && p.image !== 'undefined') {
+        imgElement.src = p.image;
+        imgElement.style.cssText = 'display:block;width:56px;height:56px;border-radius:6px;object-fit:cover;background:var(--bg-tertiary);border:1px solid var(--border);flex-shrink:0;margin-right:0.75rem;';
+    } else {
+        imgElement.style.cssText = 'display:none !important;width:0 !important;height:0 !important;margin:0 !important;padding:0 !important;border:0 !important;';
+        imgElement.src = '';
+    }
     
     // Cargar voto existente si ya votaste este producto
     const existingVote = (currentTasting.votes[selectedProductId] || []).find(v => v.user === currentUser.name);
@@ -3223,18 +3324,27 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
         return;
     }
     
-    // Renderizar con diseño horizontal
+    // Renderizar con diseño simple en una línea
     container.innerHTML = recentTastings.map(t => {
         const statusInfo = getStatusInfo(t.status);
         const createdDate = new Date(t.createdAt).toLocaleDateString('es-ES', { 
             day: 'numeric', 
-            month: 'short',
-            year: 'numeric'
+            month: 'short'
         });
         
         const onclick = t.isArchived ? `viewArchivedTasting('${t.code}')` : `resumeTasting('${t.code}')`;
         
-        return `<div class="recent-tasting-item-new" onclick="${onclick}"><div class="recent-tasting-name">${t.name}</div><div class="recent-tasting-date">📅 ${createdDate}</div><div class="status-badge status-${t.status}">${statusInfo.text}</div><div class="recent-tasting-arrow">›</div></div>`;
+        return `
+            <div class="recent-tasting-simple" onclick="${onclick}">
+                <div class="recent-tasting-name">${t.name}</div>
+                <div class="recent-tasting-status-group">
+                    <div class="recent-tasting-date">${createdDate}</div>
+                    <div class="recent-tasting-status-ring" style="border-color:${statusInfo.color};">
+                        <div class="recent-tasting-status-dot" style="background:${statusInfo.color};"></div>
+                    </div>
+                </div>
+            </div>
+        `;
     }).join('');
 }
 
