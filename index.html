@@ -1028,6 +1028,13 @@
         <div class="card">
             <h2 style="margin-bottom:1rem;font-size:1.2rem;font-weight:600;">🏆 Ranking Global</h2>
             <p style="color:var(--text-secondary);margin-bottom:1rem;font-size:0.875rem;">Los productos mejor valorados</p>
+            
+            <!-- Tabs -->
+            <div class="tabs" style="margin-bottom:1rem;">
+                <button class="tab active" onclick="switchRankingTab('supermarket')">🛒 Supermercado</button>
+                <button class="tab" onclick="switchRankingTab('restaurant')">🍔 Restaurantes</button>
+            </div>
+            
             <div id="rankingList"></div>
         </div>
     </div>
@@ -1517,7 +1524,6 @@
 </div>
 
 <!-- INVITE FAB (shown during active tasting) -->
-<button class="invite-fab" id="inviteFab" onclick="openShareModal()">+</button>
 
 <!-- CONFIRM DELETE MODAL -->
 <div class="modal-overlay" id="confirmDeleteModal" style="display:none;">
@@ -2020,11 +2026,6 @@ function showScreen(sid){
         document.getElementById('profileEmail').textContent=authenticatedUser.email;
         document.getElementById('profileAvatarBig').innerHTML='<span style="font-size:2.5rem;font-weight:700;color:white;">'+authenticatedUser.name[0].toUpperCase()+'</span>';
     }
-    // FAB: show on all active-tasting screens (not finished, not archive-only)
-    const fab=document.getElementById('inviteFab');
-    const fabScreens=['waitingScreen','addProductsScreen','productSelectionScreen','editCataScreen','votingScreen','resultsScreen','manageParticipantsScreen'];
-    if(currentTasting && currentTasting.status!=='finished' && fabScreens.includes(sid)){fab.classList.add('show');}
-    else{fab.classList.remove('show');}
 }
 
 // ===== INVITE / SHARE =====
@@ -2060,6 +2061,26 @@ function updateGlobalRanking(name,brand,image,score){
     if(image) globalRanking[key].image=image;
     localStorage.setItem('globalRanking',JSON.stringify(globalRanking));
 }
+// Variable para la pestaña activa del ranking
+let activeRankingTab = 'supermarket';
+
+function switchRankingTab(tab) {
+    activeRankingTab = tab;
+    
+    // Actualizar tabs visuales
+    const tabs = document.querySelectorAll('#rankingScreen .tab');
+    tabs.forEach(t => {
+        if ((tab === 'supermarket' && t.textContent.includes('Supermercado')) ||
+            (tab === 'restaurant' && t.textContent.includes('Restaurantes'))) {
+            t.classList.add('active');
+        } else {
+            t.classList.remove('active');
+        }
+    });
+    
+    displayGlobalRanking();
+}
+
 function displayGlobalRanking(){
     const c=document.getElementById('rankingList');
     const allProducts = Object.values(globalRanking);
@@ -2081,36 +2102,27 @@ function displayGlobalRanking(){
     const supermarketProducts = allProducts.filter(p => !isRestaurantProduct(p.name, p.brand));
     const restaurantProducts = allProducts.filter(p => isRestaurantProduct(p.name, p.brand));
     
-    // Ordenar cada categoría
-    const sortedSupermarket = supermarketProducts.sort((a,b)=>b.avgScore-a.avgScore).slice(0,25);
-    const sortedRestaurant = restaurantProducts.sort((a,b)=>b.avgScore-a.avgScore).slice(0,25);
-    
     if(!allProducts.length){
         c.innerHTML='<div class="empty-state"><div class="icon">🏆</div><p>Aún no hay productos.<br>¡Sé el primero en votar!</p></div>';
         return;
     }
     
-    let html = '';
+    // Mostrar solo la pestaña activa
+    let productsToShow = activeRankingTab === 'supermarket' ? supermarketProducts : restaurantProducts;
+    const sorted = productsToShow.sort((a,b)=>b.avgScore-a.avgScore).slice(0,50);
     
-    // Ranking Supermercado
-    if(sortedSupermarket.length > 0){
-        html += '<div style="margin-bottom:2rem;"><h3 style="font-size:1.05rem;font-weight:600;margin:0 0 1rem;color:var(--text);display:flex;align-items:center;gap:0.5rem;"><span>🛒</span>Supermercado</h3>';
-        html += sortedSupermarket.map((p,i)=>{
-            const cls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
-            return `<div class="ranking-item"><div class="ranking-position ${cls}">${i+1}</div><div class="product-info" style="flex:1;"><h4>${p.name}</h4><p>${p.brand} • ${p.voteCount} voto${p.voteCount===1?'':'s'}</p></div><div class="product-score">${p.avgScore.toFixed(1)}</div>${authenticatedUser?'<button onclick="toggleFav(\''+p.name.replace(/'/g,"\\'")+'\',' + "'"+p.brand.replace(/'/g,"\\'")+"'" + ',\''+((p.image||'')).replace(/'/g,"\\'")+'\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">'+(isFav(p.name,p.brand)?'❤️':'🤍')+'</button>':''}</div>`;
-        }).join('');
-        html += '</div>';
+    if(!sorted.length){
+        const emptyIcon = activeRankingTab === 'supermarket' ? '🛒' : '🍔';
+        const emptyText = activeRankingTab === 'supermarket' ? 'supermercado' : 'restaurantes';
+        c.innerHTML=`<div class="empty-state"><div class="icon">${emptyIcon}</div><p>Aún no hay productos de ${emptyText}.<br>¡Sé el primero en votar!</p></div>`;
+        return;
     }
     
-    // Ranking Restaurante
-    if(sortedRestaurant.length > 0){
-        html += '<div><h3 style="font-size:1.05rem;font-weight:600;margin:0 0 1rem;color:var(--text);display:flex;align-items:center;gap:0.5rem;"><span>🍔</span>Restaurantes</h3>';
-        html += sortedRestaurant.map((p,i)=>{
-            const cls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
-            return `<div class="ranking-item"><div class="ranking-position ${cls}">${i+1}</div><div class="product-info" style="flex:1;"><h4>${p.name}</h4><p>${p.brand} • ${p.voteCount} voto${p.voteCount===1?'':'s'}</p></div><div class="product-score">${p.avgScore.toFixed(1)}</div>${authenticatedUser?'<button onclick="toggleFav(\''+p.name.replace(/'/g,"\\'")+'\',' + "'"+p.brand.replace(/'/g,"\\'")+"'" + ',\'\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">'+(isFav(p.name,p.brand)?'❤️':'🤍')+'</button>':''}</div>`;
-        }).join('');
-        html += '</div>';
-    }
+    const html = sorted.map((p,i)=>{
+        const cls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
+        const imageParam = activeRankingTab === 'supermarket' ? ((p.image||'')).replace(/'/g,"\\'") : '';
+        return `<div class="ranking-item"><div class="ranking-position ${cls}">${i+1}</div><div class="product-info" style="flex:1;"><h4>${p.name}</h4><p>${p.brand} • ${p.voteCount} voto${p.voteCount===1?'':'s'}</p></div><div class="product-score">${p.avgScore.toFixed(1)}</div>${authenticatedUser?'<button onclick="toggleFav(\''+p.name.replace(/'/g,"\\'")+'\',' + "'"+p.brand.replace(/'/g,"\\'")+"'" + ',\''+ imageParam +'\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">'+(isFav(p.name,p.brand)?'❤️':'🤍')+'</button>':''}</div>`;
+    }).join('');
     
     c.innerHTML = html;
 }
@@ -3942,17 +3954,41 @@ async function selectAvatar(avatarKey){
 }
 
 async function deleteAccount(){
-    if(!confirm('¿Estás seguro de que quieres eliminar tu cuenta?\\n\\nEsta acción NO se puede deshacer.'))return;
+    if(!confirm('¿Estás seguro de que quieres eliminar tu cuenta?\n\nEsta acción NO se puede deshacer.'))return;
     if(!confirm('Última confirmación: ¿Eliminar cuenta permanentemente?'))return;
     
     try{
-        await supabaseClient.from('profiles').delete().eq('id',authenticatedUser.id);
-        await supabaseClient.rpc('delete_user');
-        await logout();
+        // Eliminar perfil
+        const {error: profileError} = await supabaseClient.from('profiles').delete().eq('id',authenticatedUser.id);
+        if(profileError) throw profileError;
+        
+        // Eliminar catas del usuario
+        await supabaseClient.from('tastings').delete().eq('user_id',authenticatedUser.id);
+        
+        // Eliminar usuario de auth (esto cierra la sesión automáticamente)
+        const {error: authError} = await supabaseClient.auth.admin.deleteUser(authenticatedUser.id);
+        
+        // Si falla el admin delete (no tenemos permisos), intentar con signOut
+        if(authError){
+            await supabaseClient.auth.signOut();
+        }
+        
+        // Limpiar localStorage
+        localStorage.removeItem('favourites');
+        localStorage.removeItem('globalRanking');
+        
         alert('Tu cuenta ha sido eliminada');
+        
+        // Redirigir a pantalla de auth forzada
+        const completed = localStorage.getItem('onboarding_completed');
+        if (completed) {
+            document.getElementById('forcedAuthScreen').style.display = 'flex';
+        } else {
+            showScreen('homeScreen');
+        }
     }catch(e){
-        alert('Cuenta eliminada de la app. Para eliminarla completamente, contacta con soporte.');
-        await logout();
+        console.error('Error eliminando cuenta:', e);
+        alert('Error eliminando la cuenta. Por favor, inténtalo de nuevo o contacta con soporte.');
     }
 }
 
@@ -4192,6 +4228,15 @@ function toggleFabMenu() {
 
 function createNewTasting() {
     toggleFabMenu();
+    
+    // Pre-rellenar con nombre de usuario si está autenticado
+    if (authenticatedUser) {
+        const tastingNameInput = document.getElementById('tastingName');
+        if (tastingNameInput) {
+            tastingNameInput.value = `Cata de ${authenticatedUser.name}`;
+        }
+    }
+    
     showScreen('createScreen');
 }
 
@@ -4268,6 +4313,12 @@ function checkOnboarding() {
     } else if (!authenticatedUser) {
         // Ya vio onboarding pero no está autenticado
         document.getElementById('forcedAuthScreen').style.display = 'flex';
+    } else {
+        // Usuario autenticado y onboarding completado, mostrar mainFab si no hay cata
+        const mainFab = document.getElementById('mainFab');
+        if (mainFab && !currentTasting) {
+            mainFab.style.display = 'flex';
+        }
     }
 }
 
