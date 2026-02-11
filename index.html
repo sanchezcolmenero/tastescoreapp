@@ -677,13 +677,13 @@
             white-space: nowrap;
         }
         .fab-menu-btn {
-            width: 48px;
-            height: 48px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
-            background: white;
+            background: transparent;
             color: var(--primary);
             border: 2px solid var(--primary);
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             transition: all 0.2s;
@@ -694,7 +694,8 @@
         .fab-menu-btn:hover {
             background: var(--primary);
             color: white;
-            transform: scale(1.1);
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(37,99,235,0.3);
         }
     </style>
 </head>
@@ -1001,7 +1002,7 @@
 </div>
 
 <!-- FLOATING ACTION BUTTON -->
-<button class="main-fab" id="mainFab" onclick="toggleFabMenu()">+</button>
+<button class="main-fab" id="mainFab" onclick="toggleFabMenu()" style="display:none;">+</button>
 <div class="fab-menu" id="fabMenu">
     <div class="fab-menu-item">
         <span class="fab-menu-label">Crear nueva cata</span>
@@ -1012,6 +1013,14 @@
         <button class="fab-menu-btn" onclick="joinTasting()">🔗</button>
     </div>
 </div>
+
+<!-- SHARE FAB (solo en addProductsScreen) -->
+<button class="main-fab" id="shareFab" onclick="openShareModal()" style="display:none;">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+    </svg>
+</button>
 
 <!-- RANKING -->
 <div class="screen" id="rankingScreen">
@@ -1900,7 +1909,14 @@ function toggleAuthMode(){
 
 async function logout(){
     await supabaseClient.auth.signOut();
-    showScreen('homeScreen');
+    
+    // Mostrar pantalla de auth forzada si ya completó onboarding
+    const completed = localStorage.getItem('onboarding_completed');
+    if (completed) {
+        document.getElementById('forcedAuthScreen').style.display = 'flex';
+    } else {
+        showScreen('homeScreen');
+    }
 }
 
 // ===== NAVIGATION =====
@@ -1924,12 +1940,35 @@ function showScreen(sid){
     document.getElementById(sid).classList.add('active');
     setActiveNav(sid);
     
-    // Ocultar navbar en pantalla de auth
+    // Ocultar navbar y FABs en pantalla de auth
     const bottomNav = document.getElementById('bottomNav');
+    const mainFab = document.getElementById('mainFab');
+    const shareFab = document.getElementById('shareFab');
+    const fabMenu = document.getElementById('fabMenu');
+    
     if (sid === 'authScreen') {
         bottomNav.style.display = 'none';
+        if (mainFab) mainFab.style.display = 'none';
+        if (shareFab) shareFab.style.display = 'none';
+        if (fabMenu) fabMenu.classList.remove('show');
     } else {
         bottomNav.style.display = 'flex';
+        
+        // Mostrar mainFab solo en homeScreen sin cata activa
+        if (sid === 'homeScreen' && !currentTasting) {
+            if (mainFab) mainFab.style.display = 'flex';
+            if (shareFab) shareFab.style.display = 'none';
+        }
+        // Mostrar shareFab solo en addProductsScreen
+        else if (sid === 'addProductsScreen') {
+            if (mainFab) mainFab.style.display = 'none';
+            if (shareFab) shareFab.style.display = 'flex';
+        }
+        // Ocultar ambos en otras pantallas
+        else {
+            if (mainFab) mainFab.style.display = 'none';
+            if (shareFab) shareFab.style.display = 'none';
+        }
     }
     
     const bb=document.getElementById('backBtn');
@@ -2025,9 +2064,22 @@ function displayGlobalRanking(){
     const c=document.getElementById('rankingList');
     const allProducts = Object.values(globalRanking);
     
+    // Función para verificar si un producto es de restaurante
+    function isRestaurantProduct(productName, brandName) {
+        for (const restaurant in RESTAURANT_DATA) {
+            for (const category in RESTAURANT_DATA[restaurant]) {
+                const found = RESTAURANT_DATA[restaurant][category].some(p => 
+                    p.name === productName && p.brand === brandName
+                );
+                if (found) return true;
+            }
+        }
+        return false;
+    }
+    
     // Separar en supermercado y restaurante
-    const supermarketProducts = allProducts.filter(p => p.image && p.image.trim() !== '');
-    const restaurantProducts = allProducts.filter(p => !p.image || p.image.trim() === '');
+    const supermarketProducts = allProducts.filter(p => !isRestaurantProduct(p.name, p.brand));
+    const restaurantProducts = allProducts.filter(p => isRestaurantProduct(p.name, p.brand));
     
     // Ordenar cada categoría
     const sortedSupermarket = supermarketProducts.sort((a,b)=>b.avgScore-a.avgScore).slice(0,25);
@@ -2042,25 +2094,22 @@ function displayGlobalRanking(){
     
     // Ranking Supermercado
     if(sortedSupermarket.length > 0){
-        html += '<h3 style="font-size:1rem;font-weight:600;margin:0 0 1rem;color:var(--text);display:flex;align-items:center;gap:0.5rem;"><span>🛒</span>Supermercado</h3>';
+        html += '<div style="margin-bottom:2rem;"><h3 style="font-size:1.05rem;font-weight:600;margin:0 0 1rem;color:var(--text);display:flex;align-items:center;gap:0.5rem;"><span>🛒</span>Supermercado</h3>';
         html += sortedSupermarket.map((p,i)=>{
             const cls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
             return `<div class="ranking-item"><div class="ranking-position ${cls}">${i+1}</div><div class="product-info" style="flex:1;"><h4>${p.name}</h4><p>${p.brand} • ${p.voteCount} voto${p.voteCount===1?'':'s'}</p></div><div class="product-score">${p.avgScore.toFixed(1)}</div>${authenticatedUser?'<button onclick="toggleFav(\''+p.name.replace(/'/g,"\\'")+'\',' + "'"+p.brand.replace(/'/g,"\\'")+"'" + ',\''+((p.image||'')).replace(/'/g,"\\'")+'\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">'+(isFav(p.name,p.brand)?'❤️':'🤍')+'</button>':''}</div>`;
         }).join('');
-    }
-    
-    // Separador
-    if(sortedSupermarket.length > 0 && sortedRestaurant.length > 0){
-        html += '<div style="margin:2rem 0 1.5rem;border-top:1px solid var(--border);"></div>';
+        html += '</div>';
     }
     
     // Ranking Restaurante
     if(sortedRestaurant.length > 0){
-        html += '<h3 style="font-size:1rem;font-weight:600;margin:0 0 1rem;color:var(--text);display:flex;align-items:center;gap:0.5rem;"><span>🍔</span>Restaurantes</h3>';
+        html += '<div><h3 style="font-size:1.05rem;font-weight:600;margin:0 0 1rem;color:var(--text);display:flex;align-items:center;gap:0.5rem;"><span>🍔</span>Restaurantes</h3>';
         html += sortedRestaurant.map((p,i)=>{
             const cls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
             return `<div class="ranking-item"><div class="ranking-position ${cls}">${i+1}</div><div class="product-info" style="flex:1;"><h4>${p.name}</h4><p>${p.brand} • ${p.voteCount} voto${p.voteCount===1?'':'s'}</p></div><div class="product-score">${p.avgScore.toFixed(1)}</div>${authenticatedUser?'<button onclick="toggleFav(\''+p.name.replace(/'/g,"\\'")+'\',' + "'"+p.brand.replace(/'/g,"\\'")+"'" + ',\'\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">'+(isFav(p.name,p.brand)?'❤️':'🤍')+'</button>':''}</div>`;
         }).join('');
+        html += '</div>';
     }
     
     c.innerHTML = html;
