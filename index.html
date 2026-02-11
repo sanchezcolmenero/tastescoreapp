@@ -680,10 +680,9 @@
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: transparent;
+            background: #f1f5f9;
             color: var(--primary);
             border: 2px solid var(--primary);
-            font-size: 1.2rem;
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             transition: all 0.2s;
@@ -693,9 +692,11 @@
         }
         .fab-menu-btn:hover {
             background: var(--primary);
-            color: white;
             transform: scale(1.05);
             box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+        }
+        .fab-menu-btn:hover svg {
+            stroke: white;
         }
     </style>
 </head>
@@ -1006,11 +1007,23 @@
 <div class="fab-menu" id="fabMenu">
     <div class="fab-menu-item">
         <span class="fab-menu-label">Crear nueva cata</span>
-        <button class="fab-menu-btn" onclick="createNewTasting()">📝</button>
+        <button class="fab-menu-btn" onclick="createNewTasting()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+        </button>
     </div>
     <div class="fab-menu-item">
         <span class="fab-menu-label">Unirse a cata</span>
-        <button class="fab-menu-btn" onclick="joinTasting()">🔗</button>
+        <button class="fab-menu-btn" onclick="openJoinScreen()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+        </button>
     </div>
 </div>
 
@@ -1229,10 +1242,9 @@
     <div class="container">
         <div class="card" style="margin-top:1rem;">
             <h2 style="margin-bottom:1.25rem;font-size:1.1rem;font-weight:600;">Crear Nueva Cata</h2>
-            <div class="input-group" id="fieldTastingName"><label>Nombre de la Cata *</label><input type="text" id="tastingName" placeholder="Ej: Cata de Quesos"><p class="field-error" id="errTastingName">Este campo es obligatorio</p></div>
+            <div class="input-group" id="fieldTastingName"><label>Nombre de la Cata *</label><input type="text" id="tastingName" placeholder="Ej: Cata de Cervezas Artesanales"><p class="field-error" id="errTastingName">Este campo es obligatorio</p></div>
             <div class="input-group" id="fieldHostName"><label>Tu Nombre *</label><input type="text" id="hostName" placeholder="Tu nombre"><p class="field-error" id="errHostName">Este campo es obligatorio</p></div>
-            <div class="input-group"><label>Fecha de la Cata (opcional)</label><input type="date" id="tastingDate" style="color-scheme:light;"></div>
-            <div class="input-group"><label>Descripción (opcional)</label><textarea id="tastingDescription" rows="3" placeholder="Detalles..."></textarea></div>
+            <div class="input-group"><label>Descripción (opcional)</label><textarea id="tastingDescription" rows="3" placeholder="Detalles sobre la cata..."></textarea></div>
             <button class="btn btn-primary" onclick="createTasting()">Crear Cata</button>
         </div>
     </div>
@@ -2278,9 +2290,10 @@ async function createTasting(){
     const name=document.getElementById('tastingName').value.trim();
     let hostName=document.getElementById('hostName').value.trim();
     const desc=document.getElementById('tastingDescription').value.trim();
-    const date=document.getElementById('tastingDate').value;
+    
     // Pre-fill from authenticated user if empty
     if(!hostName && authenticatedUser) hostName=authenticatedUser.name;
+    
     // Inline validation
     let hasError=false;
     const errN=document.getElementById('errTastingName'), errH=document.getElementById('errHostName');
@@ -2290,15 +2303,29 @@ async function createTasting(){
     if(!hostName){errH.classList.add('show');fieldH.querySelector('input').style.borderColor='var(--error)';hasError=true;}
     else{errH.classList.remove('show');fieldH.querySelector('input').style.borderColor='';}
     if(hasError)return;
+    
     // Update field with auto-filled value
     document.getElementById('hostName').value=hostName;
     
     const code = generateCode();
-    currentTasting={id:Date.now().toString(),code,name,description:desc,date:date||null,host:hostName,participants:[{name:hostName,isHost:true}],products:[],votes:{},status:'waiting',createdAt:new Date().toISOString(),userId:authenticatedUser?authenticatedUser.id:null};
+    currentTasting={
+        id:Date.now().toString(),
+        code,
+        name,
+        description:desc,
+        date:new Date().toISOString(),  // Fecha automática
+        host:hostName,
+        participants:[{name:hostName,isHost:true}],
+        products:[],
+        votes:{},
+        status:'waiting',
+        createdAt:new Date().toISOString(),
+        userId:authenticatedUser?authenticatedUser.id:null
+    };
     currentUser={name:hostName,isHost:true};
     
     await saveTasting();
-    subscribeToTastingUpdates(); // Subscribe to realtime updates
+    subscribeToTastingUpdates();
     showWaitingRoom();
 }
 
@@ -3958,34 +3985,38 @@ async function deleteAccount(){
     if(!confirm('Última confirmación: ¿Eliminar cuenta permanentemente?'))return;
     
     try{
-        // Eliminar perfil
-        const {error: profileError} = await supabaseClient.from('profiles').delete().eq('id',authenticatedUser.id);
-        if(profileError) throw profileError;
+        const userId = authenticatedUser.id;
         
-        // Eliminar catas del usuario
-        await supabaseClient.from('tastings').delete().eq('user_id',authenticatedUser.id);
+        // 1. Eliminar todas las catas del usuario
+        const {error: tastingsError} = await supabaseClient
+            .from('tastings')
+            .delete()
+            .eq('user_id', userId);
         
-        // Eliminar usuario de auth (esto cierra la sesión automáticamente)
-        const {error: authError} = await supabaseClient.auth.admin.deleteUser(authenticatedUser.id);
+        if(tastingsError) console.error('Error eliminando catas:', tastingsError);
         
-        // Si falla el admin delete (no tenemos permisos), intentar con signOut
-        if(authError){
-            await supabaseClient.auth.signOut();
-        }
+        // 2. Eliminar perfil
+        const {error: profileError} = await supabaseClient
+            .from('profiles')
+            .delete()
+            .eq('id', userId);
         
-        // Limpiar localStorage
+        if(profileError) console.error('Error eliminando perfil:', profileError);
+        
+        // 3. Limpiar datos específicos de localStorage (sin borrar onboarding)
         localStorage.removeItem('favourites');
         localStorage.removeItem('globalRanking');
+        localStorage.removeItem('tastings');
+        localStorage.removeItem('archivedTastings');
         
-        alert('Tu cuenta ha sido eliminada');
+        // 4. Cerrar sesión
+        await supabaseClient.auth.signOut();
         
-        // Redirigir a pantalla de auth forzada
-        const completed = localStorage.getItem('onboarding_completed');
-        if (completed) {
-            document.getElementById('forcedAuthScreen').style.display = 'flex';
-        } else {
-            showScreen('homeScreen');
-        }
+        alert('Tu cuenta y todos tus datos han sido eliminados');
+        
+        // 5. Mostrar pantalla de auth forzada
+        document.getElementById('forcedAuthScreen').style.display = 'flex';
+        
     }catch(e){
         console.error('Error eliminando cuenta:', e);
         alert('Error eliminando la cuenta. Por favor, inténtalo de nuevo o contacta con soporte.');
@@ -4229,19 +4260,34 @@ function toggleFabMenu() {
 function createNewTasting() {
     toggleFabMenu();
     
-    // Pre-rellenar con nombre de usuario si está autenticado
+    // Limpiar campos
+    document.getElementById('tastingName').value = '';
+    document.getElementById('tastingDescription').value = '';
+    
+    // Pre-rellenar solo "Tu Nombre" con nombre de usuario si está autenticado
     if (authenticatedUser) {
-        const tastingNameInput = document.getElementById('tastingName');
-        if (tastingNameInput) {
-            tastingNameInput.value = `Cata de ${authenticatedUser.name}`;
+        const hostNameInput = document.getElementById('hostName');
+        if (hostNameInput) {
+            hostNameInput.value = authenticatedUser.name;
         }
+    } else {
+        document.getElementById('hostName').value = '';
     }
     
     showScreen('createScreen');
 }
 
-function joinTasting() {
+function openJoinScreen() {
     toggleFabMenu();
+    
+    // Pre-rellenar nombre si está autenticado
+    if (authenticatedUser) {
+        const participantNameInput = document.getElementById('participantName');
+        if (participantNameInput) {
+            participantNameInput.value = authenticatedUser.name;
+        }
+    }
+    
     showScreen('joinScreen');
 }
 
