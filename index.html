@@ -110,7 +110,7 @@
         .input-group select { cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2364748b' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 0.75rem center; padding-right:2.5rem; }
         .input-group input:focus,.input-group textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
         /* PRODUCTS – overflow fix */
-        .product-item { background:var(--bg-secondary); padding:0.625rem 0.75rem; border-radius:8px; margin-bottom:0.5rem; border:1px solid var(--border); transition:all 0.15s; display:flex; gap:0.5rem; align-items:center; cursor:pointer; }
+        .product-item { background:var(--bg-secondary); padding:0.5rem 0.625rem; border-radius:8px; margin-bottom:0.35rem; border:1px solid var(--border); transition:all 0.15s; display:flex; gap:0.5rem; align-items:center; cursor:pointer; }
         .drag-handle { width:28px; height:28px; display:none; align-items:center; justify-content:center; cursor:grab; color:var(--text-tertiary); flex-shrink:0; font-size:1.1rem; transition:color 0.2s; }
         .drag-handle:hover { color:var(--primary); }
         .drag-handle:active { cursor:grabbing; }
@@ -1076,11 +1076,16 @@
 <div class="screen" id="rankingScreen">
     <div class="container">
         <div class="card">
-            <h2 style="margin-bottom:1rem;font-size:1.2rem;font-weight:600;">🏆 Ranking Global</h2>
-            <p style="color:var(--text-secondary);margin-bottom:1rem;font-size:0.875rem;">Los productos mejor valorados</p>
+            <h2 style="margin-bottom:1rem;font-size:1.2rem;font-weight:600;">🏆 Ranking</h2>
             
-            <!-- Tabs -->
+            <!-- Tabs principales: Global vs Mis Votos -->
             <div class="tabs" style="margin-bottom:1rem;">
+                <button class="tab active" onclick="switchRankingMode('global')">Global</button>
+                <button class="tab" onclick="switchRankingMode('my')">Mis Votos</button>
+            </div>
+            
+            <!-- Tabs secundarias: Supermercado vs Restaurante -->
+            <div id="rankingTypeTabs" class="tabs" style="margin-bottom:1rem;">
                 <button class="tab active" onclick="switchRankingTab('supermarket')">🛒 Supermercado</button>
                 <button class="tab" onclick="switchRankingTab('restaurant')">🍔 Restaurantes</button>
             </div>
@@ -2158,30 +2163,138 @@ function shareInvite(){
 function loadGlobalRanking(){globalRanking=JSON.parse(localStorage.getItem('globalRanking')||'{}');displayGlobalRanking();}
 function updateGlobalRanking(name,brand,image,score){
     const key=(name+'|'+brand).toLowerCase();
-    if(!globalRanking[key]) globalRanking[key]={name,brand,image,totalScore:0,voteCount:0,avgScore:0};
-    globalRanking[key].totalScore+=score; globalRanking[key].voteCount++;
-    globalRanking[key].avgScore=globalRanking[key].totalScore/globalRanking[key].voteCount;
-    if(image) globalRanking[key].image=image;
-    localStorage.setItem('globalRanking',JSON.stringify(globalRanking));
+    const userName = authenticatedUser ? authenticatedUser.name : 'Anónimo';
+    
+    if(!globalRanking[key]) {
+        globalRanking[key]={name,brand,image,totalScore:0,voteCount:0,avgScore:0,votes:[]};
+    }
+    
+    // Actualizar o añadir voto del usuario
+    const existingVoteIndex = globalRanking[key].votes.findIndex(v => v.user === userName);
+    if (existingVoteIndex >= 0) {
+        // Actualizar voto existente
+        const oldScore = globalRanking[key].votes[existingVoteIndex].score;
+        globalRanking[key].totalScore = globalRanking[key].totalScore - oldScore + score;
+        globalRanking[key].votes[existingVoteIndex].score = score;
+    } else {
+        // Nuevo voto
+        globalRanking[key].votes.push({user: userName, score: score});
+        globalRanking[key].totalScore += score;
+        globalRanking[key].voteCount++;
+    }
+    
+    globalRanking[key].avgScore = globalRanking[key].totalScore / globalRanking[key].voteCount;
+    if(image) globalRanking[key].image = image;
+    
+    localStorage.setItem('globalRanking', JSON.stringify(globalRanking));
 }
 // Variable para la pestaña activa del ranking
 let activeRankingTab = 'supermarket';
+let activeRankingMode = 'global'; // 'global' o 'my'
 
-function switchRankingTab(tab) {
-    activeRankingTab = tab;
+function switchRankingMode(mode) {
+    activeRankingMode = mode;
     
-    // Actualizar tabs visuales
-    const tabs = document.querySelectorAll('#rankingScreen .tab');
-    tabs.forEach(t => {
-        if ((tab === 'supermarket' && t.textContent.includes('Supermercado')) ||
-            (tab === 'restaurant' && t.textContent.includes('Restaurantes'))) {
+    // Actualizar tabs del modo
+    const modeTabs = document.querySelectorAll('#rankingScreen .tabs:first-of-type .tab');
+    modeTabs.forEach((t, i) => {
+        if ((mode === 'global' && i === 0) || (mode === 'my' && i === 1)) {
             t.classList.add('active');
         } else {
             t.classList.remove('active');
         }
     });
     
-    displayGlobalRanking();
+    if (mode === 'global') {
+        displayGlobalRanking();
+    } else {
+        displayMyVotesRanking();
+    }
+}
+
+function switchRankingTab(tab) {
+    activeRankingTab = tab;
+    
+    // Actualizar tabs visuales de tipo
+    const typeTabs = document.querySelectorAll('#rankingTypeTabs .tab');
+    typeTabs.forEach((t, i) => {
+        if ((tab === 'supermarket' && i === 0) || (tab === 'restaurant' && i === 1)) {
+            t.classList.add('active');
+        } else {
+            t.classList.remove('active');
+        }
+    });
+    
+    if (activeRankingMode === 'global') {
+        displayGlobalRanking();
+    } else {
+        displayMyVotesRanking();
+    }
+}
+
+function displayMyVotesRanking() {
+    const c = document.getElementById('rankingList');
+    const allProducts = Object.values(globalRanking);
+    
+    // Filtrar solo productos votados por el usuario
+    const myProducts = allProducts.filter(p => {
+        // Verificar si hay un voto del usuario para este producto
+        return p.votes && p.votes.some(v => v.user === (authenticatedUser ? authenticatedUser.name : ''));
+    });
+    
+    if (!myProducts.length) {
+        c.innerHTML = '<div class="empty-state"><div class="icon">🗳️</div><p>Aún no has votado ningún producto.<br>¡Participa en una cata!</p></div>';
+        return;
+    }
+    
+    // Función para verificar si un producto es de restaurante
+    function isRestaurantProduct(productName, brandName) {
+        for (const restaurant in RESTAURANT_DATA) {
+            for (const category in RESTAURANT_DATA[restaurant]) {
+                const found = RESTAURANT_DATA[restaurant][category].some(p => 
+                    p.name === productName && p.brand === brandName
+                );
+                if (found) return true;
+            }
+        }
+        return false;
+    }
+    
+    // Separar en supermercado y restaurante
+    const supermarketProducts = myProducts.filter(p => !isRestaurantProduct(p.name, p.brand));
+    const restaurantProducts = myProducts.filter(p => isRestaurantProduct(p.name, p.brand));
+    
+    // Mostrar solo la pestaña activa
+    let productsToShow = activeRankingTab === 'supermarket' ? supermarketProducts : restaurantProducts;
+    const sorted = productsToShow.sort((a, b) => b.avgScore - a.avgScore);
+    
+    if (!sorted.length) {
+        const emptyIcon = activeRankingTab === 'supermarket' ? '🛒' : '🍔';
+        const emptyText = activeRankingTab === 'supermarket' ? 'supermercado' : 'restaurantes';
+        c.innerHTML = `<div class="empty-state"><div class="icon">${emptyIcon}</div><p>No has votado productos de ${emptyText}.</p></div>`;
+        return;
+    }
+    
+    const html = sorted.map((p, i) => {
+        const cls = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+        const imageParam = activeRankingTab === 'supermarket' ? ((p.image || '')).replace(/'/g, "\\'") : '';
+        
+        // Obtener el voto del usuario actual
+        const userVote = p.votes ? p.votes.find(v => v.user === (authenticatedUser ? authenticatedUser.name : '')) : null;
+        const myScore = userVote ? userVote.score : p.avgScore;
+        
+        return `<div class="ranking-item">
+            <div class="ranking-position ${cls}">${i + 1}</div>
+            <div class="product-info" style="flex:1;">
+                <h4>${p.name}</h4>
+                <p>${p.brand} • Mi voto: ${myScore.toFixed(1)}</p>
+            </div>
+            <div class="product-score">${p.avgScore.toFixed(1)}</div>
+            ${authenticatedUser ? '<button onclick="toggleFav(\'' + p.name.replace(/'/g, "\\'") + '\',' + "'" + p.brand.replace(/'/g, "\\'") + "'" + ',\'' + imageParam + '\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">' + (isFav(p.name, p.brand) ? '❤️' : '🤍') + '</button>' : ''}
+        </div>`;
+    }).join('');
+    
+    c.innerHTML = html;
 }
 
 function displayGlobalRanking(){
@@ -3575,8 +3688,22 @@ function showProductSelectionScreen(){
 }
 function updateProductSelectionList(){
     const c=document.getElementById('productSelectionList');
-    document.getElementById('votedProductsCount').textContent=Object.keys(userVotes).length;
-    document.getElementById('totalProductsCount').textContent=currentTasting.products.length;
+    const votedCount = Object.keys(userVotes).length;
+    const totalCount = currentTasting.products.length;
+    
+    document.getElementById('votedProductsCount').textContent=votedCount;
+    document.getElementById('totalProductsCount').textContent=totalCount;
+    
+    // Cambiar color de la barra si todos votados
+    const statsBar = document.querySelector('.stats-bar');
+    if (statsBar && votedCount === totalCount && totalCount > 0) {
+        statsBar.style.background = '#d1fae5'; // Verde suave
+        statsBar.style.borderColor = '#86efac';
+    } else if (statsBar) {
+        statsBar.style.background = 'var(--bg-secondary)';
+        statsBar.style.borderColor = 'var(--border)';
+    }
+    
     c.innerHTML=currentTasting.products.map(function(p){
         const voted=userVotes[p.id];
         const userVote = voted ? (currentTasting.votes[p.id] || []).find(v => v.user === currentUser.name) : null;
