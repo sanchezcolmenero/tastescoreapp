@@ -1348,11 +1348,19 @@
                     <button class="btn btn-icon" onclick="openScanner()"><span>📷</span><span>Escanear</span></button>
                     <button class="btn btn-secondary btn-icon" onclick="toggleManualForm()"><span>✍️</span><span>Manual</span></button>
                 </div>
-                <div class="manual-product-form" id="manualProductForm" style="display:none;">
+                <div class="manual-product-form" id="manualProductForm" style="display:none;position:relative;">
+                    <button onclick="toggleManualForm()" style="position:absolute;top:0.5rem;right:0.5rem;background:none;border:none;font-size:1.5rem;color:var(--text-secondary);cursor:pointer;padding:0.25rem;line-height:1;transition:color 0.2s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-secondary)'">×</button>
                     <h4 style="margin-bottom:0.75rem;font-size:0.9rem;font-weight:600;">Producto Manual</h4>
+                    <div class="input-group">
+                        <label>Tipo</label>
+                        <select id="manualProductType" style="width:100%;padding:0.625rem;border:1px solid var(--border);border-radius:8px;font-size:0.9rem;font-family:'Inter',sans-serif;">
+                            <option value="supermarket">🛒 Supermercado</option>
+                            <option value="restaurant">🍔 Restaurante</option>
+                        </select>
+                    </div>
                     <div class="input-group"><label>Nombre</label><input type="text" id="manualProductName" placeholder="Ej: Queso Manchego"></div>
                     <div class="input-group"><label>Marca</label><input type="text" id="manualProductBrand" placeholder="Ej: García Baquero"></div>
-                    <div class="input-group"><label>URL Imagen (opcional)</label><input type="text" id="manualProductImage" placeholder="https://..."></div>
+                    <div class="input-group" id="manualImageGroup"><label>URL Imagen (opcional)</label><input type="text" id="manualProductImage" placeholder="https://..."></div>
                     <button class="btn btn-primary" onclick="addManualProduct()">Añadir</button>
                 </div>
                 <div class="search-results" id="searchResults"></div>
@@ -1520,7 +1528,6 @@
                     <div class="rating-value-popup" id="ratingValuePopup">5.0</div>
                 </div>
             </div>
-            <div class="input-group"><label>Comentarios (opcional)</label><textarea id="voteComment" rows="2" placeholder="Tus impresiones..."></textarea></div>
             <button class="btn btn-primary" onclick="submitVote()">Enviar Voto</button>
             <div class="stats-bar"><p><strong id="votedCount" style="color:var(--primary);">0</strong> de <strong id="votedTotal">0</strong> han votado</p></div>
         </div>
@@ -2368,6 +2375,13 @@ async function joinTasting(){
     const t=await loadTastingByCode(code);
     if(!t){alert('Código no encontrado');return;}
     if(t.status==='finished'){alert('Esta cata ya finalizó');return;}
+    
+    // Verificar si está expulsado
+    if(t.kickedParticipants && t.kickedParticipants.includes(name)){
+        showToast('⛔ Has sido expulsado de esta cata');
+        return;
+    }
+    
     currentTasting=t; currentUser={name,isHost:false};
     if(!currentTasting.participants.find(p=>p.name===name)){currentTasting.participants.push(currentUser);await saveTasting();}
     subscribeToTastingUpdates(); // Subscribe to realtime updates
@@ -2440,10 +2454,119 @@ function updateParticipantsList(){
     document.getElementById('participantsList').innerHTML=currentTasting.participants.map((p,i)=>{
         let actions='';
         if(currentUser.isHost && !p.isHost){
-            actions=`<div class="participant-actions"><button onclick="promoteToHost(${i})">👑 Anfitrión</button><button class="btn-kick" onclick="kickParticipant(${i})">✕ Eliminar</button></div>`;
+            actions=`
+                <div class="participant-actions" style="display:flex;gap:0.5rem;">
+                    <button onclick="confirmPromoteToHost(${i})" style="width:32px;height:32px;border-radius:50%;border:2px solid #f59e0b;background:transparent;color:#f59e0b;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='#f59e0b';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='#f59e0b';">
+                        ⭐
+                    </button>
+                    <button onclick="confirmKickParticipant(${i})" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--error);background:transparent;color:var(--error);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='var(--error)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--error)';">
+                        ✕
+                    </button>
+                </div>
+            `;
         }
         return `<div class="participant"><div class="participant-avatar">${p.name[0].toUpperCase()}</div><div class="participant-info"><strong style="font-size:0.9rem;">${p.name}</strong>${p.isHost?'<span style="color:var(--primary);margin-left:0.5rem;font-weight:500;font-size:0.75rem;">• Anfitrión</span>':''}</div>${actions}</div>`;
     }).join('');
+}
+
+// Confirmar promoción a anfitrión
+async function confirmPromoteToHost(idx) {
+    const participant = currentTasting.participants[idx];
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px);animation:fadeIn 0.2s;';
+    
+    const dialog = document.createElement('div');
+    dialog.style.cssText = 'background:white;border-radius:16px;padding:1.5rem;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:slideUp 0.3s;';
+    
+    dialog.innerHTML = `
+        <div style="text-align:center;margin-bottom:1rem;">
+            <div style="font-size:3rem;margin-bottom:0.5rem;">⭐</div>
+            <h3 style="font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:0.5rem;">¿Hacer anfitrión a ${participant.name}?</h3>
+            <p style="font-size:0.875rem;color:var(--text-secondary);line-height:1.5;">Esta persona tendrá control total de la cata.</p>
+        </div>
+        <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+            <button id="cancelPromote" style="flex:1;padding:0.75rem;border-radius:10px;border:1px solid var(--border);background:white;color:var(--text);font-weight:500;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;">
+                Cancelar
+            </button>
+            <button id="confirmPromote" style="flex:1;padding:0.75rem;border-radius:10px;border:none;background:#f59e0b;color:white;font-weight:600;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 2px 8px rgba(245,158,11,0.3);transition:all 0.2s;">
+                Confirmar
+            </button>
+        </div>
+    `;
+    
+    modal.appendChild(dialog);
+    document.body.appendChild(modal);
+    
+    const cancelBtn = dialog.querySelector('#cancelPromote');
+    const confirmBtn = dialog.querySelector('#confirmPromote');
+    
+    cancelBtn.onclick = () => {
+        modal.style.animation = 'fadeOut 0.2s';
+        setTimeout(() => document.body.removeChild(modal), 200);
+    };
+    
+    confirmBtn.onclick = async () => {
+        modal.style.animation = 'fadeOut 0.2s';
+        setTimeout(async () => {
+            document.body.removeChild(modal);
+            await promoteToHost(idx);
+        }, 200);
+    };
+    
+    modal.onclick = (e) => {
+        if (e.target === modal) cancelBtn.click();
+    };
+}
+
+// Confirmar expulsión
+async function confirmKickParticipant(idx) {
+    const participant = currentTasting.participants[idx];
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px);animation:fadeIn 0.2s;';
+    
+    const dialog = document.createElement('div');
+    dialog.style.cssText = 'background:white;border-radius:16px;padding:1.5rem;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:slideUp 0.3s;';
+    
+    dialog.innerHTML = `
+        <div style="text-align:center;margin-bottom:1rem;">
+            <div style="font-size:3rem;margin-bottom:0.5rem;">👋</div>
+            <h3 style="font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:0.5rem;">¿Expulsar a ${participant.name}?</h3>
+            <p style="font-size:0.875rem;color:var(--text-secondary);line-height:1.5;">Esta persona no podrá volver a entrar a esta cata.</p>
+        </div>
+        <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+            <button id="cancelKick" style="flex:1;padding:0.75rem;border-radius:10px;border:1px solid var(--border);background:white;color:var(--text);font-weight:500;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;">
+                Cancelar
+            </button>
+            <button id="confirmKick" style="flex:1;padding:0.75rem;border-radius:10px;border:none;background:var(--error);color:white;font-weight:600;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 2px 8px rgba(239,68,68,0.3);transition:all 0.2s;">
+                Expulsar
+            </button>
+        </div>
+    `;
+    
+    modal.appendChild(dialog);
+    document.body.appendChild(modal);
+    
+    const cancelBtn = dialog.querySelector('#cancelKick');
+    const confirmBtn = dialog.querySelector('#confirmKick');
+    
+    cancelBtn.onclick = () => {
+        modal.style.animation = 'fadeOut 0.2s';
+        setTimeout(() => document.body.removeChild(modal), 200);
+    };
+    
+    confirmBtn.onclick = async () => {
+        modal.style.animation = 'fadeOut 0.2s';
+        setTimeout(async () => {
+            document.body.removeChild(modal);
+            await kickParticipant(idx);
+        }, 200);
+    };
+    
+    modal.onclick = (e) => {
+        if (e.target === modal) cancelBtn.click();
+    };
 }
 
 async function promoteToHost(idx){
@@ -2460,12 +2583,25 @@ async function promoteToHost(idx){
 }
 
 async function kickParticipant(idx){
-    const name=currentTasting.participants[idx].name;
-    if(confirm('¿Eliminar a '+name+' de la cata?')){
-        currentTasting.participants.splice(idx,1);
-        await saveTasting(); updateParticipantsList();
-        if(document.getElementById('manageParticipantsScreen').classList.contains('active')) renderManageParticipants();
+    const participant = currentTasting.participants[idx];
+    
+    // Añadir a lista de expulsados
+    if (!currentTasting.kickedParticipants) {
+        currentTasting.kickedParticipants = [];
     }
+    currentTasting.kickedParticipants.push(participant.name);
+    
+    // Eliminar de participantes
+    currentTasting.participants.splice(idx,1);
+    
+    await saveTasting(); 
+    updateParticipantsList();
+    
+    if(document.getElementById('manageParticipantsScreen').classList.contains('active')) {
+        renderManageParticipants();
+    }
+    
+    showToast('✓ ' + participant.name + ' ha sido expulsado');
 }
 
 async function startTasting(){
@@ -2563,7 +2699,40 @@ async function searchProductsEdit(){
 
 function toggleManualForm(){const f=document.getElementById('manualProductForm');f.style.display=f.style.display==='none'?'block':'none';}
 function toggleManualFormEdit(){const f=document.getElementById('manualProductFormEdit');f.style.display=f.style.display==='none'?'block':'none';}
-function addManualProduct(){const n=document.getElementById('manualProductName').value.trim(),b=document.getElementById('manualProductBrand').value.trim(),img=document.getElementById('manualProductImage').value.trim();if(!n||!b){alert('Completa nombre y marca');return;}addProduct({name:n,brand:b,image:img});document.getElementById('manualProductName').value='';document.getElementById('manualProductBrand').value='';document.getElementById('manualProductImage').value='';toggleManualForm();}
+function addManualProduct(){
+    const n=document.getElementById('manualProductName').value.trim();
+    const b=document.getElementById('manualProductBrand').value.trim();
+    const type=document.getElementById('manualProductType').value;
+    const img= type === 'restaurant' ? '' : document.getElementById('manualProductImage').value.trim();
+    
+    if(!n||!b){alert('Completa nombre y marca');return;}
+    
+    addProduct({name:n,brand:b,image:img});
+    
+    document.getElementById('manualProductName').value='';
+    document.getElementById('manualProductBrand').value='';
+    document.getElementById('manualProductImage').value='';
+    document.getElementById('manualProductType').value='supermarket';
+    
+    toggleManualForm();
+}
+
+// Listener para mostrar/ocultar campo de imagen según tipo
+document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.getElementById('manualProductType');
+    const imageGroup = document.getElementById('manualImageGroup');
+    
+    if (typeSelect && imageGroup) {
+        typeSelect.addEventListener('change', function() {
+            if (this.value === 'restaurant') {
+                imageGroup.style.display = 'none';
+            } else {
+                imageGroup.style.display = 'block';
+            }
+        });
+    }
+});
+
 function addManualProductEdit(){const n=document.getElementById('editManualProductName').value.trim(),b=document.getElementById('editManualProductBrand').value.trim(),img=document.getElementById('editManualProductImage').value.trim();if(!n||!b){alert('Completa nombre y marca');return;}addProductFromEdit({name:n,brand:b,image:img});document.getElementById('editManualProductName').value='';document.getElementById('editManualProductBrand').value='';document.getElementById('editManualProductImage').value='';toggleManualFormEdit();}
 
 // ===== TABS =====
@@ -3132,7 +3301,7 @@ async function addProductFromEdit(product){if(currentTasting.products.find(p=>p.
 function updateAddedProducts(){
     const c=document.getElementById('addedProducts');document.getElementById('productCount').textContent=currentTasting.products.length;
     if(!currentTasting.products.length){c.innerHTML='<div class="empty-state" style="padding:1.5rem 0;"><div class="icon">📦</div><p>Aún no hay productos</p></div>';return;}
-    c.innerHTML=currentTasting.products.map(function(p,i){return '<div class="product-item" data-id="'+p.id+'"><div class="drag-handle">⋮⋮</div><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+p.name+'</h4><p>'+p.brand+'</p></div><button onclick="removeProduct('+i+')" class="btn btn-small" style="background:var(--error);color:white;border-color:var(--error);width:auto;flex-shrink:0;">✕</button></div>';}).join('');
+    c.innerHTML=currentTasting.products.map(function(p,i){return '<div class="product-item" data-id="'+p.id+'"><div class="drag-handle">⋮⋮</div><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+p.name+'</h4><p>'+p.brand+'</p></div><button onclick="removeProduct('+i+')" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--error);background:transparent;color:var(--error);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;padding:0;line-height:1;" onmouseover="this.style.background=\'var(--error)\';this.style.color=\'white\'" onmouseout="this.style.background=\'transparent\';this.style.color=\'var(--error)\'">✕</button></div>';}).join('');
     // Init Sortable for drag & drop
     if(sortableInstances.addedProducts) sortableInstances.addedProducts.destroy();
     sortableInstances.addedProducts = new Sortable(c, {
@@ -3306,11 +3475,10 @@ function showVotingScreen(){
 }
 async function submitVote(){
     const score=parseFloat(document.getElementById('ratingSlider').value);
-    const comment=document.getElementById('voteComment').value.trim();
     const product=currentTasting.products.find(function(p){return p.id===selectedProductId;});
     if(!currentTasting.votes[selectedProductId])currentTasting.votes[selectedProductId]=[];
     currentTasting.votes[selectedProductId]=currentTasting.votes[selectedProductId].filter(function(v){return v.user!==currentUser.name;});
-    currentTasting.votes[selectedProductId].push({user:currentUser.name,score:score,comment:comment});
+    currentTasting.votes[selectedProductId].push({user:currentUser.name,score:score});
     userVotes[selectedProductId]=true;
     updateGlobalRanking(product.name,product.brand,product.image,score);
     
@@ -3341,7 +3509,7 @@ function updateEditProductsList(){
     const c=document.getElementById('editProductsList');document.getElementById('editProductCount').textContent=currentTasting.products.length;
     c.innerHTML=currentTasting.products.map(function(p,i){
         const hasVotes=currentTasting.votes[p.id]&&currentTasting.votes[p.id].length>0;
-        return '<div class="product-item" data-id="'+p.id+'"><div class="drag-handle">⋮⋮</div><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+p.name+'</h4><p>'+p.brand+'</p>'+(hasVotes?'<p style="color:var(--success);font-size:0.72rem;margin-top:0.15rem;">✓ '+currentTasting.votes[p.id].length+' votos</p>':'')+' </div><button onclick="removeProductFromEdit('+i+')" class="btn btn-small" style="background:var(--error);color:white;border-color:var(--error);width:auto;flex-shrink:0;" '+(hasVotes?'disabled style="opacity:0.4;cursor:not-allowed;"':'')+'>✕</button></div>';
+        return '<div class="product-item" data-id="'+p.id+'"><div class="drag-handle">⋮⋮</div><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+p.name+'</h4><p>'+p.brand+'</p>'+(hasVotes?'<p style="color:var(--success);font-size:0.72rem;margin-top:0.15rem;">✓ '+currentTasting.votes[p.id].length+' votos</p>':'')+' </div><button onclick="removeProductFromEdit('+i+')" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--error);background:transparent;color:var(--error);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;padding:0;line-height:1;'+(hasVotes?'opacity:0.4;cursor:not-allowed;pointer-events:none;':'')+'" '+(hasVotes?'':'onmouseover="this.style.background=\'var(--error)\';this.style.color=\'white\'" onmouseout="this.style.background=\'transparent\';this.style.color=\'var(--error)\'"')+'>✕</button></div>';
     }).join('');
     // Init Sortable for drag & drop
     if(sortableInstances.editProductsList) sortableInstances.editProductsList.destroy();
@@ -4005,6 +4173,13 @@ async function resumeTasting(code) {
         });
         
         if (existingParticipant) {
+            // Verificar si fue expulsado después
+            if (currentTasting.kickedParticipants && currentTasting.kickedParticipants.includes(existingParticipant.name)) {
+                showToast('⛔ Has sido expulsado de esta cata');
+                showScreen('homeScreen');
+                return;
+            }
+            
             // Usuario ya está en la cata
             currentUser = existingParticipant;
             console.log('Found existing participant:', currentUser.name, 'isHost:', currentUser.isHost);
@@ -4013,6 +4188,13 @@ async function resumeTasting(code) {
             if (!userName) {
                 userName = prompt('Introduce tu nombre para continuar:');
                 if (!userName) return;
+            }
+            
+            // Verificar si está expulsado
+            if (currentTasting.kickedParticipants && currentTasting.kickedParticipants.includes(userName)) {
+                showToast('⛔ Has sido expulsado de esta cata');
+                showScreen('homeScreen');
+                return;
             }
             
             // Añadir como participante nuevo
