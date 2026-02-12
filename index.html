@@ -1422,8 +1422,12 @@
 <div class="screen" id="productSelectionScreen">
     <div class="container">
         <div class="card" style="position:relative;">
-            <button onclick="showEditMode()" id="editBtn" style="display:none;position:absolute;top:1rem;right:1rem;width:36px;height:36px;border-radius:50%;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);font-size:1.2rem;cursor:pointer;transition:all 0.2s;padding:0;display:flex;align-items:center;justify-content:center;z-index:10;" onmouseover="this.style.background='var(--primary)';this.style.color='white';this.style.borderColor='var(--primary)';" onmouseout="this.style.background='var(--bg-secondary)';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)';" title="Editar cata">⌄</button>
-            <button onclick="showManageParticipants()" id="participantsBtn" style="display:none;position:absolute;top:1rem;right:4rem;width:36px;height:36px;border-radius:50%;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);font-size:1rem;cursor:pointer;transition:all 0.2s;padding:0;display:flex;align-items:center;justify-content:center;z-index:10;" onmouseover="this.style.background='var(--primary)';this.style.color='white';this.style.borderColor='var(--primary)';" onmouseout="this.style.background='var(--bg-secondary)';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)';" title="Participantes">👥</button>
+            <button onclick="showEditMode()" id="editBtn" style="display:none;position:absolute;top:1rem;right:1rem;width:36px;height:36px;border-radius:50%;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);font-size:1.2rem;cursor:pointer;transition:all 0.2s;padding:0;display:flex;align-items:center;justify-content:center;z-index:10;" onmouseover="this.style.background='var(--primary)';this.style.color='white';this.style.borderColor='var(--primary)';" onmouseout="this.style.background='var(--bg-secondary)';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)';" title="Editar cata">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </button>
+            <button onclick="showManageParticipants()" id="participantsBtn" style="display:none;position:absolute;top:1rem;right:4rem;width:36px;height:36px;border-radius:50%;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;transition:all 0.2s;padding:0;display:flex;align-items:center;justify-content:center;z-index:10;" onmouseover="this.style.background='var(--primary)';this.style.color='white';this.style.borderColor='var(--primary)';" onmouseout="this.style.background='var(--bg-secondary)';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)';" title="Participantes">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </button>
             <h2 class="section-title" style="margin:0 0 1.25rem;">Selecciona Producto</h2>
             <div class="product-grid" id="productSelectionList"></div>
             <div class="stats-bar"><p><strong id="votedProductsCount">0</strong> de <strong id="totalProductsCount">0</strong> productos votados</p></div>
@@ -1438,15 +1442,21 @@
         <div class="card" style="margin-top:0.75rem;">
             <h2 style="margin-bottom:1rem;font-size:1.1rem;font-weight:600;">Participantes</h2>
             
-            <!-- Código para invitar -->
-            <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;">
-                <div>
-                    <p style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.25rem;">Código de la cata</p>
-                    <span style="font-size:1.2rem;font-weight:700;color:var(--primary);letter-spacing:0.1em;" id="manageMiniCode"></span>
+            <!-- Código grande como en waitingScreen -->
+            <div style="text-align:center;margin-bottom:1.5rem;">
+                <p style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.5rem;">Código de la cata</p>
+                <div style="font-size:2.5rem;font-weight:700;color:var(--primary);letter-spacing:0.15em;margin-bottom:1rem;" id="manageMiniCode"></div>
+                
+                <!-- Botones de compartir -->
+                <div style="display:flex;gap:0.75rem;justify-content:center;">
+                    <button onclick="copyInviteLink()" style="flex:1;max-width:200px;padding:0.75rem;border-radius:10px;border:1px solid var(--border);background:white;color:var(--text);font-weight:500;font-size:0.85rem;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.5rem;" onmouseover="this.style.background='var(--bg-secondary)';this.style.borderColor='var(--primary)';" onmouseout="this.style.background='white';this.style.borderColor='var(--border)';">
+                        📋 Copiar enlace
+                    </button>
+                    <button onclick="shareWhatsApp()" style="flex:1;max-width:200px;padding:0.75rem;border-radius:10px;border:none;background:#25D366;color:white;font-weight:600;font-size:0.85rem;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 2px 6px rgba(37,211,102,0.3);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.5rem;" onmouseover="this.style.background='#20BA5A';this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(37,211,102,0.4)';" onmouseout="this.style.background='#25D366';this.style.transform='';this.style.boxShadow='0 2px 6px rgba(37,211,102,0.3)';">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                        WhatsApp
+                    </button>
                 </div>
-                <button onclick="openShareModal()" style="padding:0.5rem 1rem;border-radius:8px;border:none;background:var(--primary);color:white;font-weight:600;font-size:0.85rem;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 2px 6px rgba(37,99,235,0.3);transition:all 0.2s;" onmouseover="this.style.background='var(--primary-dark)';this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(37,99,235,0.4)';" onmouseout="this.style.background='var(--primary)';this.style.transform='';this.style.boxShadow='0 2px 6px rgba(37,99,235,0.3)';">
-                    📤 Invitar
-                </button>
             </div>
             
             <!-- Lista de participantes -->
@@ -1535,10 +1545,12 @@
                 <div class="rating-slider-container">
                     <input type="range" id="ratingSlider" class="rating-slider" min="0" max="10" step="0.1" value="5.0" oninput="updateRatingValue()">
                     <div class="rating-labels"><span>0</span><span>5</span><span>10</span></div>
-                    <div class="rating-value-popup" id="ratingValuePopup">5.0</div>
                 </div>
             </div>
-            <button class="btn btn-primary" onclick="submitVote()">Enviar Voto</button>
+            <div style="display:flex;gap:0.75rem;">
+                <button class="btn btn-primary" onclick="submitVote()" style="flex:1;">Enviar Voto</button>
+                <button class="btn" onclick="markAsNotTasted()" style="flex:1;background:var(--bg-tertiary);color:var(--text);border:1px solid var(--border);font-weight:500;">No probado</button>
+            </div>
             <div class="stats-bar"><p><strong id="votedCount" style="color:var(--primary);">0</strong> de <strong id="votedTotal">0</strong> han votado</p></div>
         </div>
     </div>
@@ -2466,10 +2478,10 @@ function updateParticipantsList(){
         if(currentUser.isHost && !p.isHost){
             actions=`
                 <div class="participant-actions" style="display:flex;gap:0.5rem;">
-                    <button onclick="confirmPromoteToHost(${i})" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--primary);background:transparent;color:var(--primary);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='var(--primary)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--primary)';">
-                        ⭐
+                    <button onclick="confirmPromoteToHost(${i})" style="width:24px;height:24px;border-radius:50%;border:1.5px solid var(--primary);background:transparent;color:var(--primary);font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='var(--primary)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--primary)';">
+                        ☆
                     </button>
-                    <button onclick="confirmKickParticipant(${i})" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--error);background:transparent;color:var(--error);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='var(--error)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--error)';">
+                    <button onclick="confirmKickParticipant(${i})" style="width:24px;height:24px;border-radius:50%;border:1.5px solid var(--error);background:transparent;color:var(--error);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='var(--error)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--error)';">
                         ✕
                     </button>
                 </div>
@@ -2632,10 +2644,10 @@ function renderManageParticipants(){
         if(currentUser.isHost&&!p.isHost){
             actions=`
                 <div class="participant-actions" style="display:flex;gap:0.5rem;">
-                    <button onclick="confirmPromoteToHost(${i})" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--primary);background:transparent;color:var(--primary);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='var(--primary)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--primary)';">
-                        ⭐
+                    <button onclick="confirmPromoteToHost(${i})" style="width:24px;height:24px;border-radius:50%;border:1.5px solid var(--primary);background:transparent;color:var(--primary);font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='var(--primary)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--primary)';">
+                        ☆
                     </button>
-                    <button onclick="confirmKickParticipant(${i})" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--error);background:transparent;color:var(--error);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='var(--error)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--error)';">
+                    <button onclick="confirmKickParticipant(${i})" style="width:24px;height:24px;border-radius:50%;border:1.5px solid var(--error);background:transparent;color:var(--error);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='var(--error)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--error)';">
                         ✕
                     </button>
                 </div>
@@ -3355,17 +3367,27 @@ function updateProductSelectionList(){
     c.innerHTML=currentTasting.products.map(function(p){
         const voted=userVotes[p.id];
         const userVote = voted ? (currentTasting.votes[p.id] || []).find(v => v.user === currentUser.name) : null;
-        const voteScore = userVote ? userVote.score : 0;
-        const scoreColor = userVote ? getScoreColor(voteScore) : '';
+        const isNotTasted = userVote && userVote.score === -1;
+        const voteScore = userVote && !isNotTasted ? userVote.score : 0;
+        const scoreColor = userVote && !isNotTasted ? getScoreColor(voteScore) : '';
         
         // Eventos para mantener pulsado (solo para host)
         const longPressEvents = currentUser.isHost && currentTasting.status !== 'finished' ? 
             `onmousedown="startLongPress('${p.id}')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress('${p.id}')" ontouchend="cancelLongPress()"` : '';
         
+        let statusBadge = '';
+        if (voted) {
+            if (isNotTasted) {
+                statusBadge = `<div style="font-size:1.3rem;font-weight:600;color:var(--text-secondary);padding:0.3rem 0.7rem;border-radius:6px;flex-shrink:0;background:var(--bg-tertiary);">−</div>`;
+            } else {
+                statusBadge = `<div style="font-size:1.1rem;font-weight:600;color:white;padding:0.3rem 0.7rem;border-radius:6px;text-shadow:0 1px 2px rgba(0,0,0,0.15);flex-shrink:0;background:${scoreColor};">${voteScore.toFixed(1)}</div>`;
+            }
+        }
+        
         return `<div class="product-item ${voted ? 'selected' : ''}" onclick="selectProduct('${p.id}')" ${longPressEvents} style="cursor:pointer;">
             <img src="${p.image || ''}" class="product-image" onerror="this.style.display='none'">
             <div class="product-info"><h4>${p.name}</h4><p>${p.brand}</p></div>
-            ${voted ? `<div style="font-size:1.1rem;font-weight:600;color:white;padding:0.3rem 0.7rem;border-radius:6px;text-shadow:0 1px 2px rgba(0,0,0,0.15);flex-shrink:0;background:${scoreColor};">${voteScore.toFixed(1)}</div>` : ''}
+            ${statusBadge}
         </div>`;
     }).join('');
 }
@@ -3434,7 +3456,6 @@ function selectProduct(id){
 }
 function updateRatingValue(){
     const value = parseFloat(document.getElementById('ratingSlider').value);
-    const popupEl = document.getElementById('ratingValuePopup');
     const productScoreEl = document.getElementById('votingProductScore');
     
     // Obtener color
@@ -3443,18 +3464,6 @@ function updateRatingValue(){
     else if (value < 5) bgColor = '#f97316';
     else if (value < 7.5) bgColor = '#eab308';
     else bgColor = '#22c55e';
-    
-    // Actualizar popup
-    if (popupEl) {
-        popupEl.textContent = value.toFixed(1);
-        popupEl.style.background = bgColor;
-        popupEl.style.borderColor = bgColor;
-        
-        // Centrar el popup en el thumb del slider
-        const slider = document.getElementById('ratingSlider');
-        const percent = ((value - slider.min) / (slider.max - slider.min)) * 100;
-        popupEl.style.left = `${percent}%`;
-    }
     
     // Actualizar puntuación al lado del producto
     if (productScoreEl) {
@@ -3509,6 +3518,18 @@ async function submitVote(){
     scoreEl.style.background = getScoreColor(score);
     
     await saveTasting(); showProductSelectionScreen();
+}
+
+async function markAsNotTasted(){
+    const product=currentTasting.products.find(function(p){return p.id===selectedProductId;});
+    if(!currentTasting.votes[selectedProductId])currentTasting.votes[selectedProductId]=[];
+    currentTasting.votes[selectedProductId]=currentTasting.votes[selectedProductId].filter(function(v){return v.user!==currentUser.name;});
+    // -1 indica "no probado"
+    currentTasting.votes[selectedProductId].push({user:currentUser.name,score:-1});
+    userVotes[selectedProductId]=true;
+    
+    await saveTasting(); 
+    showProductSelectionScreen();
 }
 
 function editVote() {
@@ -3618,6 +3639,51 @@ function toggleResultCard(card) {
     card.classList.toggle('collapsed');
 }
 function confirmFinishTasting() {
+    // Verificar que todos los productos tengan votos de todos los participantes
+    const productsWithoutVotes = [];
+    
+    currentTasting.products.forEach(product => {
+        const votes = currentTasting.votes[product.id] || [];
+        const votedUsers = votes.map(v => v.user);
+        
+        // Verificar si algún participante no ha votado
+        const missingVoters = currentTasting.participants.filter(p => !votedUsers.includes(p.name));
+        
+        if (missingVoters.length > 0) {
+            productsWithoutVotes.push({
+                product: product.name,
+                missingVoters: missingVoters
+            });
+        }
+    });
+    
+    if (productsWithoutVotes.length > 0) {
+        // Mostrar error
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px);animation:fadeIn 0.2s;';
+        
+        const dialog = document.createElement('div');
+        dialog.style.cssText = 'background:white;border-radius:16px;padding:1.5rem;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:slideUp 0.3s;';
+        
+        dialog.innerHTML = `
+            <div style="text-align:center;margin-bottom:1rem;">
+                <div style="font-size:3rem;margin-bottom:0.5rem;">⚠️</div>
+                <h3 style="font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:0.5rem;">Productos sin votar</h3>
+                <p style="font-size:0.875rem;color:var(--text-secondary);line-height:1.5;margin-bottom:0.75rem;">Hay ${productsWithoutVotes.length} producto(s) que no han sido votados por todos los participantes.</p>
+                <p style="font-size:0.8rem;color:var(--text-secondary);line-height:1.4;">Todos deben marcar los productos como "No probado" o votarlos para finalizar la cata.</p>
+            </div>
+            <button onclick="this.closest('div[style*=\\'position:fixed\\']').remove()" style="width:100%;padding:0.75rem;border-radius:10px;border:none;background:var(--primary);color:white;font-weight:600;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">
+                Entendido
+            </button>
+        `;
+        
+        modal.appendChild(dialog);
+        document.body.appendChild(modal);
+        
+        return;
+    }
+    
+    // Continuar con confirmación normal
     const modal = document.createElement('div');
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px);animation:fadeIn 0.2s;';
     
