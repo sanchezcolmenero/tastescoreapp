@@ -110,19 +110,19 @@
         .input-group select { cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2364748b' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 0.75rem center; padding-right:2.5rem; }
         .input-group input:focus,.input-group textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
         /* PRODUCTS – overflow fix */
-        .product-item { background:var(--bg-secondary); padding:1rem; border-radius:8px; margin-bottom:0.75rem; border:1px solid var(--border); transition:all 0.15s; display:flex; gap:0.75rem; align-items:center; cursor:pointer; }
-        .drag-handle { width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:grab; color:var(--text-tertiary); flex-shrink:0; font-size:1.1rem; transition:color 0.2s; }
+        .product-item { background:var(--bg-secondary); padding:0.625rem 0.75rem; border-radius:8px; margin-bottom:0.5rem; border:1px solid var(--border); transition:all 0.15s; display:flex; gap:0.5rem; align-items:center; cursor:pointer; }
+        .drag-handle { width:28px; height:28px; display:none; align-items:center; justify-content:center; cursor:grab; color:var(--text-tertiary); flex-shrink:0; font-size:1.1rem; transition:color 0.2s; }
         .drag-handle:hover { color:var(--primary); }
         .drag-handle:active { cursor:grabbing; }
         .product-item.dragging { opacity:0.4; transform:scale(1.05); box-shadow:0 8px 24px rgba(37,99,235,0.3); border-color:var(--primary); background:var(--bg); }
         .product-item.ghost { opacity:0.5; background:var(--bg-tertiary); }
         .product-item:hover { background:var(--bg-tertiary); border-color:var(--primary); }
         .product-item.selected { border-color:var(--primary); background:var(--bg); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
-        .product-image { width:56px; height:56px; border-radius:6px; object-fit:cover; background:var(--bg-tertiary); border:1px solid var(--border); flex-shrink:0; }
+        .product-image { width:48px; height:48px; border-radius:6px; object-fit:cover; background:var(--bg-tertiary); border:1px solid var(--border); flex-shrink:0; }
         .product-image[style*="display: none"] { width:0; height:0; margin:0; border:0; }
         .product-info { flex:1; min-width:0; overflow:hidden; }
-        .product-info h4 { font-weight:600; font-size:0.9rem; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; margin-bottom:0.15rem; }
-        .product-info p { font-size:0.78rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .product-info h4 { font-weight:600; font-size:0.85rem; line-height:1.25; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; margin-bottom:0.1rem; }
+        .product-info p { font-size:0.72rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .product-score { font-weight:700; color:var(--primary); font-size:1.25rem; flex-shrink:0; }
         .product-grid { display:grid; gap:0.75rem; }
         /* RATING */
@@ -1360,7 +1360,23 @@
                     </div>
                     <div class="input-group"><label>Nombre</label><input type="text" id="manualProductName" placeholder="Ej: Queso Manchego"></div>
                     <div class="input-group"><label>Marca</label><input type="text" id="manualProductBrand" placeholder="Ej: García Baquero"></div>
-                    <div class="input-group" id="manualImageGroup"><label>URL Imagen (opcional)</label><input type="text" id="manualProductImage" placeholder="https://..."></div>
+                    <div class="input-group" id="manualImageGroup">
+                        <label>Imagen (opcional)</label>
+                        <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+                            <button type="button" onclick="showManualImageOption('url')" id="manualImageUrlBtn" style="flex:1;padding:0.5rem;border-radius:6px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text);font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;">
+                                🔗 URL
+                            </button>
+                            <button type="button" onclick="showManualImageOption('camera')" id="manualImageCameraBtn" style="flex:1;padding:0.5rem;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text);font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;">
+                                📷 Cámara
+                            </button>
+                        </div>
+                        <input type="text" id="manualProductImage" placeholder="https://..." style="display:none;">
+                        <input type="file" id="manualProductImageFile" accept="image/*" capture="environment" style="display:none;" onchange="handleManualImageCapture(event)">
+                        <div id="manualImagePreview" style="display:none;margin-top:0.5rem;position:relative;">
+                            <img id="manualImagePreviewImg" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
+                            <button type="button" onclick="removeManualImage()" style="position:absolute;top:0.5rem;right:0.5rem;width:28px;height:28px;border-radius:50%;background:var(--error);color:white;border:none;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+                        </div>
+                    </div>
                     <button class="btn btn-primary" onclick="addManualProduct()">Añadir</button>
                 </div>
                 <div class="search-results" id="searchResults"></div>
@@ -1489,7 +1505,23 @@
                     <h4 style="margin-bottom:0.75rem;font-size:0.9rem;font-weight:600;">Producto Manual</h4>
                     <div class="input-group"><label>Nombre</label><input type="text" id="editManualProductName" placeholder="Ej: Queso Manchego"></div>
                     <div class="input-group"><label>Marca</label><input type="text" id="editManualProductBrand" placeholder="Ej: García Baquero"></div>
-                    <div class="input-group"><label>URL Imagen (opcional)</label><input type="text" id="editManualProductImage" placeholder="https://..."></div>
+                    <div class="input-group">
+                        <label>Imagen (opcional)</label>
+                        <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+                            <button type="button" onclick="showEditImageOption('url')" id="editImageUrlBtn" style="flex:1;padding:0.5rem;border-radius:6px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text);font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;">
+                                🔗 URL
+                            </button>
+                            <button type="button" onclick="showEditImageOption('camera')" id="editImageCameraBtn" style="flex:1;padding:0.5rem;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text);font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;">
+                                📷 Cámara
+                            </button>
+                        </div>
+                        <input type="text" id="editManualProductImage" placeholder="https://..." style="display:none;">
+                        <input type="file" id="editManualProductImageFile" accept="image/*" capture="environment" style="display:none;" onchange="handleEditImageCapture(event)">
+                        <div id="editImagePreview" style="display:none;margin-top:0.5rem;position:relative;">
+                            <img id="editImagePreviewImg" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
+                            <button type="button" onclick="removeEditImage()" style="position:absolute;top:0.5rem;right:0.5rem;width:28px;height:28px;border-radius:50%;background:var(--error);color:white;border:none;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+                        </div>
+                    </div>
                     <button class="btn btn-primary" onclick="addManualProductEdit()">Añadir</button>
                 </div>
                 <div class="search-results" id="editSearchResults"></div>
@@ -2730,22 +2762,112 @@ async function searchProductsEdit(){
 
 function toggleManualForm(){const f=document.getElementById('manualProductForm');f.style.display=f.style.display==='none'?'block':'none';}
 function toggleManualFormEdit(){const f=document.getElementById('manualProductFormEdit');f.style.display=f.style.display==='none'?'block':'none';}
+// Variable global para imagen capturada
+let manualCapturedImage = null;
+
 function addManualProduct(){
     const n=document.getElementById('manualProductName').value.trim();
     const b=document.getElementById('manualProductBrand').value.trim();
     const type=document.getElementById('manualProductType').value;
-    const img= type === 'restaurant' ? '' : document.getElementById('manualProductImage').value.trim();
+    
+    // Usar imagen capturada o URL según lo que haya
+    let img = '';
+    if (type !== 'restaurant') {
+        img = manualCapturedImage || document.getElementById('manualProductImage').value.trim();
+    }
     
     if(!n||!b){alert('Completa nombre y marca');return;}
     
     addProduct({name:n,brand:b,image:img});
     
+    // Limpiar formulario
     document.getElementById('manualProductName').value='';
     document.getElementById('manualProductBrand').value='';
     document.getElementById('manualProductImage').value='';
     document.getElementById('manualProductType').value='supermarket';
+    removeManualImage();
     
     toggleManualForm();
+}
+
+function showManualImageOption(option) {
+    const urlBtn = document.getElementById('manualImageUrlBtn');
+    const cameraBtn = document.getElementById('manualImageCameraBtn');
+    const urlInput = document.getElementById('manualProductImage');
+    const fileInput = document.getElementById('manualProductImageFile');
+    const preview = document.getElementById('manualImagePreview');
+    
+    if (option === 'url') {
+        // Activar URL
+        urlBtn.style.background = 'var(--bg-secondary)';
+        urlBtn.style.borderColor = 'var(--primary)';
+        cameraBtn.style.background = 'white';
+        cameraBtn.style.borderColor = 'var(--border)';
+        
+        urlInput.style.display = 'block';
+        fileInput.style.display = 'none';
+        preview.style.display = 'none';
+        manualCapturedImage = null;
+    } else {
+        // Activar cámara
+        cameraBtn.style.background = 'var(--bg-secondary)';
+        cameraBtn.style.borderColor = 'var(--primary)';
+        urlBtn.style.background = 'white';
+        urlBtn.style.borderColor = 'var(--border)';
+        
+        urlInput.style.display = 'none';
+        fileInput.style.display = 'block';
+        fileInput.click(); // Abrir selector de archivo/cámara
+    }
+}
+
+function handleManualImageCapture(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validar que sea imagen
+    if (!file.type.startsWith('image/')) {
+        alert('Por favor selecciona una imagen válida');
+        return;
+    }
+    
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen es demasiado grande. Máximo 5MB.');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        manualCapturedImage = e.target.result; // Base64
+        
+        // Mostrar preview
+        const preview = document.getElementById('manualImagePreview');
+        const previewImg = document.getElementById('manualImagePreviewImg');
+        previewImg.src = manualCapturedImage;
+        preview.style.display = 'block';
+        
+        // Ocultar input de archivo
+        document.getElementById('manualProductImageFile').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeManualImage() {
+    manualCapturedImage = null;
+    document.getElementById('manualImagePreview').style.display = 'none';
+    document.getElementById('manualProductImageFile').style.display = 'none';
+    document.getElementById('manualProductImageFile').value = '';
+    
+    // Resetear a URL por defecto
+    const urlBtn = document.getElementById('manualImageUrlBtn');
+    const cameraBtn = document.getElementById('manualImageCameraBtn');
+    if (urlBtn && cameraBtn) {
+        urlBtn.style.background = 'var(--bg-secondary)';
+        urlBtn.style.borderColor = 'var(--primary)';
+        cameraBtn.style.background = 'white';
+        cameraBtn.style.borderColor = 'var(--border)';
+    }
 }
 
 // Listener para mostrar/ocultar campo de imagen según tipo
@@ -2764,7 +2886,98 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function addManualProductEdit(){const n=document.getElementById('editManualProductName').value.trim(),b=document.getElementById('editManualProductBrand').value.trim(),img=document.getElementById('editManualProductImage').value.trim();if(!n||!b){alert('Completa nombre y marca');return;}addProductFromEdit({name:n,brand:b,image:img});document.getElementById('editManualProductName').value='';document.getElementById('editManualProductBrand').value='';document.getElementById('editManualProductImage').value='';toggleManualFormEdit();}
+// Variable global para imagen capturada en edición
+let editCapturedImage = null;
+
+function addManualProductEdit(){
+    const n=document.getElementById('editManualProductName').value.trim();
+    const b=document.getElementById('editManualProductBrand').value.trim();
+    const img=editCapturedImage || document.getElementById('editManualProductImage').value.trim();
+    
+    if(!n||!b){alert('Completa nombre y marca');return;}
+    
+    addProductFromEdit({name:n,brand:b,image:img});
+    
+    document.getElementById('editManualProductName').value='';
+    document.getElementById('editManualProductBrand').value='';
+    document.getElementById('editManualProductImage').value='';
+    removeEditImage();
+    
+    toggleManualFormEdit();
+}
+
+function showEditImageOption(option) {
+    const urlBtn = document.getElementById('editImageUrlBtn');
+    const cameraBtn = document.getElementById('editImageCameraBtn');
+    const urlInput = document.getElementById('editManualProductImage');
+    const fileInput = document.getElementById('editManualProductImageFile');
+    const preview = document.getElementById('editImagePreview');
+    
+    if (option === 'url') {
+        urlBtn.style.background = 'var(--bg-secondary)';
+        urlBtn.style.borderColor = 'var(--primary)';
+        cameraBtn.style.background = 'white';
+        cameraBtn.style.borderColor = 'var(--border)';
+        
+        urlInput.style.display = 'block';
+        fileInput.style.display = 'none';
+        preview.style.display = 'none';
+        editCapturedImage = null;
+    } else {
+        cameraBtn.style.background = 'var(--bg-secondary)';
+        cameraBtn.style.borderColor = 'var(--primary)';
+        urlBtn.style.background = 'white';
+        urlBtn.style.borderColor = 'var(--border)';
+        
+        urlInput.style.display = 'none';
+        fileInput.style.display = 'block';
+        fileInput.click();
+    }
+}
+
+function handleEditImageCapture(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+        alert('Por favor selecciona una imagen válida');
+        return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen es demasiado grande. Máximo 5MB.');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        editCapturedImage = e.target.result;
+        
+        const preview = document.getElementById('editImagePreview');
+        const previewImg = document.getElementById('editImagePreviewImg');
+        previewImg.src = editCapturedImage;
+        preview.style.display = 'block';
+        
+        document.getElementById('editManualProductImageFile').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeEditImage() {
+    editCapturedImage = null;
+    document.getElementById('editImagePreview').style.display = 'none';
+    document.getElementById('editManualProductImageFile').style.display = 'none';
+    document.getElementById('editManualProductImageFile').value = '';
+    
+    const urlBtn = document.getElementById('editImageUrlBtn');
+    const cameraBtn = document.getElementById('editImageCameraBtn');
+    if (urlBtn && cameraBtn) {
+        urlBtn.style.background = 'var(--bg-secondary)';
+        urlBtn.style.borderColor = 'var(--primary)';
+        cameraBtn.style.background = 'white';
+        cameraBtn.style.borderColor = 'var(--border)';
+    }
+}
 
 // ===== TABS =====
 function switchProductTab(tab){
