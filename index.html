@@ -1422,7 +1422,8 @@
 <div class="screen" id="productSelectionScreen">
     <div class="container">
         <div class="card" style="position:relative;">
-            <button onclick="showEditMode()" id="editBtn" style="display:none;position:absolute;top:1rem;right:1rem;width:36px;height:36px;border-radius:50%;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);font-size:0.9rem;cursor:pointer;transition:all 0.2s;padding:0;display:flex;align-items:center;justify-content:center;z-index:10;" onmouseover="this.style.background='var(--primary)';this.style.color='white';this.style.borderColor='var(--primary)';" onmouseout="this.style.background='var(--bg-secondary)';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)';" title="Editar cata">✎</button>
+            <button onclick="showEditMode()" id="editBtn" style="display:none;position:absolute;top:1rem;right:1rem;width:36px;height:36px;border-radius:50%;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);font-size:1.2rem;cursor:pointer;transition:all 0.2s;padding:0;display:flex;align-items:center;justify-content:center;z-index:10;" onmouseover="this.style.background='var(--primary)';this.style.color='white';this.style.borderColor='var(--primary)';" onmouseout="this.style.background='var(--bg-secondary)';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)';" title="Editar cata">⌄</button>
+            <button onclick="showManageParticipants()" id="participantsBtn" style="display:none;position:absolute;top:1rem;right:4rem;width:36px;height:36px;border-radius:50%;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);font-size:1rem;cursor:pointer;transition:all 0.2s;padding:0;display:flex;align-items:center;justify-content:center;z-index:10;" onmouseover="this.style.background='var(--primary)';this.style.color='white';this.style.borderColor='var(--primary)';" onmouseout="this.style.background='var(--bg-secondary)';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)';" title="Participantes">👥</button>
             <h2 class="section-title" style="margin:0 0 1.25rem;">Selecciona Producto</h2>
             <div class="product-grid" id="productSelectionList"></div>
             <div class="stats-bar"><p><strong id="votedProductsCount">0</strong> de <strong id="totalProductsCount">0</strong> productos votados</p></div>
@@ -1435,11 +1436,20 @@
 <div class="screen" id="manageParticipantsScreen">
     <div class="container">
         <div class="card" style="margin-top:0.75rem;">
-            <h2 style="margin-bottom:1rem;font-size:1.1rem;font-weight:600;">Gestionar Participantes</h2>
-            <div class="invite-mini">
-                <span class="code-mini" id="manageMiniCode"></span>
-                <p>Código para invitar</p>
+            <h2 style="margin-bottom:1rem;font-size:1.1rem;font-weight:600;">Participantes</h2>
+            
+            <!-- Código para invitar -->
+            <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;">
+                <div>
+                    <p style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.25rem;">Código de la cata</p>
+                    <span style="font-size:1.2rem;font-weight:700;color:var(--primary);letter-spacing:0.1em;" id="manageMiniCode"></span>
+                </div>
+                <button onclick="openShareModal()" style="padding:0.5rem 1rem;border-radius:8px;border:none;background:var(--primary);color:white;font-weight:600;font-size:0.85rem;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 2px 6px rgba(37,99,235,0.3);transition:all 0.2s;" onmouseover="this.style.background='var(--primary-dark)';this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(37,99,235,0.4)';" onmouseout="this.style.background='var(--primary)';this.style.transform='';this.style.boxShadow='0 2px 6px rgba(37,99,235,0.3)';">
+                    📤 Invitar
+                </button>
             </div>
+            
+            <!-- Lista de participantes -->
             <div id="manageParticipantsList"></div>
         </div>
     </div>
@@ -1563,7 +1573,7 @@
         <div class="card" style="margin-top:0.75rem;">
             <h2 style="margin-bottom:1rem;font-size:1.1rem;font-weight:600;text-align:center;">Resultados</h2>
             <div id="resultsContainer"></div>
-            <button class="btn btn-primary" onclick="finishTasting()" style="margin-top:1rem;">Finalizar Cata</button>
+            <button class="btn btn-primary" onclick="confirmFinishTasting()" style="margin-top:1rem;">Finalizar Cata</button>
         </div>
     </div>
 </div>
@@ -2456,7 +2466,7 @@ function updateParticipantsList(){
         if(currentUser.isHost && !p.isHost){
             actions=`
                 <div class="participant-actions" style="display:flex;gap:0.5rem;">
-                    <button onclick="confirmPromoteToHost(${i})" style="width:32px;height:32px;border-radius:50%;border:2px solid #f59e0b;background:transparent;color:#f59e0b;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='#f59e0b';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='#f59e0b';">
+                    <button onclick="confirmPromoteToHost(${i})" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--primary);background:transparent;color:var(--primary);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='var(--primary)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--primary)';">
                         ⭐
                     </button>
                     <button onclick="confirmKickParticipant(${i})" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--error);background:transparent;color:var(--error);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='var(--error)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--error)';">
@@ -2620,7 +2630,16 @@ function renderManageParticipants(){
     document.getElementById('manageParticipantsList').innerHTML=currentTasting.participants.map((p,i)=>{
         let actions='';
         if(currentUser.isHost&&!p.isHost){
-            actions=`<div class="participant-actions"><button onclick="promoteToHost(${i})">👑</button><button class="btn-kick" onclick="kickParticipant(${i})">✕</button></div>`;
+            actions=`
+                <div class="participant-actions" style="display:flex;gap:0.5rem;">
+                    <button onclick="confirmPromoteToHost(${i})" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--primary);background:transparent;color:var(--primary);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='var(--primary)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--primary)';">
+                        ⭐
+                    </button>
+                    <button onclick="confirmKickParticipant(${i})" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--error);background:transparent;color:var(--error);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='var(--error)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='var(--error)';">
+                        ✕
+                    </button>
+                </div>
+            `;
         }
         return `<div class="participant"><div class="participant-avatar">${p.name[0].toUpperCase()}</div><div class="participant-info"><strong style="font-size:0.9rem;">${p.name}</strong>${p.isHost?'<span style="color:var(--primary);margin-left:0.5rem;font-weight:500;font-size:0.75rem;">• Anfitrión</span>':''}</div>${actions}</div>`;
     }).join('');
@@ -3326,6 +3345,7 @@ async function finishAddingProducts(){if(!currentTasting.products.length){alert(
 function showProductSelectionScreen(){
     updateProductSelectionList();
     document.getElementById('editBtn').style.display=currentUser.isHost?'inline-flex':'none';
+    document.getElementById('participantsBtn').style.display='inline-flex';
     showScreen('productSelectionScreen');
 }
 function updateProductSelectionList(){
@@ -3463,10 +3483,8 @@ function showVotingScreen(){
     const existingVote = (currentTasting.votes[selectedProductId] || []).find(v => v.user === currentUser.name);
     if (existingVote) {
         document.getElementById('ratingSlider').value = existingVote.score;
-        document.getElementById('voteComment').value = existingVote.comment || '';
     } else {
         document.getElementById('ratingSlider').value = 5.0;
-        document.getElementById('voteComment').value = '';
     }
     
     updateRatingValue();
@@ -3599,6 +3617,53 @@ async function showResults(){
 function toggleResultCard(card) {
     card.classList.toggle('collapsed');
 }
+function confirmFinishTasting() {
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px);animation:fadeIn 0.2s;';
+    
+    const dialog = document.createElement('div');
+    dialog.style.cssText = 'background:white;border-radius:16px;padding:1.5rem;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:slideUp 0.3s;';
+    
+    dialog.innerHTML = `
+        <div style="text-align:center;margin-bottom:1rem;">
+            <div style="font-size:3rem;margin-bottom:0.5rem;">🏁</div>
+            <h3 style="font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:0.5rem;">¿Finalizar la cata?</h3>
+            <p style="font-size:0.875rem;color:var(--text-secondary);line-height:1.5;">Una vez finalizada, no se podrán modificar las puntuaciones.</p>
+        </div>
+        <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+            <button id="cancelFinish" style="flex:1;padding:0.75rem;border-radius:10px;border:1px solid var(--border);background:white;color:var(--text);font-weight:500;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;">
+                Cancelar
+            </button>
+            <button id="confirmFinish" style="flex:1;padding:0.75rem;border-radius:10px;border:none;background:var(--primary);color:white;font-weight:600;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 2px 8px rgba(37,99,235,0.3);transition:all 0.2s;">
+                Finalizar
+            </button>
+        </div>
+    `;
+    
+    modal.appendChild(dialog);
+    document.body.appendChild(modal);
+    
+    const cancelBtn = dialog.querySelector('#cancelFinish');
+    const confirmBtn = dialog.querySelector('#confirmFinish');
+    
+    cancelBtn.onclick = () => {
+        modal.style.animation = 'fadeOut 0.2s';
+        setTimeout(() => document.body.removeChild(modal), 200);
+    };
+    
+    confirmBtn.onclick = () => {
+        modal.style.animation = 'fadeOut 0.2s';
+        setTimeout(() => {
+            document.body.removeChild(modal);
+            finishTasting();
+        }, 200);
+    };
+    
+    modal.onclick = (e) => {
+        if (e.target === modal) cancelBtn.click();
+    };
+}
+
 function finishTasting(){
     archiveTasting();
     unsubscribeFromTastingUpdates(); // Clean up realtime subscription
@@ -3747,6 +3812,34 @@ function handleTastingUpdate(newData) {
     
     console.log('Handling tasting update');
     
+    // Verificar si el usuario actual fue expulsado
+    if (newData.kickedParticipants && newData.kickedParticipants.includes(currentUser.name)) {
+        // Usuario expulsado
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px);';
+        
+        const dialog = document.createElement('div');
+        dialog.style.cssText = 'background:white;border-radius:16px;padding:2rem;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;';
+        
+        dialog.innerHTML = `
+            <div style="font-size:4rem;margin-bottom:1rem;">⛔</div>
+            <h3 style="font-size:1.2rem;font-weight:600;color:var(--text);margin-bottom:0.75rem;">Has sido expulsado</h3>
+            <p style="font-size:0.9rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.5rem;">El anfitrión te ha eliminado de esta cata.</p>
+            <button onclick="location.reload()" style="width:100%;padding:0.875rem;border-radius:10px;border:none;background:var(--primary);color:white;font-weight:600;font-size:0.95rem;cursor:pointer;font-family:'Inter',sans-serif;">
+                Volver al inicio
+            </button>
+        `;
+        
+        modal.appendChild(dialog);
+        document.body.appendChild(modal);
+        
+        // Limpiar estado
+        currentTasting = null;
+        currentUser = null;
+        
+        return; // No continuar procesando
+    }
+    
     // Update current tasting with new data
     const oldParticipantsCount = currentTasting.participants.length;
     const oldProductsCount = currentTasting.products.length;
@@ -3760,6 +3853,7 @@ function handleTastingUpdate(newData) {
     currentTasting.description = newData.description;
     currentTasting.date = newData.date;
     currentTasting.host = newData.host;
+    currentTasting.kickedParticipants = newData.kickedParticipants || [];
     
     // Update UI based on current screen
     const currentScreen = document.querySelector('.screen.active').id;
