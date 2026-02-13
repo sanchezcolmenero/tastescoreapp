@@ -4238,7 +4238,42 @@ async function showResults(){
 function toggleResultCard(card) {
     card.classList.toggle('collapsed');
 }
-function confirmFinishTasting() {
+async function confirmFinishTasting() {
+    console.log('=== CONFIRMANDO FINALIZACIÓN ===');
+    
+    // CRÍTICO: Recargar datos de Supabase antes de validar
+    // para asegurar que tenemos los votos más recientes
+    if (authenticatedUser) {
+        try {
+            console.log('Recargando datos de Supabase...');
+            const { data, error } = await supabaseClient
+                .from('tastings')
+                .select('*')
+                .eq('code', currentTasting.code)
+                .single();
+            
+            if (data && !error) {
+                console.log('Datos recargados desde Supabase');
+                // Actualizar votos con los más recientes
+                currentTasting.votes = data.votes || currentTasting.votes;
+                currentTasting.participants = data.participants || currentTasting.participants;
+                console.log('Votos actualizados:', currentTasting.votes);
+            } else {
+                console.log('No se pudo recargar desde Supabase, usando datos locales');
+            }
+        } catch (e) {
+            console.log('Error recargando datos, usando datos locales:', e);
+        }
+    } else {
+        // Si no está autenticado, recargar desde localStorage
+        const tastings = JSON.parse(localStorage.getItem('tastings') || '{}');
+        if (tastings[currentTasting.code]) {
+            console.log('Recargando datos de localStorage');
+            currentTasting.votes = tastings[currentTasting.code].votes || currentTasting.votes;
+            currentTasting.participants = tastings[currentTasting.code].participants || currentTasting.participants;
+        }
+    }
+    
     // Verificar que todos los productos tengan votos de todos los participantes
     const productsWithoutVotes = [];
     
@@ -4571,6 +4606,24 @@ function handleTastingUpdate(newData) {
     currentTasting.date = newData.date;
     currentTasting.host = newData.host;
     currentTasting.kickedParticipants = newData.kickedParticipants || [];
+    
+    // CRÍTICO: Reconstruir userVotes cuando se actualizan los votos
+    // para reflejar votos de otros usuarios en tiempo real
+    if (currentUser && newData.votes) {
+        const oldUserVotesCount = Object.keys(userVotes).length;
+        userVotes = {};
+        currentTasting.products.forEach(product => {
+            const productVotes = newData.votes[product.id] || [];
+            const userVote = productVotes.find(v => v.user === currentUser.name);
+            if (userVote) {
+                userVotes[product.id] = true;
+            }
+        });
+        const newUserVotesCount = Object.keys(userVotes).length;
+        if (newUserVotesCount !== oldUserVotesCount) {
+            console.log('UserVotes actualizado:', oldUserVotesCount, '→', newUserVotesCount);
+        }
+    }
     
     // Update UI based on current screen
     const currentScreen = document.querySelector('.screen.active').id;
