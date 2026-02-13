@@ -4301,6 +4301,27 @@ async function confirmFinishTasting() {
     
     if (forceFinish && currentUser.isHost) {
         console.log('✅ FINALIZACIÓN FORZADA POR ANFITRIÓN');
+        
+        // Procesar todos los votos al ranking global
+        console.log('Procesando votos al ranking global...');
+        currentTasting.products.forEach(product => {
+            const votes = currentTasting.votes[product.id] || [];
+            votes.forEach(vote => {
+                // Solo procesar votos válidos (no "no probados")
+                if (vote.score !== -1) {
+                    updateGlobalRanking(product.name, product.brand, product.image, vote.score);
+                }
+            });
+        });
+        
+        // Marcar como finalizada y guardar
+        currentTasting.status = 'finished';
+        await saveTasting();
+        
+        // Archivar
+        archiveTasting();
+        
+        // Mostrar resultados
         showResults();
         return;
     }
@@ -5169,6 +5190,11 @@ async function resumeTasting(code) {
                 // Todos pueden votar
                 updateProductSelectionList();
                 showProductSelectionScreen();
+                break;
+            
+            case 'finished':
+                // Cata finalizada - mostrar resultados
+                showResults();
                 break;
                 
             default:
