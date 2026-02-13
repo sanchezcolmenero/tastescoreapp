@@ -24,6 +24,23 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         * { margin:0; padding:0; box-sizing:border-box; }
+        
+        /* Eliminar outline y efectos táctiles en botones */
+        button {
+            outline: none !important;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        button:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        button:active {
+            outline: none !important;
+        }
+        
         html, body {
             overflow-x: hidden;
             width: 100%;
@@ -1585,8 +1602,8 @@
                 </div>
             </div>
             <div style="display:flex;gap:0.75rem;">
-                <button class="btn btn-primary" onclick="submitVote()" style="flex:1;">Enviar Voto</button>
                 <button class="btn" onclick="markAsNotTasted()" style="flex:1;background:var(--bg-tertiary);color:var(--text);border:1px solid var(--border);font-weight:500;">No probado</button>
+                <button class="btn btn-primary" onclick="submitVote()" style="flex:1;">Enviar Voto</button>
             </div>
             <div class="stats-bar"><p><strong id="votedCount" style="color:var(--primary);">0</strong> de <strong id="votedTotal">0</strong> han votado</p></div>
         </div>
@@ -2186,6 +2203,44 @@ function updateGlobalRanking(name,brand,image,score){
     globalRanking[key].avgScore = globalRanking[key].totalScore / globalRanking[key].voteCount;
     if(image) globalRanking[key].image = image;
     
+    localStorage.setItem('globalRanking', JSON.stringify(globalRanking));
+}
+
+function removeVotesFromRanking(tasting) {
+    // Para cada producto en la cata
+    tasting.products.forEach(product => {
+        const key = (product.name + '|' + product.brand).toLowerCase();
+        const productRanking = globalRanking[key];
+        
+        if (!productRanking) return;
+        
+        // Obtener votos de esta cata
+        const tastingVotes = tasting.votes[product.id] || [];
+        
+        // Eliminar cada voto del ranking
+        tastingVotes.forEach(vote => {
+            const voteIndex = productRanking.votes.findIndex(v => v.user === vote.user && v.score === vote.score);
+            
+            if (voteIndex >= 0) {
+                // Restar del total
+                productRanking.totalScore -= vote.score;
+                productRanking.voteCount--;
+                
+                // Eliminar voto
+                productRanking.votes.splice(voteIndex, 1);
+            }
+        });
+        
+        // Si no quedan votos, eliminar el producto del ranking
+        if (productRanking.voteCount === 0) {
+            delete globalRanking[key];
+        } else {
+            // Recalcular promedio
+            productRanking.avgScore = productRanking.totalScore / productRanking.voteCount;
+        }
+    });
+    
+    // Guardar ranking actualizado
     localStorage.setItem('globalRanking', JSON.stringify(globalRanking));
 }
 // Variable para la pestaña activa del ranking
@@ -4555,14 +4610,21 @@ async function deleteTastingPrompt(code, isArchived) {
                 document.body.removeChild(modal);
                 
                 try {
+                    // Cargar la cata para obtener productos y votos
+                    let tastingToDelete = null;
+                    
                     if (isArchived) {
-                        // Eliminar de archived tastings
                         const archived = JSON.parse(localStorage.getItem('archivedTastings') || '[]');
+                        tastingToDelete = archived.find(t => t.code === code);
+                        
+                        // Eliminar de archived tastings
                         const filtered = archived.filter(t => t.code !== code);
                         localStorage.setItem('archivedTastings', JSON.stringify(filtered));
                     } else {
-                        // Eliminar de tastings activas
                         const tastings = JSON.parse(localStorage.getItem('tastings') || '{}');
+                        tastingToDelete = tastings[code];
+                        
+                        // Eliminar de tastings activas
                         delete tastings[code];
                         localStorage.setItem('tastings', JSON.stringify(tastings));
                         
@@ -4574,6 +4636,11 @@ async function deleteTastingPrompt(code, isArchived) {
                                 .eq('code', code)
                                 .eq('user_id', authenticatedUser.id);
                         }
+                    }
+                    
+                    // Eliminar votos de esta cata del ranking global
+                    if (tastingToDelete && tastingToDelete.products && tastingToDelete.votes) {
+                        removeVotesFromRanking(tastingToDelete);
                     }
                     
                     // Recargar lista
