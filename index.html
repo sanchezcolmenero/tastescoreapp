@@ -4278,6 +4278,32 @@ async function confirmFinishTasting() {
     const productsWithoutVotes = [];
     
     console.log('=== DEBUGGING VALIDACIÓN ===');
+    console.log('Código de cata:', currentTasting.code);
+    console.log('Fecha de creación:', currentTasting.createdAt || currentTasting.date);
+    console.log('Participantes actuales:', currentTasting.participants);
+    console.log('Total participantes:', currentTasting.participants.length);
+    console.log('Usuario actual:', currentUser);
+    console.log('Productos totales:', currentTasting.products.length);
+    console.log('Todos los votos:', currentTasting.votes);
+    console.log('Estructura de votos:', typeof currentTasting.votes, Array.isArray(currentTasting.votes));
+    
+    // BYPASS para catas antiguas: Si el anfitrión quiere forzar finalización
+    const forceFinish = confirm(
+        '⚠️ OPCIÓN DE EMERGENCIA\n\n' +
+        '¿Quieres FORZAR la finalización de esta cata?\n\n' +
+        'Usa esta opción SOLO si:\n' +
+        '- Es una cata antigua con problemas\n' +
+        '- Todos han votado pero la validación falla\n' +
+        '- Eres el anfitrión\n\n' +
+        'Click OK = Forzar finalización\n' +
+        'Click Cancelar = Hacer validación normal'
+    );
+    
+    if (forceFinish && currentUser.isHost) {
+        console.log('✅ FINALIZACIÓN FORZADA POR ANFITRIÓN');
+        showResults();
+        return;
+    }
     console.log('Participantes actuales:', currentTasting.participants);
     console.log('Usuario actual:', currentUser);
     console.log('Todos los votos:', currentTasting.votes);
