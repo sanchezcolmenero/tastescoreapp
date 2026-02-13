@@ -127,14 +127,14 @@
         .input-group select { cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2364748b' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 0.75rem center; padding-right:2.5rem; }
         .input-group input:focus,.input-group textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
         /* PRODUCTS – overflow fix */
-        .product-item { background:var(--bg-secondary); padding:0.5rem 0.625rem; border-radius:8px; margin-bottom:0.35rem; border:1px solid var(--border); transition:all 0.15s; display:flex; gap:0.5rem; align-items:center; cursor:pointer; }
+        .product-item { background:var(--bg-secondary); padding:0.45rem 0.625rem; border-radius:8px; margin-bottom:0.25rem; border:1px solid var(--border); transition:all 0.15s; display:flex; gap:0.5rem; align-items:center; cursor:pointer; }
         .drag-handle { width:28px; height:28px; display:none; align-items:center; justify-content:center; cursor:grab; color:var(--text-tertiary); flex-shrink:0; font-size:1.1rem; transition:color 0.2s; }
         .drag-handle:hover { color:var(--primary); }
         .drag-handle:active { cursor:grabbing; }
         .product-item.dragging { opacity:0.4; transform:scale(1.05); box-shadow:0 8px 24px rgba(37,99,235,0.3); border-color:var(--primary); background:var(--bg); }
         .product-item.ghost { opacity:0.5; background:var(--bg-tertiary); }
         .product-item:hover { background:var(--bg-tertiary); border-color:var(--primary); }
-        .product-item.selected { border-color:var(--primary); background:var(--bg); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
+        .product-item.selected { border-color:var(--border); background:var(--bg-secondary); }
         .product-image { width:48px; height:48px; border-radius:6px; object-fit:cover; background:var(--bg-tertiary); border:1px solid var(--border); flex-shrink:0; }
         .product-image[style*="display: none"] { width:0; height:0; margin:0; border:0; }
         .product-info { flex:1; min-width:0; overflow:hidden; }
@@ -2342,7 +2342,7 @@ function displayMyVotesRanking() {
             <div class="ranking-position ${cls}">${i + 1}</div>
             <div class="product-info" style="flex:1;">
                 <h4>${p.name}</h4>
-                <p>${p.brand} • Mi voto: ${myScore.toFixed(1)}</p>
+                <p>${p.brand} • ${p.voteCount} voto${p.voteCount === 1 ? '' : 's'}</p>
             </div>
             <div class="product-score">${p.avgScore.toFixed(1)}</div>
             ${authenticatedUser ? '<button onclick="toggleFav(\'' + p.name.replace(/'/g, "\\'") + '\',' + "'" + p.brand.replace(/'/g, "\\'") + "'" + ',\'' + imageParam + '\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">' + (isFav(p.name, p.brand) ? '❤️' : '🤍') + '</button>' : ''}
@@ -3943,7 +3943,7 @@ function updateEditProductsList(){
     const c=document.getElementById('editProductsList');document.getElementById('editProductCount').textContent=currentTasting.products.length;
     c.innerHTML=currentTasting.products.map(function(p,i){
         const hasVotes=currentTasting.votes[p.id]&&currentTasting.votes[p.id].length>0;
-        return '<div class="product-item" data-id="'+p.id+'"><div class="drag-handle">⋮⋮</div><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+p.name+'</h4><p>'+p.brand+'</p>'+(hasVotes?'<p style="color:var(--success);font-size:0.72rem;margin-top:0.15rem;">✓ '+currentTasting.votes[p.id].length+' votos</p>':'')+' </div><button onclick="removeProductFromEdit('+i+')" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--error);background:transparent;color:var(--error);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;padding:0;line-height:1;'+(hasVotes?'opacity:0.4;cursor:not-allowed;pointer-events:none;':'')+'" '+(hasVotes?'':'onmouseover="this.style.background=\'var(--error)\';this.style.color=\'white\'" onmouseout="this.style.background=\'transparent\';this.style.color=\'var(--error)\'"')+'>✕</button></div>';
+        return '<div class="product-item" data-id="'+p.id+'"><div class="drag-handle">⋮⋮</div><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+p.name+'</h4><p>'+p.brand+'</p>'+(hasVotes?'<p style="color:var(--success);font-size:0.72rem;margin-top:0.15rem;">✓ '+currentTasting.votes[p.id].length+' votos</p>':'')+' </div><button onclick="removeProductFromEdit('+i+')" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--error);background:transparent;color:var(--error);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;padding:0;line-height:1;" onmouseover="this.style.background=\'var(--error)\';this.style.color=\'white\'" onmouseout="this.style.background=\'transparent\';this.style.color=\'var(--error)\'">✕</button></div>';
     }).join('');
     // Init Sortable for drag & drop
     if(sortableInstances.editProductsList) sortableInstances.editProductsList.destroy();
@@ -3962,7 +3962,17 @@ function updateEditProductsList(){
         }
     });
 }
-async function removeProductFromEdit(i){const p=currentTasting.products[i];if(currentTasting.votes[p.id]&&currentTasting.votes[p.id].length){alert('No puedes eliminar un producto con votos');return;}currentTasting.products.splice(i,1);await saveTasting();updateEditProductsList();}
+async function removeProductFromEdit(i){
+    const p=currentTasting.products[i];
+    // Eliminar producto y sus votos
+    currentTasting.products.splice(i,1);
+    // Eliminar votos asociados
+    if(currentTasting.votes[p.id]) {
+        delete currentTasting.votes[p.id];
+    }
+    await saveTasting();
+    updateEditProductsList();
+}
 function exitEditMode(){showProductSelectionScreen();}
 
 // ===== RESULTS =====
@@ -4620,6 +4630,15 @@ async function deleteTastingPrompt(code, isArchived) {
                         // Eliminar de archived tastings
                         const filtered = archived.filter(t => t.code !== code);
                         localStorage.setItem('archivedTastings', JSON.stringify(filtered));
+                        
+                        // También eliminar de Supabase si está autenticado
+                        if (authenticatedUser) {
+                            await supabaseClient
+                                .from('tastings')
+                                .delete()
+                                .eq('code', code)
+                                .eq('user_id', authenticatedUser.id);
+                        }
                     } else {
                         const tastings = JSON.parse(localStorage.getItem('tastings') || '{}');
                         tastingToDelete = tastings[code];
