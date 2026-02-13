@@ -2176,9 +2176,129 @@ function shareInvite(){
     else{copyInviteCode();}
 }
 
+// ============================================
+// SECURITY UTILITIES MODULE
+// ============================================
+const SecurityUtils = {
+    /**
+     * Escapa HTML para prevenir XSS
+     */
+    escapeHTML: function(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    },
+    
+    /**
+     * Valida URLs de imágenes
+     */
+    validateImageURL: function(url) {
+        if (!url || url === '') return true; // Opcional vacío OK
+        
+        // Permitir data: solo si es imagen
+        if (url.startsWith('data:')) {
+            return url.startsWith('data:image/');
+        }
+        
+        // Rechazar protocolos peligrosos
+        if (/^(javascript|vbscript|file):/i.test(url)) {
+            return false;
+        }
+        
+        // Validar URL
+        try {
+            const parsed = new URL(url);
+            return ['http:', 'https:'].includes(parsed.protocol);
+        } catch {
+            return false;
+        }
+    },
+    
+    /**
+     * Valida inputs de texto
+     */
+    validateInput: function(str, options = {}) {
+        const {
+            minLength = 1,
+            maxLength = 100,
+            allowEmpty = false
+        } = options;
+        
+        if (!str || str.trim() === '') {
+            return allowEmpty;
+        }
+        
+        const trimmed = str.trim();
+        
+        // Longitud
+        if (trimmed.length < minLength || trimmed.length > maxLength) {
+            return false;
+        }
+        
+        // Detectar HTML/scripts
+        if (/<script|<iframe|javascript:|on\w+=/i.test(trimmed)) {
+            return false;
+        }
+        
+        return true;
+    },
+    
+    /**
+     * Rate limiting simple
+     */
+    rateLimit: (function() {
+        const actions = new Map();
+        
+        return function(actionKey, limitMs = 1000) {
+            const now = Date.now();
+            const lastAction = actions.get(actionKey);
+            
+            if (lastAction && (now - lastAction) < limitMs) {
+                return false; // Bloqueado por rate limit
+            }
+            
+            actions.set(actionKey, now);
+            return true; // OK para proceder
+        };
+    })(),
+    
+    /**
+     * Valida tamaño de archivo
+     */
+    validateFileSize: function(file, maxSizeMB = 2) {
+        const maxBytes = maxSizeMB * 1024 * 1024;
+        return file.size <= maxBytes;
+    },
+    
+    /**
+     * Valida tipo de archivo
+     */
+    validateImageFile: function(file) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        return allowedTypes.includes(file.type);
+    }
+};
+
+// Límites de la aplicación
+const APP_LIMITS = {
+    MAX_PRODUCTS_PER_TASTING: 50,
+    MAX_PARTICIPANTS: 20,
+    MAX_PRODUCT_NAME_LENGTH: 100,
+    MAX_BRAND_NAME_LENGTH: 100,
+    MAX_TASTING_NAME_LENGTH: 50,
+    MAX_IMAGE_SIZE_MB: 2
+};
+
 // ===== RANKING =====
 function loadGlobalRanking(){globalRanking=JSON.parse(localStorage.getItem('globalRanking')||'{}');displayGlobalRanking();}
 function updateGlobalRanking(name,brand,image,score){
+    // Ignorar productos "no probados"
+    if (score === -1) {
+        console.log('Producto marcado como no probado, no se añade al ranking');
+        return;
+    }
+    
     const key=(name+'|'+brand).toLowerCase();
     const userName = authenticatedUser ? authenticatedUser.name : 'Anónimo';
     
@@ -2341,11 +2461,11 @@ function displayMyVotesRanking() {
         return `<div class="ranking-item">
             <div class="ranking-position ${cls}">${i + 1}</div>
             <div class="product-info" style="flex:1;">
-                <h4>${p.name}</h4>
-                <p>${p.brand} • ${p.voteCount} voto${p.voteCount === 1 ? '' : 's'}</p>
+                <h4>${SecurityUtils.escapeHTML(p.name)}</h4>
+                <p>${SecurityUtils.escapeHTML(p.brand)} • ${p.voteCount} voto${p.voteCount === 1 ? '' : 's'}</p>
             </div>
             <div class="product-score">${p.avgScore.toFixed(1)}</div>
-            ${authenticatedUser ? '<button onclick="toggleFav(\'' + p.name.replace(/'/g, "\\'") + '\',' + "'" + p.brand.replace(/'/g, "\\'") + "'" + ',\'' + imageParam + '\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">' + (isFav(p.name, p.brand) ? '❤️' : '🤍') + '</button>' : ''}
+            ${authenticatedUser ? '<button onclick="toggleFav(\'' + SecurityUtils.escapeHTML(p.name).replace(/'/g, "\\'") + '\',' + "'" + SecurityUtils.escapeHTML(p.brand).replace(/'/g, "\\'") + "'" + ',\'' + imageParam + '\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">' + (isFav(p.name, p.brand) ? '❤️' : '🤍') + '</button>' : ''}
         </div>`;
     }).join('');
     
@@ -2392,7 +2512,7 @@ function displayGlobalRanking(){
     const html = sorted.map((p,i)=>{
         const cls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
         const imageParam = activeRankingTab === 'supermarket' ? ((p.image||'')).replace(/'/g,"\\'") : '';
-        return `<div class="ranking-item"><div class="ranking-position ${cls}">${i+1}</div><div class="product-info" style="flex:1;"><h4>${p.name}</h4><p>${p.brand} • ${p.voteCount} voto${p.voteCount===1?'':'s'}</p></div><div class="product-score">${p.avgScore.toFixed(1)}</div>${authenticatedUser?'<button onclick="toggleFav(\''+p.name.replace(/'/g,"\\'")+'\',' + "'"+p.brand.replace(/'/g,"\\'")+"'" + ',\''+ imageParam +'\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">'+(isFav(p.name,p.brand)?'❤️':'🤍')+'</button>':''}</div>`;
+        return `<div class="ranking-item"><div class="ranking-position ${cls}">${i+1}</div><div class="product-info" style="flex:1;"><h4>${SecurityUtils.escapeHTML(p.name)}</h4><p>${SecurityUtils.escapeHTML(p.brand)} • ${p.voteCount} voto${p.voteCount===1?'':'s'}</p></div><div class="product-score">${p.avgScore.toFixed(1)}</div>${authenticatedUser?'<button onclick="toggleFav(\''+SecurityUtils.escapeHTML(p.name).replace(/'/g,"\\'")+'\',' + "'"+SecurityUtils.escapeHTML(p.brand).replace(/'/g,"\\'")+"'" + ',\''+ imageParam +'\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">'+(isFav(p.name,p.brand)?'❤️':'🤍')+'</button>':''}</div>`;
     }).join('');
     
     c.innerHTML = html;
@@ -2944,7 +3064,37 @@ function addManualProduct(){
         img = manualCapturedImage || document.getElementById('manualProductImage').value.trim();
     }
     
-    if(!n||!b){alert('Completa nombre y marca');return;}
+    // ===== VALIDACIONES CRÍTICAS =====
+    
+    // 1. Rate limit
+    if (!SecurityUtils.rateLimit('addProduct', 2000)) {
+        showToast('⚠️ Espera un momento antes de añadir otro producto');
+        return;
+    }
+    
+    // 2. Nombre
+    if (!SecurityUtils.validateInput(n, {minLength: 2, maxLength: APP_LIMITS.MAX_PRODUCT_NAME_LENGTH})) {
+        showToast('⚠️ Nombre inválido (2-100 caracteres)');
+        return;
+    }
+    
+    // 3. Marca
+    if (!SecurityUtils.validateInput(b, {minLength: 2, maxLength: APP_LIMITS.MAX_BRAND_NAME_LENGTH})) {
+        showToast('⚠️ Marca inválida (2-100 caracteres)');
+        return;
+    }
+    
+    // 4. Imagen URL (solo si no es data: de cámara)
+    if (img && !img.startsWith('data:') && !SecurityUtils.validateImageURL(img)) {
+        showToast('⚠️ URL de imagen inválida');
+        return;
+    }
+    
+    // 5. Límite de productos
+    if (currentTasting.products.length >= APP_LIMITS.MAX_PRODUCTS_PER_TASTING) {
+        showToast('⚠️ Máximo ' + APP_LIMITS.MAX_PRODUCTS_PER_TASTING + ' productos por cata');
+        return;
+    }
     
     addProduct({name:n,brand:b,image:img});
     
@@ -2993,15 +3143,15 @@ function handleManualImageCapture(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    // Validar que sea imagen
-    if (!file.type.startsWith('image/')) {
-        alert('Por favor selecciona una imagen válida');
+    // 1. Validar tipo de archivo
+    if (!SecurityUtils.validateImageFile(file)) {
+        showToast('⚠️ Solo se permiten imágenes (JPEG, PNG, GIF, WebP)');
         return;
     }
     
-    // Validar tamaño (máximo 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen es demasiado grande. Máximo 5MB.');
+    // 2. Validar tamaño (reducido a 2MB)
+    if (!SecurityUtils.validateFileSize(file, APP_LIMITS.MAX_IMAGE_SIZE_MB)) {
+        showToast('⚠️ La imagen es demasiado grande. Máximo ' + APP_LIMITS.MAX_IMAGE_SIZE_MB + 'MB');
         return;
     }
     
@@ -3707,8 +3857,59 @@ function addRestaurantProduct(name, brand, image) {
     updateAddedProducts();
 }
 
-async function addProduct(product){if(currentTasting.products.find(p=>p.name===product.name&&p.brand===product.brand))return;currentTasting.products.push({id:Date.now().toString(),...product});await saveTasting();updateAddedProducts();document.getElementById('productSearch').value='';document.getElementById('searchResults').innerHTML='';}
-async function addProductFromEdit(product){if(currentTasting.products.find(p=>p.name===product.name&&p.brand===product.brand))return;currentTasting.products.push({id:Date.now().toString(),...product});await saveTasting();updateEditProductsList();document.getElementById('editProductSearch').value='';document.getElementById('editSearchResults').innerHTML='';}
+async function addProduct(product){
+    // Evitar duplicados
+    if(currentTasting.products.find(p=>p.name===product.name&&p.brand===product.brand)) {
+        showToast('⚠️ Producto ya añadido');
+        return;
+    }
+    
+    // Añadir a la lista local inmediatamente (optimistic update)
+    const newProduct = {id:Date.now().toString(),...product};
+    currentTasting.products.push(newProduct);
+    
+    // Actualizar UI inmediatamente
+    updateAddedProducts();
+    document.getElementById('productSearch').value='';
+    document.getElementById('searchResults').innerHTML='';
+    
+    // Guardar en background
+    saveTasting().catch(err => {
+        console.error('Error guardando producto:', err);
+        showToast('⚠️ Error al guardar. Reintenta.');
+        // Revertir si falla
+        const idx = currentTasting.products.findIndex(p => p.id === newProduct.id);
+        if (idx >= 0) currentTasting.products.splice(idx, 1);
+        updateAddedProducts();
+    });
+}
+
+async function addProductFromEdit(product){
+    // Evitar duplicados
+    if(currentTasting.products.find(p=>p.name===product.name&&p.brand===product.brand)) {
+        showToast('⚠️ Producto ya añadido');
+        return;
+    }
+    
+    // Añadir a la lista local inmediatamente (optimistic update)
+    const newProduct = {id:Date.now().toString(),...product};
+    currentTasting.products.push(newProduct);
+    
+    // Actualizar UI inmediatamente
+    updateEditProductsList();
+    document.getElementById('editProductSearch').value='';
+    document.getElementById('editSearchResults').innerHTML='';
+    
+    // Guardar en background
+    saveTasting().catch(err => {
+        console.error('Error guardando producto:', err);
+        showToast('⚠️ Error al guardar. Reintenta.');
+        // Revertir si falla
+        const idx = currentTasting.products.findIndex(p => p.id === newProduct.id);
+        if (idx >= 0) currentTasting.products.splice(idx, 1);
+        updateEditProductsList();
+    });
+}
 
 function updateAddedProducts(){
     const c=document.getElementById('addedProducts');document.getElementById('productCount').textContent=currentTasting.products.length;
@@ -3781,7 +3982,7 @@ function updateProductSelectionList(){
         
         return `<div class="product-item ${voted ? 'selected' : ''}" onclick="selectProduct('${p.id}')" ${longPressEvents} style="cursor:pointer;">
             <img src="${p.image || ''}" class="product-image" onerror="this.style.display='none'">
-            <div class="product-info"><h4>${p.name}</h4><p>${p.brand}</p></div>
+            <div class="product-info"><h4>${SecurityUtils.escapeHTML(p.name)}</h4><p>${SecurityUtils.escapeHTML(p.brand)}</p></div>
             ${statusBadge}
         </div>`;
     }).join('');
@@ -3912,7 +4113,14 @@ async function submitVote(){
     scoreEl.textContent = score.toFixed(1);
     scoreEl.style.background = getScoreColor(score);
     
-    await saveTasting(); showProductSelectionScreen();
+    // Volver a la lista inmediatamente (optimistic)
+    showProductSelectionScreen();
+    
+    // Guardar en background
+    saveTasting().catch(err => {
+        console.error('Error guardando voto:', err);
+        showToast('⚠️ Error al guardar voto');
+    });
 }
 
 async function markAsNotTasted(){
@@ -3923,8 +4131,14 @@ async function markAsNotTasted(){
     currentTasting.votes[selectedProductId].push({user:currentUser.name,score:-1});
     userVotes[selectedProductId]=true;
     
-    await saveTasting(); 
+    // Volver a la lista inmediatamente (optimistic)
     showProductSelectionScreen();
+    
+    // Guardar en background
+    saveTasting().catch(err => {
+        console.error('Error guardando:', err);
+        showToast('⚠️ Error al guardar');
+    });
 }
 
 function editVote() {
@@ -3976,25 +4190,6 @@ async function removeProductFromEdit(i){
 function exitEditMode(){showProductSelectionScreen();}
 
 // ===== RESULTS =====
-function confirmFinishTasting() {
-    const allVoted = currentTasting.participants.every(participant => {
-        return currentTasting.products.every(product => {
-            const votes = currentTasting.votes[product.id] || [];
-            return votes.some(v => v.user === participant.name);
-        });
-    });
-    
-    let message = '¿Estás seguro de que quieres finalizar la cata?';
-    if (!allVoted) {
-        message += '\n\nAún hay participantes que no han votado todos los productos.';
-    }
-    message += '\n\nUna vez finalizada, no se podrán editar los votos.';
-    
-    if (confirm(message)) {
-        showResults();
-    }
-}
-
 async function showResults(){
     currentTasting.status='finished';await saveTasting();
     const c=document.getElementById('resultsContainer');
@@ -4051,7 +4246,7 @@ function confirmFinishTasting() {
         const votes = currentTasting.votes[product.id] || [];
         const votedUsers = votes.map(v => v.user);
         
-        // Verificar si algún participante no ha votado
+        // Verificar si algún participante no ha votado (ni siquiera como "no probado")
         const missingVoters = currentTasting.participants.filter(p => !votedUsers.includes(p.name));
         
         if (missingVoters.length > 0) {
@@ -4063,6 +4258,11 @@ function confirmFinishTasting() {
     });
     
     if (productsWithoutVotes.length > 0) {
+        // Log detallado para debugging
+        console.log('Productos sin votar:', productsWithoutVotes);
+        console.log('Participantes:', currentTasting.participants.map(p => p.name));
+        console.log('Votos actuales:', currentTasting.votes);
+        
         // Mostrar error
         const modal = document.createElement('div');
         modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px);animation:fadeIn 0.2s;';
@@ -4344,6 +4544,17 @@ function handleTastingUpdate(newData) {
             showToast('🎉 ¡El anfitrión ha iniciado la cata!');
             setTimeout(() => showScreen('addProductsScreen'), 1500);
         }
+        
+        // FIX: Si el usuario se une DESPUÉS de que empezó (status ya cambió antes)
+        if (oldStatus === undefined && newData.status === 'adding_products') {
+            showToast('🎉 La cata ya comenzó');
+            setTimeout(() => showScreen('addProductsScreen'), 1000);
+        }
+        
+        if (oldStatus === undefined && newData.status === 'voting') {
+            showToast('🗳️ Votación en curso');
+            setTimeout(() => showProductSelectionScreen(), 1000);
+        }
     } else if (currentScreen === 'addProductsScreen') {
         // Update products list
         updateAddedProducts();
@@ -4366,6 +4577,11 @@ function handleTastingUpdate(newData) {
         if (newData.status !== oldStatus && newData.status === 'finished') {
             showToast('🏁 ¡Cata finalizada!');
             setTimeout(() => showResults(), 1500);
+        }
+    } else if (currentScreen === 'resultsScreen') {
+        // Actualizar resultados si alguien más vota después de finalizar
+        if (newData.status === 'finished') {
+            showResults(); // Refrescar resultados
         }
     } else if (currentScreen === 'manageParticipantsScreen') {
         // Update manage participants view
@@ -4789,8 +5005,18 @@ async function resumeTasting(code) {
             await saveTasting();
         }
         
-        // Resetear votos del usuario
+        // Reconstruir userVotes desde los votos guardados
         userVotes = {};
+        if (currentTasting.votes) {
+            currentTasting.products.forEach(product => {
+                const productVotes = currentTasting.votes[product.id] || [];
+                const userVote = productVotes.find(v => v.user === currentUser.name);
+                if (userVote) {
+                    userVotes[product.id] = true;
+                }
+            });
+        }
+        console.log('Votos reconstruidos:', Object.keys(userVotes).length);
         
         // Suscribirse a actualizaciones en tiempo real
         subscribeToTastingUpdates();
