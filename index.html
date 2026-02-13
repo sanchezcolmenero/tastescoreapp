@@ -4242,14 +4242,28 @@ function confirmFinishTasting() {
     // Verificar que todos los productos tengan votos de todos los participantes
     const productsWithoutVotes = [];
     
+    console.log('=== DEBUGGING VALIDACIÓN ===');
+    console.log('Participantes actuales:', currentTasting.participants);
+    console.log('Usuario actual:', currentUser);
+    console.log('Todos los votos:', currentTasting.votes);
+    
     currentTasting.products.forEach(product => {
         const votes = currentTasting.votes[product.id] || [];
+        console.log(`Producto: ${product.name}`);
+        console.log('  Votos:', votes);
+        
         const votedUsers = votes.map(v => v.user);
+        console.log('  Usuarios que votaron:', votedUsers);
         
         // Verificar si algún participante no ha votado (ni siquiera como "no probado")
-        const missingVoters = currentTasting.participants.filter(p => !votedUsers.includes(p.name));
+        const missingVoters = currentTasting.participants.filter(p => {
+            const hasVoted = votedUsers.includes(p.name);
+            console.log(`  ¿${p.name} votó? ${hasVoted}`);
+            return !hasVoted;
+        });
         
         if (missingVoters.length > 0) {
+            console.log('  ⚠️ Faltan votos de:', missingVoters.map(v => v.name));
             productsWithoutVotes.push({
                 product: product.name,
                 missingVoters: missingVoters
@@ -4258,26 +4272,36 @@ function confirmFinishTasting() {
     });
     
     if (productsWithoutVotes.length > 0) {
-        // Log detallado para debugging
-        console.log('Productos sin votar:', productsWithoutVotes);
-        console.log('Participantes:', currentTasting.participants.map(p => p.name));
-        console.log('Votos actuales:', currentTasting.votes);
+        console.log('❌ VALIDACIÓN FALLÓ');
+        console.log('Productos sin votar completos:', productsWithoutVotes);
         
         // Mostrar error
         const modal = document.createElement('div');
+        modal.id = 'validationErrorModal';
         modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px);animation:fadeIn 0.2s;';
         
         const dialog = document.createElement('div');
         dialog.style.cssText = 'background:white;border-radius:16px;padding:1.5rem;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:slideUp 0.3s;';
         
+        // Lista de productos faltantes
+        const productList = productsWithoutVotes.map(p => 
+            `<li style="text-align:left;margin:0.25rem 0;">
+                <strong>${p.product}</strong><br>
+                <small style="color:var(--text-secondary);">Falta: ${p.missingVoters.map(v => v.name).join(', ')}</small>
+            </li>`
+        ).join('');
+        
         dialog.innerHTML = `
             <div style="text-align:center;margin-bottom:1rem;">
                 <div style="font-size:3rem;margin-bottom:0.5rem;">⚠️</div>
                 <h3 style="font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:0.5rem;">Productos sin votar</h3>
-                <p style="font-size:0.875rem;color:var(--text-secondary);line-height:1.5;margin-bottom:0.75rem;">Hay ${productsWithoutVotes.length} producto(s) que no han sido votados por todos los participantes.</p>
-                <p style="font-size:0.8rem;color:var(--text-secondary);line-height:1.4;">Todos deben marcar los productos como "No probado" o votarlos para finalizar la cata.</p>
+                <p style="font-size:0.875rem;color:var(--text-secondary);line-height:1.5;margin-bottom:0.75rem;">Hay ${productsWithoutVotes.length} producto(s) sin completar:</p>
+                <ul style="list-style:none;padding:0;margin-bottom:1rem;max-height:200px;overflow-y:auto;">
+                    ${productList}
+                </ul>
+                <p style="font-size:0.8rem;color:var(--text-secondary);line-height:1.4;">Todos deben marcar como "No probado" o votar.</p>
             </div>
-            <button onclick="this.closest('div[style*=\\'position:fixed\\']').remove()" style="width:100%;padding:0.75rem;border-radius:10px;border:none;background:var(--primary);color:white;font-weight:600;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">
+            <button id="closeValidationModal" style="width:100%;padding:0.75rem;border-radius:10px;border:none;background:var(--primary);color:white;font-weight:600;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">
                 Entendido
             </button>
         `;
@@ -4285,11 +4309,29 @@ function confirmFinishTasting() {
         modal.appendChild(dialog);
         document.body.appendChild(modal);
         
+        // Evento del botón
+        document.getElementById('closeValidationModal').addEventListener('click', function() {
+            const modal = document.getElementById('validationErrorModal');
+            if (modal) {
+                modal.remove();
+            }
+        });
+        
+        // Click fuera del modal
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+        
         return;
     }
     
+    console.log('✅ VALIDACIÓN PASÓ');
+    
     // Continuar con confirmación normal
     const modal = document.createElement('div');
+    modal.id = 'finishConfirmModal';
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px);animation:fadeIn 0.2s;';
     
     const dialog = document.createElement('div');
@@ -4319,13 +4361,17 @@ function confirmFinishTasting() {
     
     cancelBtn.onclick = () => {
         modal.style.animation = 'fadeOut 0.2s';
-        setTimeout(() => document.body.removeChild(modal), 200);
+        setTimeout(() => {
+            const modalEl = document.getElementById('finishConfirmModal');
+            if (modalEl) modalEl.remove();
+        }, 200);
     };
     
     confirmBtn.onclick = () => {
         modal.style.animation = 'fadeOut 0.2s';
         setTimeout(() => {
-            document.body.removeChild(modal);
+            const modalEl = document.getElementById('finishConfirmModal');
+            if (modalEl) modalEl.remove();
             finishTasting();
         }, 200);
     };
