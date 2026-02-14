@@ -1872,7 +1872,7 @@ async function loginWithGoogle(){
             redirectTo: 'https://sanchezcolmenero.github.io/tastescoreapp/'
         }
     });
-    if(error){showAuthSpinner(false);alert('Error con Google: '+error.message);}
+    if(error){showAuthSpinner(false);showToast('❌ Error con Google: '+error.message);}
 }
 
 async function loginWithEmail(){
@@ -1920,7 +1920,7 @@ async function loginWithEmail(){
             }
         });
         showAuthSpinner(false);
-        if(error){alert('Error: '+error.message);return;}
+        if(error){showToast('Error: '+error.message);return;}
         if(data.user){
             await supabaseClient.from('profiles').upsert({id:data.user.id,name:name,email:email,avatar:'panda_normal'});
             document.getElementById('confirmEmailAddress').textContent=email;
@@ -1946,12 +1946,12 @@ async function loginWithEmail(){
         showAuthSpinner(false);
         if(error){
             if(error.message.includes('Invalid login')){
-                alert('Email o contraseña incorrectos');
+                showToast('❌ Email o contraseña incorrectos');
                 document.getElementById('authEmail').classList.add('input-error');
                 document.getElementById('authPassword').classList.add('input-error');
             }
-            else if(error.message.includes('Email not confirmed')) alert('Confirma tu email antes de iniciar sesión. Revisa tu bandeja de entrada.');
-            else alert('Error: '+error.message);
+            else if(error.message.includes('Email not confirmed')) showToast('📧 Confirma tu email antes de iniciar sesión. Revisa tu bandeja de entrada.');
+            else showToast('Error: '+error.message);
         } else {
             showScreen('homeScreen');
         }
@@ -2295,7 +2295,6 @@ function loadGlobalRanking(){globalRanking=JSON.parse(localStorage.getItem('glob
 function updateGlobalRanking(name,brand,image,score){
     // Ignorar productos "no probados"
     if (score === -1) {
-        console.log('Producto marcado como no probado, no se añade al ranking');
         return;
     }
     
@@ -2343,7 +2342,6 @@ function addVoteToRanking(name, brand, image, score, userName) {
     const existingVoteIndex = globalRanking[key].votes.findIndex(v => v.user === userName);
     if (existingVoteIndex >= 0) {
         // Ya existe, no añadir duplicado
-        console.log(`Voto duplicado ignorado: ${userName} ya votó ${name}`);
         return;
     }
     
@@ -2358,11 +2356,9 @@ function addVoteToRanking(name, brand, image, score, userName) {
 
 // Procesar todos los votos de una cata al ranking global
 function processTastingToRanking(tasting) {
-    console.log('Procesando votos de cata al ranking global...');
     
     tasting.products.forEach(product => {
         const votes = tasting.votes[product.id] || [];
-        console.log(`Producto: ${product.name}, Votos:`, votes);
         
         votes.forEach(vote => {
             if (vote.score !== -1) {  // Ignorar "no probados"
@@ -2373,14 +2369,12 @@ function processTastingToRanking(tasting) {
                     vote.score,
                     vote.user  // ← Usar el nombre del usuario del voto
                 );
-                console.log(`  ✓ Voto añadido: ${vote.user} → ${vote.score}`);
             }
         });
     });
     
     // Guardar ranking actualizado
     localStorage.setItem('globalRanking', JSON.stringify(globalRanking));
-    console.log('✅ Ranking global actualizado');
 }
 
 function removeVotesFromRanking(tasting) {
@@ -2602,7 +2596,7 @@ function renderFavs(){
     c.innerHTML=items.map((p,i)=>`<div class="fav-item"><img src="${p.image||''}" onerror="this.style.display='none'" style="width:48px;height:48px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);"><div class="fav-info"><h4>${SecurityUtils.escapeHTML(p.name)}</h4><p>${SecurityUtils.escapeHTML(p.brand)}</p></div><button class="fav-remove" onclick="removeFavFromList('${sel.value}',${i})">🗑️</button></div>`).join('');
 }
 function removeFavFromList(k,i){const data=getFavData();data[k].splice(i,1);saveFavData(data);renderFavs();}
-function createNewFavList(){const name=prompt('Nombre de la nueva lista:');if(!name||!name.trim())return;const key=name.trim();const data=getFavData();if(data[key]){alert('Ya existe esa lista');return;}data[key]=[];saveFavData(data);loadFavLists();document.getElementById('favListSelector').value=key;renderFavs();}
+function createNewFavList(){const name=prompt('Nombre de la nueva lista:');if(!name||!name.trim())return;const key=name.trim();const data=getFavData();if(data[key]){showToast('⚠️ Ya existe esa lista');return;}data[key]=[];saveFavData(data);loadFavLists();document.getElementById('favListSelector').value=key;renderFavs();}
 
 // ===== DEDUP =====
 function normalizeProductName(n){return(n||'').toLowerCase().replace(/\s+/g,' ').replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').trim();}
@@ -2708,22 +2702,16 @@ function showToast(message) {
 
 // Auto-join from URL parameter
 async function checkAutoJoin() {
-    console.log('checkAutoJoin called');
-    console.log('Current URL:', window.location.href);
-    console.log('Search params:', window.location.search);
     
     const urlParams = new URLSearchParams(window.location.search);
     const joinCode = urlParams.get('join');
     
-    console.log('Join code detected:', joinCode);
     
     if (joinCode) {
-        console.log('Auto-join detected with code:', joinCode);
         
         // Clear the URL parameter to clean up the address bar
         const cleanUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
-        console.log('URL cleaned to:', cleanUrl);
         
         // Wait a moment for DOM to be ready
         setTimeout(() => {
@@ -2731,7 +2719,6 @@ async function checkAutoJoin() {
             const joinCodeInput = document.getElementById('joinCode');
             if (joinCodeInput) {
                 joinCodeInput.value = joinCode.toUpperCase();
-                console.log('Join code input filled with:', joinCode.toUpperCase());
             } else {
                 console.error('joinCode input not found!');
             }
@@ -2741,19 +2728,16 @@ async function checkAutoJoin() {
                 const participantNameInput = document.getElementById('participantName');
                 if (participantNameInput) {
                     participantNameInput.value = authenticatedUser.name;
-                    console.log('Participant name pre-filled with:', authenticatedUser.name);
                 }
             }
             
             // Show join screen
-            console.log('Showing join screen');
             showScreen('joinScreen');
             
             // Show a message
             showToast('📋 Introduce tu nombre para unirte a la cata');
         }, 100);
     } else {
-        console.log('No join code in URL');
     }
 }
 
@@ -2963,7 +2947,7 @@ function updateParticipantsList(){
                 </div>
             `;
         }
-        return `<div class="participant"><div class="participant-avatar">${p.name[0].toUpperCase()}</div><div class="participant-info"><strong style="font-size:0.9rem;">${p.name}</strong>${p.isHost?'<span style="color:var(--primary);margin-left:0.5rem;font-weight:500;font-size:0.75rem;">• Anfitrión</span>':''}</div>${actions}</div>`;
+        return `<div class="participant"><div class="participant-avatar">${SecurityUtils.escapeHTML(p.name[0].toUpperCase())}</div><div class="participant-info"><strong style="font-size:0.9rem;">${SecurityUtils.escapeHTML(p.name)}</strong>${p.isHost?'<span style="color:var(--primary);margin-left:0.5rem;font-weight:500;font-size:0.75rem;">• Anfitrión</span>':''}</div>${actions}</div>`;
     }).join('');
 }
 
@@ -3129,7 +3113,7 @@ function renderManageParticipants(){
                 </div>
             `;
         }
-        return `<div class="participant"><div class="participant-avatar">${p.name[0].toUpperCase()}</div><div class="participant-info"><strong style="font-size:0.9rem;">${p.name}</strong>${p.isHost?'<span style="color:var(--primary);margin-left:0.5rem;font-weight:500;font-size:0.75rem;">• Anfitrión</span>':''}</div>${actions}</div>`;
+        return `<div class="participant"><div class="participant-avatar">${SecurityUtils.escapeHTML(p.name[0].toUpperCase())}</div><div class="participant-info"><strong style="font-size:0.9rem;">${SecurityUtils.escapeHTML(p.name)}</strong>${p.isHost?'<span style="color:var(--primary);margin-left:0.5rem;font-weight:500;font-size:0.75rem;">• Anfitrión</span>':''}</div>${actions}</div>`;
     }).join('');
 }
 
@@ -3162,8 +3146,8 @@ async function searchProductByBarcode(barcode){
         if(data.status===1&&data.product){
             const p=data.product;const product={name:p.product_name||'Producto sin nombre',brand:p.brands||'Marca desconocida',image:p.image_url||''};
             if(scannerTargetScreen==='editCataScreen')addProductFromEdit(product);else addProduct(product);
-        } else alert('Producto no encontrado. Añádelo manualmente.');
-    }catch(e){alert('Error al buscar. Comprueba tu conexión.');}
+        } else showToast('⚠️ Producto no encontrado. Añádelo manualmente.');
+    }catch(e){showToast('❌ Error al buscar. Comprueba tu conexión.');}
 }
 
 // ===== PRODUCT SEARCH =====
@@ -3179,7 +3163,7 @@ async function searchProducts(){
                 const unique=deduplicateProducts(data.products);
                 div.innerHTML=unique.slice(0,10).map(function(p){
                     const obj=JSON.stringify({name:p.product_name||'Sin nombre',brand:p.brands||'Sin marca',image:p.image_url||''}).replace(/'/g,"&apos;");
-                    return '<div class="search-result-item" onclick=\'addProduct('+obj+')\'>  <img src="'+(p.image_url||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><strong>'+(p.product_name||'Sin nombre')+'</strong><p>'+(p.brands||'Sin marca')+'</p></div></div>';
+                    return '<div class="search-result-item" onclick=\'addProduct('+obj+')\'>  <img src="'+(p.image_url||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><strong>'+SecurityUtils.escapeHTML(p.product_name||'Sin nombre')+'</strong><p>'+SecurityUtils.escapeHTML(p.brands||'Sin marca')+'</p></div></div>';
                 }).join('');
             } else div.innerHTML='<p style="text-align:center;color:var(--text-secondary);padding:1.5rem;">No se encontraron productos</p>';
         }catch(e){document.getElementById('searchResults').innerHTML='<p style="text-align:center;color:var(--error);padding:1.5rem;">Error al buscar</p>';}
@@ -3197,7 +3181,7 @@ async function searchProductsEdit(){
                 const unique=deduplicateProducts(data.products);
                 div.innerHTML=unique.slice(0,10).map(function(p){
                     const obj=JSON.stringify({name:p.product_name||'Sin nombre',brand:p.brands||'Sin marca',image:p.image_url||''}).replace(/'/g,"&apos;");
-                    return '<div class="search-result-item" onclick=\'addProductFromEdit('+obj+')\'>  <img src="'+(p.image_url||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><strong>'+(p.product_name||'Sin nombre')+'</strong><p>'+(p.brands||'Sin marca')+'</p></div></div>';
+                    return '<div class="search-result-item" onclick=\'addProductFromEdit('+obj+')\'>  <img src="'+(p.image_url||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><strong>'+SecurityUtils.escapeHTML(p.product_name||'Sin nombre')+'</strong><p>'+SecurityUtils.escapeHTML(p.brands||'Sin marca')+'</p></div></div>';
                 }).join('');
             } else div.innerHTML='<p style="text-align:center;color:var(--text-secondary);padding:1.5rem;">No se encontraron productos</p>';
         }catch(e){document.getElementById('editSearchResults').innerHTML='<p style="text-align:center;color:var(--error);padding:1.5rem;">Error al buscar</p>';}
@@ -3368,7 +3352,7 @@ function addManualProductEdit(){
     const b=document.getElementById('editManualProductBrand').value.trim();
     const img=editCapturedImage || document.getElementById('editManualProductImage').value.trim();
     
-    if(!n||!b){alert('Completa nombre y marca');return;}
+    if(!n||!b){showToast('⚠️ Completa nombre y marca');return;}
     
     addProductFromEdit({name:n,brand:b,image:img});
     
@@ -3414,12 +3398,12 @@ function handleEditImageCapture(event) {
     if (!file) return;
     
     if (!file.type.startsWith('image/')) {
-        alert('Por favor selecciona una imagen válida');
+        showToast('⚠️ Por favor selecciona una imagen válida');
         return;
     }
     
     if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen es demasiado grande. Máximo 5MB.');
+        showToast('⚠️ La imagen es demasiado grande. Máximo 5MB.');
         return;
     }
     
@@ -4004,7 +3988,7 @@ function addRestaurantProduct(name, brand, image) {
     
     // Check if already added
     if (currentTasting.products.find(function(p) { return p.name === name && p.brand === brand; })) {
-        alert('Este producto ya está añadido');
+        showToast('⚠️ Este producto ya está añadido');
         return;
     }
     
@@ -4089,7 +4073,7 @@ function updateAddedProducts(){
     });
 }
 async function removeProduct(i){currentTasting.products.splice(i,1);await saveTasting();updateAddedProducts();}
-async function finishAddingProducts(){if(!currentTasting.products.length){alert('Añade al menos un producto');return;}currentTasting.status='voting';await saveTasting();showProductSelectionScreen();}
+async function finishAddingProducts(){if(!currentTasting.products.length){showToast('⚠️ Añade al menos un producto');return;}currentTasting.status='voting';await saveTasting();showProductSelectionScreen();}
 
 // ===== VOTING =====
 function showProductSelectionScreen(){
@@ -4299,7 +4283,7 @@ async function markAsNotTasted(){
 
 function editVote() {
     if (currentTasting.status === 'finished') {
-        alert('La cata ya ha finalizado. No se pueden editar votos.');
+        showToast('⚠️ La cata ya ha finalizado. No se pueden editar votos.');
         return;
     }
     // Volver a la pantalla de votación
@@ -4308,7 +4292,7 @@ function editVote() {
 function updateVoteCount(){const votes=currentTasting.votes[selectedProductId]||[];document.getElementById('votedCount').textContent=votes.length;document.getElementById('votedTotal').textContent=currentTasting.participants.length;}
 
 // ===== EDIT MODE =====
-function showEditMode(){if(!currentUser.isHost){alert('Solo el anfitrión puede editar');return;}updateEditProductsList();showScreen('editCataScreen');}
+function showEditMode(){if(!currentUser.isHost){showToast('⚠️ Solo el anfitrión puede editar');return;}updateEditProductsList();showScreen('editCataScreen');}
 function updateEditProductsList(){
     const c=document.getElementById('editProductsList');document.getElementById('editProductCount').textContent=currentTasting.products.length;
     c.innerHTML=currentTasting.products.map(function(p,i){
@@ -4406,7 +4390,6 @@ async function confirmFinishTasting() {
     // para asegurar que tenemos los votos más recientes
     if (authenticatedUser) {
         try {
-            console.log('Recargando datos de Supabase...');
             const { data, error } = await supabaseClient
                 .from('tastings')
                 .select('*')
@@ -4414,13 +4397,10 @@ async function confirmFinishTasting() {
                 .single();
             
             if (data && !error) {
-                console.log('Datos recargados desde Supabase');
                 // Actualizar votos con los más recientes
                 currentTasting.votes = data.votes || currentTasting.votes;
                 currentTasting.participants = data.participants || currentTasting.participants;
-                console.log('Votos actualizados:', currentTasting.votes);
             } else {
-                console.log('No se pudo recargar desde Supabase, usando datos locales');
             }
         } catch (e) {
             console.log('Error recargando datos, usando datos locales:', e);
@@ -4429,7 +4409,6 @@ async function confirmFinishTasting() {
         // Si no está autenticado, recargar desde localStorage
         const tastings = JSON.parse(localStorage.getItem('tastings') || '{}');
         if (tastings[currentTasting.code]) {
-            console.log('Recargando datos de localStorage');
             currentTasting.votes = tastings[currentTasting.code].votes || currentTasting.votes;
             currentTasting.participants = tastings[currentTasting.code].participants || currentTasting.participants;
         }
@@ -4439,14 +4418,6 @@ async function confirmFinishTasting() {
     const productsWithoutVotes = [];
     
     console.log('=== DEBUGGING VALIDACIÓN ===');
-    console.log('Código de cata:', currentTasting.code);
-    console.log('Fecha de creación:', currentTasting.createdAt || currentTasting.date);
-    console.log('Participantes actuales:', currentTasting.participants);
-    console.log('Total participantes:', currentTasting.participants.length);
-    console.log('Usuario actual:', currentUser);
-    console.log('Productos totales:', currentTasting.products.length);
-    console.log('Todos los votos:', currentTasting.votes);
-    console.log('Estructura de votos:', typeof currentTasting.votes, Array.isArray(currentTasting.votes));
     
     // BYPASS para catas antiguas: Si el anfitrión quiere forzar finalización
     const forceFinish = confirm(
@@ -4461,7 +4432,6 @@ async function confirmFinishTasting() {
     );
     
     if (forceFinish && currentUser.isHost) {
-        console.log('✅ FINALIZACIÓN FORZADA POR ANFITRIÓN');
         
         // Procesar todos los votos al ranking global usando la nueva función
         processTastingToRanking(currentTasting);
@@ -4477,27 +4447,19 @@ async function confirmFinishTasting() {
         showResults();
         return;
     }
-    console.log('Participantes actuales:', currentTasting.participants);
-    console.log('Usuario actual:', currentUser);
-    console.log('Todos los votos:', currentTasting.votes);
     
     currentTasting.products.forEach(product => {
         const votes = currentTasting.votes[product.id] || [];
-        console.log(`Producto: ${product.name}`);
-        console.log('  Votos:', votes);
         
         const votedUsers = votes.map(v => v.user);
-        console.log('  Usuarios que votaron:', votedUsers);
         
         // Verificar si algún participante no ha votado (ni siquiera como "no probado")
         const missingVoters = currentTasting.participants.filter(p => {
             const hasVoted = votedUsers.includes(p.name);
-            console.log(`  ¿${p.name} votó? ${hasVoted}`);
             return !hasVoted;
         });
         
         if (missingVoters.length > 0) {
-            console.log('  ⚠️ Faltan votos de:', missingVoters.map(v => v.name));
             productsWithoutVotes.push({
                 product: product.name,
                 missingVoters: missingVoters
@@ -4506,8 +4468,6 @@ async function confirmFinishTasting() {
     });
     
     if (productsWithoutVotes.length > 0) {
-        console.log('❌ VALIDACIÓN FALLÓ');
-        console.log('Productos sin votar completos:', productsWithoutVotes);
         
         // Mostrar error
         const modal = document.createElement('div');
@@ -4561,7 +4521,6 @@ async function confirmFinishTasting() {
         return;
     }
     
-    console.log('✅ VALIDACIÓN PASÓ');
     
     // Continuar con confirmación normal
     const modal = document.createElement('div');
@@ -4632,12 +4591,10 @@ async function saveTasting(){
     const t = JSON.parse(localStorage.getItem('tastings') || '{}');
     t[currentTasting.code] = currentTasting;
     localStorage.setItem('tastings', JSON.stringify(t));
-    console.log('Saved to localStorage:', currentTasting.code);
     
     // Intentar guardar en Supabase SOLO si está autenticado
     if (authenticatedUser && authenticatedUser.id) {
         try {
-            console.log('Saving tasting to Supabase:', currentTasting.code);
             
             const tastingData = {
                 code: currentTasting.code,
@@ -4663,7 +4620,6 @@ async function saveTasting(){
                 console.error('Supabase error:', error.message);
                 showToast('⚠️ Error al guardar en la nube. Guardado localmente.');
             } else {
-                console.log('Successfully saved to Supabase');
             }
         } catch(e) {
             console.error('Exception in saveTasting:', e.message);
@@ -4674,18 +4630,15 @@ async function saveTasting(){
 
 async function loadTastingByCode(code){
     try {
-        console.log('Loading tasting:', code);
         
         // Primero intentar localStorage (más rápido)
         const localTasting = JSON.parse(localStorage.getItem('tastings')||'{}')[code];
         if(localTasting) {
-            console.log('Found in localStorage');
             return localTasting;
         }
         
         // Si no está en localStorage, buscar en Supabase
         if (authenticatedUser) {
-            console.log('Checking Supabase for:', code);
             const {data, error} = await supabaseClient
                 .from('tastings')
                 .select('*')
@@ -4698,7 +4651,6 @@ async function loadTastingByCode(code){
             }
             
             if(data) {
-                console.log('Found in Supabase');
                 return {
                     code: data.code,
                     name: data.name,
@@ -4715,7 +4667,6 @@ async function loadTastingByCode(code){
             }
         }
         
-        console.log('Tasting not found');
         return null;
     } catch(e) {
         console.error('Exception in loadTastingByCode:', e.message);
@@ -4734,7 +4685,6 @@ function subscribeToTastingUpdates() {
         supabaseClient.removeChannel(realtimeChannel);
     }
     
-    console.log('Subscribing to realtime updates for:', currentTasting.code);
     
     // Subscribe to changes on this specific tasting (both INSERT and UPDATE)
     realtimeChannel = supabaseClient
@@ -4748,12 +4698,10 @@ function subscribeToTastingUpdates() {
                 filter: 'code=eq.' + currentTasting.code
             },
             (payload) => {
-                console.log('Received realtime update:', payload);
                 handleTastingUpdate(payload.new);
             }
         )
         .subscribe((status) => {
-            console.log('Realtime subscription status:', status);
         });
 }
 
@@ -4761,7 +4709,6 @@ function subscribeToTastingUpdates() {
 function handleTastingUpdate(newData) {
     if (!currentTasting || !newData) return;
     
-    console.log('Handling tasting update');
     
     // Verificar si el usuario actual fue expulsado
     if (newData.kickedParticipants && newData.kickedParticipants.includes(currentUser.name)) {
@@ -4820,7 +4767,6 @@ function handleTastingUpdate(newData) {
         });
         const newUserVotesCount = Object.keys(userVotes).length;
         if (newUserVotesCount !== oldUserVotesCount) {
-            console.log('UserVotes actualizado:', oldUserVotesCount, '→', newUserVotesCount);
         }
     }
     
@@ -4890,7 +4836,6 @@ function handleTastingUpdate(newData) {
 // Unsubscribe when leaving a tasting
 function unsubscribeFromTastingUpdates() {
     if (realtimeChannel) {
-        console.log('Unsubscribing from realtime updates');
         supabaseClient.removeChannel(realtimeChannel);
         realtimeChannel = null;
     }
@@ -4903,13 +4848,11 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
     const container = document.getElementById(containerId);
     if (!container) return;
     
-    console.log('=== loadRecentTastings START ===');
     let recentTastings = [];
     
     try {
         // 1. Cargar catas archivadas (finalizadas) de localStorage
         const archived = JSON.parse(localStorage.getItem('archivedTastings') || '[]');
-        console.log('Archived tastings from localStorage:', archived.length);
         archived.forEach(t => {
             recentTastings.push({
                 code: t.code || 'N/A',
@@ -4929,11 +4872,8 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
         
         // 2. Cargar catas activas de localStorage
         const localTastings = JSON.parse(localStorage.getItem('tastings') || '{}');
-        console.log('Active tastings from localStorage:', Object.keys(localTastings).length);
-        console.log('Active tastings:', localTastings);
         Object.values(localTastings).forEach(t => {
             if (!recentTastings.find(rt => rt.code === t.code)) {
-                console.log('Adding tasting:', t.name, t.status);
                 recentTastings.push({
                     code: t.code,
                     name: t.name,
@@ -4954,7 +4894,6 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
         // 3. Cargar desde Supabase si está autenticado
         if (authenticatedUser && authenticatedUser.id) {
             try {
-                console.log('Loading from Supabase for user:', authenticatedUser.id);
                 const { data, error } = await supabaseClient
                     .from('tastings')
                     .select('*')
@@ -4965,7 +4904,6 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
                 if (error) {
                     console.error('Error loading from Supabase:', error.message);
                 } else if (data) {
-                    console.log('Loaded from Supabase:', data.length);
                     data.forEach(t => {
                         if (!recentTastings.find(rt => rt.code === t.code)) {
                             recentTastings.push({
@@ -4993,7 +4931,6 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
         console.error('Error loading tastings:', error);
     }
     
-    console.log('Total tastings before sort:', recentTastings.length);
     
     // Ordenar por fecha (más recientes primero)
     recentTastings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -5001,8 +4938,6 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
     // Limitar a las 20 más recientes
     recentTastings = recentTastings.slice(0, 20);
     
-    console.log('Final tastings to display:', recentTastings.length);
-    console.log('=== loadRecentTastings END ===');
     
     if (!recentTastings.length) {
         container.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>No tienes catas</p></div>';
@@ -5250,7 +5185,7 @@ async function resumeTasting(code) {
     try {
         const tasting = await loadTastingByCode(code);
         if (!tasting) {
-            alert('No se pudo cargar la cata');
+            showToast('No se pudo cargar la cata');
             return;
         }
         
@@ -5282,7 +5217,6 @@ async function resumeTasting(code) {
             
             // Usuario ya está en la cata
             currentUser = existingParticipant;
-            console.log('Found existing participant:', currentUser.name, 'isHost:', currentUser.isHost);
         } else {
             // Usuario nuevo - pedir nombre si no está autenticado
             if (!userName) {
@@ -5314,7 +5248,6 @@ async function resumeTasting(code) {
                 }
             });
         }
-        console.log('Votos reconstruidos:', Object.keys(userVotes).length);
         
         // Suscribirse a actualizaciones en tiempo real
         subscribeToTastingUpdates();
@@ -5354,7 +5287,7 @@ async function resumeTasting(code) {
         }
     } catch (error) {
         console.error('Error resuming tasting:', error);
-        alert('Error al cargar la cata');
+        showToast('❌ Error al cargar la cata');
     }
 }
 
@@ -5418,7 +5351,7 @@ async function saveProfileChanges(){
     const newName=document.getElementById('editProfileName').value.trim();
     const newEmail=document.getElementById('editProfileEmail').value.trim();
     const newPassword=document.getElementById('editProfilePassword').value.trim();
-    if(!newName||!newEmail){alert('Nombre y email son obligatorios');return;}
+    if(!newName||!newEmail){showToast('Nombre y email son obligatorios');return;}
     
     try{
         await supabaseClient.from('profiles').update({name:newName,email:newEmail}).eq('id',authenticatedUser.id);
@@ -5426,21 +5359,21 @@ async function saveProfileChanges(){
         
         if(newEmail!==authenticatedUser.email){
             const {error:emailError} = await supabaseClient.auth.updateUser({email:newEmail});
-            if(emailError) alert('Error al cambiar email: '+emailError.message);
-            else alert('Se ha enviado un email de confirmación a la nueva dirección');
+            if(emailError) showToast('Error al cambiar email: '+emailError.message);
+            else showToast('Se ha enviado un email de confirmación a la nueva dirección');
         }
         
         if(newPassword){
-            if(newPassword.length<6){alert('La contraseña debe tener al menos 6 caracteres');return;}
+            if(newPassword.length<6){showToast('La contraseña debe tener al menos 6 caracteres');return;}
             const {error:pwError} = await supabaseClient.auth.updateUser({password:newPassword});
-            if(pwError){alert('Error al cambiar contraseña: '+pwError.message);return;}
+            if(pwError){showToast('Error al cambiar contraseña: '+pwError.message);return;}
         }
         
-        alert('✓ Perfil actualizado');
+        showToast('✓ Perfil actualizado');
         showScreen('profileScreen');
         loadProfileData();
     }catch(e){
-        alert('Error al guardar cambios: '+e.message);
+        showToast('Error al guardar cambios: '+e.message);
     }
 }
 
@@ -5490,14 +5423,14 @@ async function deleteAccount(){
         // 4. Cerrar sesión
         await supabaseClient.auth.signOut();
         
-        alert('Tu cuenta y todos tus datos han sido eliminados');
+        showToast('Tu cuenta y todos tus datos han sido eliminados');
         
         // 5. Mostrar pantalla de auth forzada
         document.getElementById('forcedAuthScreen').style.display = 'flex';
         
     }catch(e){
         console.error('Error eliminando cuenta:', e);
-        alert('Error eliminando la cuenta. Por favor, inténtalo de nuevo o contacta con soporte.');
+        showToast('❌ Error eliminando la cuenta. Por favor, inténtalo de nuevo o contacta con soporte.');
     }
 }
 
@@ -5510,7 +5443,6 @@ if('serviceWorker' in navigator){
     window.addEventListener('load',function(){
         navigator.serviceWorker.register('sw.js')
             .then(function(registration){
-                console.log('SW registered');
                 
                 // Check for updates every 30 seconds
                 setInterval(function(){
@@ -5529,7 +5461,6 @@ if('serviceWorker' in navigator){
                 });
             })
             .catch(function(err){
-                console.log('SW registration failed:', err);
             });
         
         // Listen for messages from service worker
@@ -5614,7 +5545,6 @@ window.addEventListener('load',function(){if(/iphone|ipad|ipod/i.test(navigator.
 
 // ===== BLOQUEADOR DE share-modal.js Y ERRORES DE EXTENSIONES =====
 (function() {
-    console.log('🛡️ Bloqueador de scripts y errores de extensiones activado');
     
     // 1. Interceptar todas las peticiones de scripts
     const originalCreateElement = document.createElement;
@@ -5724,7 +5654,6 @@ window.addEventListener('load',function(){if(/iphone|ipad|ipod/i.test(navigator.
         originalConsoleWarn.apply(console, args);
     };
     
-    console.log('✅ Protección completa contra errores de extensiones instalada');
 })();
 // ===== FLOATING ACTION BUTTON =====
 function toggleFabMenu() {
