@@ -2599,7 +2599,7 @@ function toggleFav(name,brand,image){
 function renderFavs(){
     const data=getFavData();const sel=document.getElementById('favListSelector');const items=data[sel.value]||[];const c=document.getElementById('favsList');
     if(!items.length){c.innerHTML='<div class="empty-state" style="padding:1.5rem 0;"><div class="icon">🤍</div><p>Lista vacía.<br>Añade productos desde el Ranking.</p></div>';return;}
-    c.innerHTML=items.map((p,i)=>`<div class="fav-item"><img src="${p.image||''}" onerror="this.style.display='none'" style="width:48px;height:48px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);"><div class="fav-info"><h4>${p.name}</h4><p>${p.brand}</p></div><button class="fav-remove" onclick="removeFavFromList('${sel.value}',${i})">🗑️</button></div>`).join('');
+    c.innerHTML=items.map((p,i)=>`<div class="fav-item"><img src="${p.image||''}" onerror="this.style.display='none'" style="width:48px;height:48px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);"><div class="fav-info"><h4>${SecurityUtils.escapeHTML(p.name)}</h4><p>${SecurityUtils.escapeHTML(p.brand)}</p></div><button class="fav-remove" onclick="removeFavFromList('${sel.value}',${i})">🗑️</button></div>`).join('');
 }
 function removeFavFromList(k,i){const data=getFavData();data[k].splice(i,1);saveFavData(data);renderFavs();}
 function createNewFavList(){const name=prompt('Nombre de la nueva lista:');if(!name||!name.trim())return;const key=name.trim();const data=getFavData();if(data[key]){alert('Ya existe esa lista');return;}data[key]=[];saveFavData(data);loadFavLists();document.getElementById('favListSelector').value=key;renderFavs();}
@@ -2727,10 +2727,39 @@ async function createTasting(){
     let hostName=document.getElementById('hostName').value.trim();
     const desc=document.getElementById('tastingDescription').value.trim();
     
+    // ===== VALIDACIONES DE SEGURIDAD =====
+    
+    // 1. Rate limiting
+    if (!SecurityUtils.rateLimit('createTasting', 5000)) {
+        showToast('⚠️ Espera 5 segundos antes de crear otra cata');
+        return;
+    }
+    
+    // 2. Validar nombre de cata
+    if (!SecurityUtils.validateInput(name, {minLength: 3, maxLength: APP_LIMITS.MAX_TASTING_NAME_LENGTH})) {
+        showToast('⚠️ Nombre de cata inválido (3-50 caracteres, sin HTML)');
+        document.getElementById('tastingName').focus();
+        return;
+    }
+    
+    // 3. Validar descripción (opcional pero con límite)
+    if (desc && !SecurityUtils.validateInput(desc, {minLength: 0, maxLength: 200, allowEmpty: true})) {
+        showToast('⚠️ Descripción demasiado larga (máx 200 caracteres)');
+        document.getElementById('tastingDescription').focus();
+        return;
+    }
+    
     // Pre-fill from authenticated user if empty
     if(!hostName && authenticatedUser) hostName=authenticatedUser.name;
     
-    // Inline validation
+    // 4. Validar nombre de anfitrión
+    if (!hostName || !SecurityUtils.validateInput(hostName, {minLength: 2, maxLength: 30})) {
+        showToast('⚠️ Nombre de anfitrión inválido (2-30 caracteres)');
+        document.getElementById('hostName').focus();
+        return;
+    }
+    
+    // Inline validation (visual)
     let hasError=false;
     const errN=document.getElementById('errTastingName'), errH=document.getElementById('errHostName');
     const fieldN=document.getElementById('fieldTastingName'), fieldH=document.getElementById('fieldHostName');
@@ -2768,16 +2797,51 @@ async function createTasting(){
 async function joinTasting(){
     const code=document.getElementById('joinCode').value.trim().toUpperCase();
     let name=document.getElementById('participantName').value.trim();
+    
+    // ===== VALIDACIONES DE SEGURIDAD =====
+    
+    // 1. Rate limiting
+    if (!SecurityUtils.rateLimit('joinTasting', 3000)) {
+        showToast('⚠️ Espera 3 segundos antes de intentar unirte de nuevo');
+        return;
+    }
+    
+    // 2. Validar código (6 caracteres alfanuméricos)
+    if (!code || !/^[A-Z0-9]{6}$/.test(code)) {
+        showToast('⚠️ Código inválido (debe ser 6 caracteres)');
+        document.getElementById('joinCode').focus();
+        return;
+    }
+    
     // Pre-fill from authenticated user if empty
     if(!name && authenticatedUser) name=authenticatedUser.name;
-    if(!code||!name){alert('Completa código y nombre');return;}
+    
+    // 3. Validar nombre
+    if (!SecurityUtils.validateInput(name, {minLength: 2, maxLength: 30})) {
+        showToast('⚠️ Nombre inválido (2-30 caracteres, sin HTML)');
+        document.getElementById('participantName').focus();
+        return;
+    }
+    
     const t=await loadTastingByCode(code);
-    if(!t){alert('Código no encontrado');return;}
-    if(t.status==='finished'){alert('Esta cata ya finalizó');return;}
+    if(!t){
+        showToast('⚠️ Código no encontrado');
+        return;
+    }
+    if(t.status==='finished'){
+        showToast('⚠️ Esta cata ya finalizó');
+        return;
+    }
     
     // Verificar si está expulsado
     if(t.kickedParticipants && t.kickedParticipants.includes(name)){
         showToast('⛔ Has sido expulsado de esta cata');
+        return;
+    }
+    
+    // Verificar límite de participantes
+    if (t.participants.length >= APP_LIMITS.MAX_PARTICIPANTS) {
+        showToast('⚠️ Esta cata está llena (máx ' + APP_LIMITS.MAX_PARTICIPANTS + ' participantes)');
         return;
     }
     
@@ -3971,7 +4035,7 @@ async function addProductFromEdit(product){
 function updateAddedProducts(){
     const c=document.getElementById('addedProducts');document.getElementById('productCount').textContent=currentTasting.products.length;
     if(!currentTasting.products.length){c.innerHTML='<div class="empty-state" style="padding:1.5rem 0;"><div class="icon">📦</div><p>Aún no hay productos</p></div>';return;}
-    c.innerHTML=currentTasting.products.map(function(p,i){return '<div class="product-item" data-id="'+p.id+'"><div class="drag-handle">⋮⋮</div><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+p.name+'</h4><p>'+p.brand+'</p></div><button onclick="removeProduct('+i+')" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--error);background:transparent;color:var(--error);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;padding:0;line-height:1;" onmouseover="this.style.background=\'var(--error)\';this.style.color=\'white\'" onmouseout="this.style.background=\'transparent\';this.style.color=\'var(--error)\'">✕</button></div>';}).join('');
+    c.innerHTML=currentTasting.products.map(function(p,i){return '<div class="product-item" data-id="'+p.id+'"><div class="drag-handle">⋮⋮</div><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+SecurityUtils.escapeHTML(p.name)+'</h4><p>'+SecurityUtils.escapeHTML(p.brand)+'</p></div><button onclick="removeProduct('+i+')" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--error);background:transparent;color:var(--error);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;padding:0;line-height:1;" onmouseover="this.style.background=\'var(--error)\';this.style.color=\'white\'" onmouseout="this.style.background=\'transparent\';this.style.color=\'var(--error)\'">✕</button></div>';}).join('');
     // Init Sortable for drag & drop
     if(sortableInstances.addedProducts) sortableInstances.addedProducts.destroy();
     sortableInstances.addedProducts = new Sortable(c, {
@@ -4214,7 +4278,7 @@ function updateEditProductsList(){
     const c=document.getElementById('editProductsList');document.getElementById('editProductCount').textContent=currentTasting.products.length;
     c.innerHTML=currentTasting.products.map(function(p,i){
         const hasVotes=currentTasting.votes[p.id]&&currentTasting.votes[p.id].length>0;
-        return '<div class="product-item" data-id="'+p.id+'"><div class="drag-handle">⋮⋮</div><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+p.name+'</h4><p>'+p.brand+'</p>'+(hasVotes?'<p style="color:var(--success);font-size:0.72rem;margin-top:0.15rem;">✓ '+currentTasting.votes[p.id].length+' votos</p>':'')+' </div><button onclick="removeProductFromEdit('+i+')" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--error);background:transparent;color:var(--error);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;padding:0;line-height:1;" onmouseover="this.style.background=\'var(--error)\';this.style.color=\'white\'" onmouseout="this.style.background=\'transparent\';this.style.color=\'var(--error)\'">✕</button></div>';
+        return '<div class="product-item" data-id="'+p.id+'"><div class="drag-handle">⋮⋮</div><img src="'+(p.image||'')+'" class="product-image" onerror="this.style.display=\'none\'"><div class="product-info"><h4>'+SecurityUtils.escapeHTML(p.name)+'</h4><p>'+SecurityUtils.escapeHTML(p.brand)+'</p>'+(hasVotes?'<p style="color:var(--success);font-size:0.72rem;margin-top:0.15rem;">✓ '+currentTasting.votes[p.id].length+' votos</p>':'')+' </div><button onclick="removeProductFromEdit('+i+')" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--error);background:transparent;color:var(--error);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;padding:0;line-height:1;" onmouseover="this.style.background=\'var(--error)\';this.style.color=\'white\'" onmouseout="this.style.background=\'transparent\';this.style.color=\'var(--error)\'">✕</button></div>';
     }).join('');
     // Init Sortable for drag & drop
     if(sortableInstances.editProductsList) sortableInstances.editProductsList.destroy();
@@ -4267,8 +4331,8 @@ async function showResults(){
                 <div class="result-card-compact">
                     <img src="${product.image || ''}" class="product-image" onerror="this.style.display='none'">
                     <div class="result-card-compact-info">
-                        <h4>${product.name}</h4>
-                        <p>${product.brand}</p>
+                        <h4>${SecurityUtils.escapeHTML(product.name)}</h4>
+                        <p>${SecurityUtils.escapeHTML(product.brand)}</p>
                     </div>
                     <div class="result-card-compact-score" style="background: ${scoreColor};">
                         ${avg.toFixed(1)}
@@ -4283,8 +4347,8 @@ async function showResults(){
                         ${votes.map(function(v){
                             return `<div class="rating-result">
                                 <div>
-                                    <strong style="font-size:0.875rem;">${v.user}</strong>
-                                    ${v.comment ? `<p style="font-size:0.775rem;color:var(--text-secondary);margin-top:0.15rem;">${v.comment}</p>` : ''}
+                                    <strong style="font-size:0.875rem;">${SecurityUtils.escapeHTML(v.user)}</strong>
+                                    ${v.comment ? `<p style="font-size:0.775rem;color:var(--text-secondary);margin-top:0.15rem;">${SecurityUtils.escapeHTML(v.comment)}</p>` : ''}
                                 </div>
                                 <div class="rating-score">${v.score.toFixed(1)}</div>
                             </div>`;
@@ -4924,7 +4988,7 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
         
         return `
             <div class="recent-tasting-simple" onclick="${onclick}" oncontextmenu="${oncontextmenu}" ontouchstart="${ontouchstart}" ontouchend="clearTastingLongPress()">
-                <div class="recent-tasting-name">${t.name}</div>
+                <div class="recent-tasting-name">${SecurityUtils.escapeHTML(t.name)}</div>
                 <div class="recent-tasting-status-group">
                     <div class="recent-tasting-date">${createdDate}</div>
                     <div class="recent-tasting-status-ring" style="border-color:${statusInfo.color};">
