@@ -2326,6 +2326,63 @@ function updateGlobalRanking(name,brand,image,score){
     localStorage.setItem('globalRanking', JSON.stringify(globalRanking));
 }
 
+// Función para añadir un voto específico al ranking (con nombre de usuario)
+function addVoteToRanking(name, brand, image, score, userName) {
+    // Ignorar productos "no probados"
+    if (score === -1) {
+        return;
+    }
+    
+    const key = (name + '|' + brand).toLowerCase();
+    
+    if (!globalRanking[key]) {
+        globalRanking[key] = {name, brand, image, totalScore: 0, voteCount: 0, avgScore: 0, votes: []};
+    }
+    
+    // Verificar si este usuario ya votó este producto
+    const existingVoteIndex = globalRanking[key].votes.findIndex(v => v.user === userName);
+    if (existingVoteIndex >= 0) {
+        // Ya existe, no añadir duplicado
+        console.log(`Voto duplicado ignorado: ${userName} ya votó ${name}`);
+        return;
+    }
+    
+    // Nuevo voto
+    globalRanking[key].votes.push({user: userName, score: score});
+    globalRanking[key].totalScore += score;
+    globalRanking[key].voteCount++;
+    globalRanking[key].avgScore = globalRanking[key].totalScore / globalRanking[key].voteCount;
+    
+    if (image) globalRanking[key].image = image;
+}
+
+// Procesar todos los votos de una cata al ranking global
+function processTastingToRanking(tasting) {
+    console.log('Procesando votos de cata al ranking global...');
+    
+    tasting.products.forEach(product => {
+        const votes = tasting.votes[product.id] || [];
+        console.log(`Producto: ${product.name}, Votos:`, votes);
+        
+        votes.forEach(vote => {
+            if (vote.score !== -1) {  // Ignorar "no probados"
+                addVoteToRanking(
+                    product.name,
+                    product.brand,
+                    product.image,
+                    vote.score,
+                    vote.user  // ← Usar el nombre del usuario del voto
+                );
+                console.log(`  ✓ Voto añadido: ${vote.user} → ${vote.score}`);
+            }
+        });
+    });
+    
+    // Guardar ranking actualizado
+    localStorage.setItem('globalRanking', JSON.stringify(globalRanking));
+    console.log('✅ Ranking global actualizado');
+}
+
 function removeVotesFromRanking(tasting) {
     // Para cada producto en la cata
     tasting.products.forEach(product => {
@@ -4191,7 +4248,12 @@ function exitEditMode(){showProductSelectionScreen();}
 
 // ===== RESULTS =====
 async function showResults(){
-    currentTasting.status='finished';await saveTasting();
+    currentTasting.status='finished';
+    await saveTasting();
+    
+    // Procesar todos los votos al ranking global
+    processTastingToRanking(currentTasting);
+    
     const c=document.getElementById('resultsContainer');
     c.innerHTML=currentTasting.products.map(function(product, index){
         const votes=currentTasting.votes[product.id]||[];
@@ -4302,17 +4364,8 @@ async function confirmFinishTasting() {
     if (forceFinish && currentUser.isHost) {
         console.log('✅ FINALIZACIÓN FORZADA POR ANFITRIÓN');
         
-        // Procesar todos los votos al ranking global
-        console.log('Procesando votos al ranking global...');
-        currentTasting.products.forEach(product => {
-            const votes = currentTasting.votes[product.id] || [];
-            votes.forEach(vote => {
-                // Solo procesar votos válidos (no "no probados")
-                if (vote.score !== -1) {
-                    updateGlobalRanking(product.name, product.brand, product.image, vote.score);
-                }
-            });
-        });
+        // Procesar todos los votos al ranking global usando la nueva función
+        processTastingToRanking(currentTasting);
         
         // Marcar como finalizada y guardar
         currentTasting.status = 'finished';
