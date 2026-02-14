@@ -2609,7 +2609,42 @@ function normalizeProductName(n){return(n||'').toLowerCase().replace(/\s+/g,' ')
 function deduplicateProducts(products){const seen=new Map();products.forEach(p=>{const key=normalizeProductName(p.product_name)+'|'+normalizeProductName(p.brands);if(!seen.has(key))seen.set(key,p);else{const ex=seen.get(key);if(p.image_url&&!ex.image_url)ex.image_url=p.image_url;}});return Array.from(seen.values());}
 
 // ===== TASTING FLOW =====
-function generateCode(){return Math.random().toString(36).substring(2,8).toUpperCase();}
+function generateCode() {
+    // FASE 2: Generación segura de códigos usando Crypto API
+    // Más seguro que Math.random() que es predecible
+    
+    try {
+        // Usar crypto.getRandomValues para aleatoriedad criptográfica
+        const array = new Uint8Array(4);
+        crypto.getRandomValues(array);
+        
+        let code = '';
+        for (let i = 0; i < array.length; i++) {
+            // Convertir cada byte a base36 (0-9, A-Z)
+            const char = array[i].toString(36).toUpperCase();
+            code += char;
+        }
+        
+        // Asegurar exactamente 6 caracteres
+        // Si es más corto, rellenar con números aleatorios
+        // Si es más largo, truncar
+        if (code.length < 6) {
+            // Generar más caracteres aleatorios
+            const extraArray = new Uint8Array(1);
+            while (code.length < 6) {
+                crypto.getRandomValues(extraArray);
+                code += extraArray[0].toString(36).toUpperCase().charAt(0);
+            }
+        }
+        
+        return code.substring(0, 6);
+        
+    } catch (error) {
+        // Fallback a Math.random si crypto no está disponible
+        console.warn('Crypto API no disponible, usando Math.random');
+        return Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+}
 
 // Share functionality
 function getShareLink() {
