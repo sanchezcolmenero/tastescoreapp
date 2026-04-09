@@ -2799,14 +2799,22 @@ async function createTasting(){
         description:desc,
         date:new Date().toISOString(),  // Fecha automática
         host:hostName,
-        participants:[{name:hostName,isHost:true}],
+        participants:[{
+            name:hostName,
+            isHost:true,
+            userId: authenticatedUser ? authenticatedUser.id : 'local_' + Date.now()  // FIX 1: ID único
+        }],
         products:[],
         votes:{},
         status:'waiting',
         createdAt:new Date().toISOString(),
         userId:authenticatedUser?authenticatedUser.id:null
     };
-    currentUser={name:hostName,isHost:true};
+    currentUser={
+        name:hostName,
+        isHost:true,
+        userId: authenticatedUser ? authenticatedUser.id : 'local_' + Date.now()  // FIX 1: ID único
+    };
     
     await saveTasting();
     subscribeToTastingUpdates();
@@ -2864,8 +2872,26 @@ async function joinTasting(){
         return;
     }
     
-    currentTasting=t; currentUser={name,isHost:false};
-    if(!currentTasting.participants.find(p=>p.name===name)){currentTasting.participants.push(currentUser);await saveTasting();}
+    // FIX 1: Crear currentUser con userId único
+    const userId = authenticatedUser ? authenticatedUser.id : 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    currentTasting = t;
+    currentUser = {
+        name,
+        isHost: false,
+        userId: userId
+    };
+    
+    // Verificar si ya existe por userId, no por nombre
+    const existingParticipant = currentTasting.participants.find(p => p.userId === userId);
+    
+    if (!existingParticipant) {
+        currentTasting.participants.push(currentUser);
+        await saveTasting();
+    } else {
+        // Actualizar currentUser con el participante existente
+        currentUser = existingParticipant;
+    }
     subscribeToTastingUpdates(); // Subscribe to realtime updates
     if(currentTasting.status==='waiting') showWaitingRoom();
     else if(currentTasting.status==='voting') showProductSelectionScreen();
@@ -4102,7 +4128,12 @@ function updateProductSelectionList(){
     
     c.innerHTML=currentTasting.products.map(function(p){
         const voted=userVotes[p.id];
-        const userVote = voted ? (currentTasting.votes[p.id] || []).find(v => v.user === currentUser.name) : null;
+        
+        // FIX 1: Buscar voto por userId en lugar de name
+        const userVote = voted ? (currentTasting.votes[p.id] || []).find(v => 
+            v.userId === currentUser.userId || v.user === currentUser.name  // Fallback para compatibilidad
+        ) : null;
+        
         const isNotTasted = userVote && userVote.score === -1;
         const voteScore = userVote && !isNotTasted ? userVote.score : 0;
         const scoreColor = userVote && !isNotTasted ? getScoreColor(voteScore) : '';
@@ -4240,8 +4271,19 @@ async function submitVote(){
     const score=parseFloat(document.getElementById('ratingSlider').value);
     const product=currentTasting.products.find(function(p){return p.id===selectedProductId;});
     if(!currentTasting.votes[selectedProductId])currentTasting.votes[selectedProductId]=[];
-    currentTasting.votes[selectedProductId]=currentTasting.votes[selectedProductId].filter(function(v){return v.user!==currentUser.name;});
-    currentTasting.votes[selectedProductId].push({user:currentUser.name,score:score});
+    
+    // FIX 1: Filtrar y buscar por userId en lugar de name
+    currentTasting.votes[selectedProductId]=currentTasting.votes[selectedProductId].filter(function(v){
+        return v.userId !== currentUser.userId;
+    });
+    
+    // FIX 1: Guardar voto con userId y userName
+    currentTasting.votes[selectedProductId].push({
+        userId: currentUser.userId,
+        user: currentUser.name,  // Mantener para compatibilidad
+        score: score
+    });
+    
     userVotes[selectedProductId]=true;
     updateGlobalRanking(product.name,product.brand,product.image,score);
     
@@ -4266,9 +4308,19 @@ async function submitVote(){
 async function markAsNotTasted(){
     const product=currentTasting.products.find(function(p){return p.id===selectedProductId;});
     if(!currentTasting.votes[selectedProductId])currentTasting.votes[selectedProductId]=[];
-    currentTasting.votes[selectedProductId]=currentTasting.votes[selectedProductId].filter(function(v){return v.user!==currentUser.name;});
-    // -1 indica "no probado"
-    currentTasting.votes[selectedProductId].push({user:currentUser.name,score:-1});
+    
+    // FIX 1: Filtrar por userId
+    currentTasting.votes[selectedProductId]=currentTasting.votes[selectedProductId].filter(function(v){
+        return v.userId !== currentUser.userId;
+    });
+    
+    // FIX 1: Guardar con userId
+    currentTasting.votes[selectedProductId].push({
+        userId: currentUser.userId,
+        user: currentUser.name,
+        score: -1
+    });
+    
     userVotes[selectedProductId]=true;
     
     // Volver a la lista inmediatamente (optimistic)
@@ -4743,9 +4795,44 @@ function handleTastingUpdate(newData) {
     const oldProductsCount = currentTasting.products.length;
     const oldStatus = currentTasting.status;
     
+    // FIX 2: Merge inteligente de votos en lugar de sobrescribir
+    // Esto previene la pérdida de votos durante race conditions
+    const mergedVotes = {};
+    
+    // Primero, copiar todos los votos actuales (locales)
+    Object.keys(currentTasting.votes || {}).forEach(productId => {
+        mergedVotes[productId] = [...(currentTasting.votes[productId] || [])];
+    });
+    
+    // Luego, mergear con los votos nuevos (remotos)
+    Object.keys(newData.votes || {}).forEach(productId => {
+        if (!mergedVotes[productId]) {
+            mergedVotes[productId] = [];
+        }
+        
+        const remoteVotes = newData.votes[productId] || [];
+        
+        remoteVotes.forEach(remoteVote => {
+            // Buscar si ya existe este voto (por userId o por name como fallback)
+            const existingIndex = mergedVotes[productId].findIndex(v => 
+                (v.userId && remoteVote.userId && v.userId === remoteVote.userId) ||
+                (v.user === remoteVote.user)
+            );
+            
+            if (existingIndex >= 0) {
+                // Actualizar voto existente con el remoto (el servidor es la verdad)
+                mergedVotes[productId][existingIndex] = remoteVote;
+            } else {
+                // Añadir nuevo voto
+                mergedVotes[productId].push(remoteVote);
+            }
+        });
+    });
+    
+    // Actualizar con datos merged
     currentTasting.participants = newData.participants;
     currentTasting.products = newData.products;
-    currentTasting.votes = newData.votes;
+    currentTasting.votes = mergedVotes;  // FIX 2: Usar votos mergeados
     currentTasting.status = newData.status;
     currentTasting.name = newData.name;
     currentTasting.description = newData.description;
@@ -4755,18 +4842,24 @@ function handleTastingUpdate(newData) {
     
     // CRÍTICO: Reconstruir userVotes cuando se actualizan los votos
     // para reflejar votos de otros usuarios en tiempo real
-    if (currentUser && newData.votes) {
+    if (currentUser && currentTasting.votes) {
         const oldUserVotesCount = Object.keys(userVotes).length;
         userVotes = {};
         currentTasting.products.forEach(product => {
-            const productVotes = newData.votes[product.id] || [];
-            const userVote = productVotes.find(v => v.user === currentUser.name);
+            const productVotes = currentTasting.votes[product.id] || [];
+            
+            // FIX 1: Buscar por userId en lugar de name
+            const userVote = productVotes.find(v => 
+                v.userId === currentUser.userId || v.user === currentUser.name  // Fallback
+            );
+            
             if (userVote) {
                 userVotes[product.id] = true;
             }
         });
         const newUserVotesCount = Object.keys(userVotes).length;
         if (newUserVotesCount !== oldUserVotesCount) {
+            // Votos cambiaron, puede que alguien borró
         }
     }
     
@@ -4841,7 +4934,40 @@ function unsubscribeFromTastingUpdates() {
     }
 }
 
-function archiveTasting(){const a=JSON.parse(localStorage.getItem('archivedTastings')||'[]');a.unshift({...currentTasting,archivedAt:new Date().toISOString()});localStorage.setItem('archivedTastings',JSON.stringify(a));}
+async function archiveTasting() {
+    const archivedData = {
+        ...currentTasting,
+        archivedAt: new Date().toISOString()
+    };
+    
+    // FIX 3: Guardar en Supabase si está autenticado
+    if (authenticatedUser && authenticatedUser.id) {
+        try {
+            const { error } = await supabaseClient
+                .from('archived_tastings')
+                .insert({
+                    user_id: authenticatedUser.id,
+                    tasting_code: currentTasting.code,
+                    tasting_data: archivedData,
+                    archived_at: archivedData.archivedAt
+                });
+            
+            if (error) {
+                console.error('Error archivando en Supabase:', error);
+                showToast('⚠️ Error al archivar en la nube, guardado localmente');
+            } else {
+                console.log('✅ Cata archivada en Supabase');
+            }
+        } catch (err) {
+            console.error('Error archivando:', err);
+        }
+    }
+    
+    // También guardar en localStorage como backup
+    const a = JSON.parse(localStorage.getItem('archivedTastings') || '[]');
+    a.unshift(archivedData);
+    localStorage.setItem('archivedTastings', JSON.stringify(a));
+}
 
 // ===== LOAD RECENT TASTINGS =====
 async function loadRecentTastings(containerId = 'recentTastingsList') {
@@ -4894,6 +5020,40 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
         // 3. Cargar desde Supabase si está autenticado
         if (authenticatedUser && authenticatedUser.id) {
             try {
+                // 3a. Cargar catas archivadas de Supabase (FIX 3)
+                const { data: archivedData, error: archivedError } = await supabaseClient
+                    .from('archived_tastings')
+                    .select('*')
+                    .eq('user_id', authenticatedUser.id)
+                    .order('archived_at', { ascending: false })
+                    .limit(20);
+                
+                if (archivedError) {
+                    console.error('Error loading archived from Supabase:', archivedError.message);
+                } else if (archivedData) {
+                    archivedData.forEach(record => {
+                        const t = record.tasting_data;
+                        if (!recentTastings.find(rt => rt.code === t.code)) {
+                            recentTastings.push({
+                                code: t.code || 'N/A',
+                                name: t.name,
+                                status: 'finished',
+                                createdAt: record.archived_at || t.createdAt,
+                                participants: t.participants,
+                                products: t.products,
+                                votes: t.votes,
+                                host: t.host,
+                                description: t.description,
+                                date: t.date,
+                                userId: record.user_id,
+                                isArchived: true,
+                                supabaseArchiveId: record.id  // Para poder borrar
+                            });
+                        }
+                    });
+                }
+                
+                // 3b. Cargar catas activas de Supabase
                 const { data, error } = await supabaseClient
                     .from('tastings')
                     .select('*')
