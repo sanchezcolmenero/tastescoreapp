@@ -1639,7 +1639,12 @@
         <div class="card" style="margin-top:0.75rem;">
             <h2 style="margin-bottom:1rem;font-size:1.1rem;font-weight:600;text-align:center;">Resultados</h2>
             <div id="resultsContainer"></div>
-            <button class="btn btn-primary" onclick="confirmFinishTasting()" style="margin-top:1rem;">Finalizar Cata</button>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:1rem;">
+                <button class="btn btn-secondary" onclick="shareCompletedTasting()" id="shareResultsBtn" style="display:none;">
+                    🔗 Compartir
+                </button>
+                <button class="btn btn-primary" onclick="confirmFinishTasting()" id="finishTastingBtn">Finalizar Cata</button>
+            </div>
         </div>
     </div>
 </div>
@@ -1803,6 +1808,9 @@ async function initApp(){
     updateNavBar();
     loadGlobalRanking();
     loadRecentTastings();
+    
+    // Check for shared tasting link
+    handleSharedTasting();
     
     // Check for auto-join parameter AFTER everything is loaded
     // Use a longer delay to ensure DOM is fully ready
@@ -2049,7 +2057,10 @@ async function logout(){
 // ===== NAVIGATION =====
 function navigateTo(dest){
     switch(dest){
-        case 'home': showScreen('homeScreen'); break;
+        case 'home': 
+            loadRecentTastings(); // FIX: Cargar catas recientes
+            showScreen('homeScreen'); 
+            break;
         case 'ranking': loadGlobalRanking(); showScreen('rankingScreen'); break;
         case 'myTastings': if(!authenticatedUser){showScreen('authScreen');break;} loadUserTastings(); showScreen('myTastingsScreen'); break;
         case 'favs': if(!authenticatedUser){showScreen('authScreen');break;} loadFavLists(); renderFavs(); showScreen('favsScreen'); break;
@@ -4429,6 +4440,19 @@ async function showResults(){
             </div>
         `;
     }).join('');
+    
+    // Mostrar botón compartir solo si la cata ya está archivada
+    const shareBtn = document.getElementById('shareResultsBtn');
+    const finishBtn = document.getElementById('finishTastingBtn');
+    
+    if (currentTasting.status === 'finished' && currentTasting.isArchived) {
+        shareBtn.style.display = 'block';
+        finishBtn.style.display = 'none';
+    } else {
+        shareBtn.style.display = 'none';
+        finishBtn.style.display = 'block';
+    }
+    
     showScreen('resultsScreen');
 }
 
@@ -4937,7 +4961,8 @@ function unsubscribeFromTastingUpdates() {
 async function archiveTasting() {
     const archivedData = {
         ...currentTasting,
-        archivedAt: new Date().toISOString()
+        archivedAt: new Date().toISOString(),
+        isArchived: true  // Marcar como archivada
     };
     
     // FIX 3: Guardar en Supabase si está autenticado
@@ -4949,7 +4974,8 @@ async function archiveTasting() {
                     user_id: authenticatedUser.id,
                     tasting_code: currentTasting.code,
                     tasting_data: archivedData,
-                    archived_at: archivedData.archivedAt
+                    archived_at: archivedData.archivedAt,
+                    is_shareable: true  // Permitir compartir
                 });
             
             if (error) {
@@ -4967,6 +4993,295 @@ async function archiveTasting() {
     const a = JSON.parse(localStorage.getItem('archivedTastings') || '[]');
     a.unshift(archivedData);
     localStorage.setItem('archivedTastings', JSON.stringify(a));
+    
+    // Actualizar currentTasting para mostrar botón compartir
+    currentTasting.isArchived = true;
+}
+
+// ===== COMPARTIR CATAS =====
+
+async function shareCompletedTasting() {
+    if (!currentTasting || !currentTasting.code) {
+        showToast('⚠️ Error: No hay cata para compartir');
+        return;
+    }
+    
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${baseUrl}?share=${currentTasting.code}`;
+    
+    // Crear modal personalizado para compartir
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px);';
+    
+    const dialog = document.createElement('div');
+    dialog.style.cssText = 'background:white;border-radius:16px;padding:1.5rem;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);';
+    
+    const participantsList = currentTasting.participants
+        .map(p => p.name)
+        .join(', ');
+    
+    dialog.innerHTML = `
+        <div style="text-align:center;margin-bottom:1rem;">
+            <div style="font-size:3rem;margin-bottom:0.5rem;">🔗</div>
+            <h3 style="font-size:1.2rem;font-weight:600;color:var(--text);margin-bottom:0.5rem;">Compartir Cata</h3>
+            <p style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">
+                ${currentTasting.name || 'Cata sin nombre'}
+            </p>
+            <p style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.25rem;">
+                👥 ${participantsList}
+            </p>
+        </div>
+        
+        <div style="background:var(--bg-secondary);padding:1rem;border-radius:10px;margin-bottom:1rem;">
+            <p style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.5rem;font-weight:600;">ENLACE PARA COMPARTIR</p>
+            <div style="background:white;padding:0.75rem;border-radius:8px;word-break:break-all;font-size:0.8rem;font-family:monospace;border:1px solid var(--border);">
+                ${shareUrl}
+            </div>
+        </div>
+        
+        <p style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.5;text-align:center;">
+            Cualquiera con este enlace podrá ver los resultados y añadir la cata a su historial
+        </p>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <button onclick="copyShareLink('${shareUrl}', this.parentElement.parentElement.parentElement)" 
+                    style="padding:0.875rem;border-radius:10px;border:1px solid var(--border);background:white;color:var(--text);font-weight:600;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">
+                📋 Copiar
+            </button>
+            <button onclick="shareNativeUrl('${shareUrl}')" 
+                    style="padding:0.875rem;border-radius:10px;border:none;background:var(--primary);color:white;font-weight:600;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">
+                📤 Compartir
+            </button>
+        </div>
+        
+        <button onclick="this.parentElement.parentElement.remove()" 
+                style="width:100%;margin-top:0.75rem;padding:0.75rem;border-radius:10px;border:none;background:var(--bg-secondary);color:var(--text-secondary);font-weight:600;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">
+            Cerrar
+        </button>
+    `;
+    
+    modal.appendChild(dialog);
+    document.body.appendChild(modal);
+}
+
+function copyShareLink(url, modal) {
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('✅ Enlace copiado');
+        if (modal) modal.remove();
+    }).catch(() => {
+        showToast('⚠️ No se pudo copiar');
+    });
+}
+
+function shareNativeUrl(url) {
+    if (navigator.share) {
+        navigator.share({
+            title: currentTasting.name || 'Cata de TasteScore',
+            text: `Mira los resultados de nuestra cata: ${currentTasting.name || 'Cata'}`,
+            url: url
+        }).catch(() => {
+            // Usuario canceló, no hacer nada
+        });
+    } else {
+        copyShareLink(url);
+    }
+}
+
+// Detectar si se abrió con parámetro ?share=CODIGO
+async function handleSharedTasting() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedCode = urlParams.get('share');
+    
+    if (!sharedCode) return;
+    
+    console.log('📥 Detectado enlace compartido:', sharedCode);
+    
+    try {
+        // Buscar la cata en Supabase por código
+        const { data, error } = await supabaseClient
+            .from('archived_tastings')
+            .select('*')
+            .eq('tasting_code', sharedCode)
+            .eq('is_shareable', true)
+            .limit(1);
+        
+        if (error) {
+            console.error('Error buscando cata compartida:', error);
+            showToast('⚠️ No se pudo cargar la cata compartida');
+            return;
+        }
+        
+        if (!data || data.length === 0) {
+            showToast('⚠️ Cata no encontrada o no disponible');
+            return;
+        }
+        
+        const sharedTasting = data[0].tasting_data;
+        
+        // Mostrar modal para añadir a historial
+        showAddSharedTastingModal(sharedTasting, data[0]);
+        
+    } catch (err) {
+        console.error('Error manejando cata compartida:', err);
+        showToast('⚠️ Error al cargar la cata');
+    }
+}
+
+function showAddSharedTastingModal(tastingData, record) {
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px);';
+    
+    const dialog = document.createElement('div');
+    dialog.style.cssText = 'background:white;border-radius:16px;padding:2rem;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);';
+    
+    const participantsList = tastingData.participants
+        .map(p => p.name)
+        .join(', ');
+    
+    const productCount = tastingData.products ? tastingData.products.length : 0;
+    
+    dialog.innerHTML = `
+        <div style="text-align:center;margin-bottom:1.5rem;">
+            <div style="font-size:4rem;margin-bottom:0.75rem;">🎉</div>
+            <h3 style="font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:0.5rem;">Cata Compartida</h3>
+            <p style="font-size:1rem;color:var(--text);font-weight:500;margin-bottom:0.25rem;">
+                ${SecurityUtils.escapeHTML(tastingData.name || 'Cata sin nombre')}
+            </p>
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.5rem;">
+                👥 ${SecurityUtils.escapeHTML(participantsList)}
+            </p>
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.25rem;">
+                🍷 ${productCount} productos probados
+            </p>
+        </div>
+        
+        <p style="font-size:0.9rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem;text-align:center;">
+            ¿Quieres añadir esta cata a tu historial para poder verla siempre?
+        </p>
+        
+        <div style="display:grid;grid-template-columns:1fr;gap:0.75rem;">
+            <button id="addToHistoryBtn" 
+                    style="padding:1rem;border-radius:10px;border:none;background:var(--primary);color:white;font-weight:600;font-size:1rem;cursor:pointer;font-family:'Inter',sans-serif;">
+                ✅ Sí, añadir a mi historial
+            </button>
+            <button id="justViewBtn"
+                    style="padding:0.875rem;border-radius:10px;border:1px solid var(--border);background:white;color:var(--text);font-weight:600;font-size:0.95rem;cursor:pointer;font-family:'Inter',sans-serif;">
+                👀 Solo ver resultados
+            </button>
+            <button onclick="window.location.href=window.location.pathname"
+                    style="padding:0.75rem;border-radius:10px;border:none;background:var(--bg-secondary);color:var(--text-secondary);font-weight:600;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">
+                ✕ Cancelar
+            </button>
+        </div>
+    `;
+    
+    modal.appendChild(dialog);
+    document.body.appendChild(modal);
+    
+    // Event listeners
+    document.getElementById('addToHistoryBtn').onclick = async () => {
+        await addSharedTastingToHistory(tastingData, record);
+        modal.remove();
+    };
+    
+    document.getElementById('justViewBtn').onclick = () => {
+        viewSharedTasting(tastingData);
+        modal.remove();
+    };
+}
+
+async function addSharedTastingToHistory(tastingData, record) {
+    if (!authenticatedUser) {
+        showToast('⚠️ Inicia sesión para guardar en tu historial');
+        // Guardar solo en localStorage
+        const archived = JSON.parse(localStorage.getItem('archivedTastings') || '[]');
+        archived.unshift({
+            ...tastingData,
+            archivedAt: new Date().toISOString(),
+            sharedFrom: record.user_id
+        });
+        localStorage.setItem('archivedTastings', JSON.stringify(archived));
+        showToast('✅ Cata guardada localmente');
+        viewSharedTasting(tastingData);
+        return;
+    }
+    
+    try {
+        // Guardar en Supabase para el usuario actual
+        const { error } = await supabaseClient
+            .from('archived_tastings')
+            .insert({
+                user_id: authenticatedUser.id,
+                tasting_code: tastingData.code,
+                tasting_data: tastingData,
+                archived_at: new Date().toISOString(),
+                is_shareable: true
+            });
+        
+        if (error) {
+            console.error('Error guardando cata compartida:', error);
+            showToast('⚠️ Error al guardar en tu historial');
+        } else {
+            showToast('✅ Cata añadida a tu historial');
+            viewSharedTasting(tastingData);
+        }
+    } catch (err) {
+        console.error('Error:', err);
+        showToast('⚠️ Error al guardar');
+    }
+}
+
+function viewSharedTasting(tastingData) {
+    // Establecer como cata actual temporal
+    currentTasting = {
+        ...tastingData,
+        isArchived: true,
+        isShared: true
+    };
+    
+    // Mostrar resultados
+    const c = document.getElementById('archiveResults');
+    c.innerHTML = tastingData.products.map(function(product){
+        const votes = tastingData.votes[product.id] || [];
+        const avg = votes.length ? votes.reduce((s,v) => s + v.score, 0) / votes.length : 0;
+        const scoreColor = getScoreColor(avg);
+        
+        return `
+            <div class="result-card collapsed" style="border-left:4px solid ${scoreColor};" onclick="toggleResultCard(this)">
+                <div class="result-card-compact">
+                    <img src="${product.image || ''}" class="product-image" onerror="this.style.display='none'">
+                    <div class="result-card-compact-info">
+                        <h4>${SecurityUtils.escapeHTML(product.name)}</h4>
+                        <p>${SecurityUtils.escapeHTML(product.brand)}</p>
+                    </div>
+                    <div class="result-card-compact-score" style="background:${scoreColor};">
+                        ${avg.toFixed(1)}
+                    </div>
+                    <div class="result-card-arrow">›</div>
+                </div>
+                <div class="result-card-details">
+                    ${votes.length ? `
+                        <h4 style="margin:0 0 0.75rem;font-size:0.875rem;font-weight:600;color:var(--text-secondary);">Puntuaciones</h4>
+                        ${votes.map(v => `
+                            <div class="rating-result">
+                                <strong style="font-size:0.875rem;">${SecurityUtils.escapeHTML(v.user)}</strong>
+                                <div class="rating-score">${v.score.toFixed(1)}</div>
+                            </div>
+                        `).join('')}
+                    ` : '<p style="text-align:center;color:var(--text-secondary);padding:0.75rem;">Sin votos</p>'}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    document.getElementById('archiveTastingName').textContent = tastingData.name || 'Cata compartida';
+    document.getElementById('archiveDate').textContent = new Date(tastingData.archivedAt || tastingData.createdAt).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    showScreen('archiveScreen');
 }
 
 // ===== LOAD RECENT TASTINGS =====
@@ -5112,13 +5427,30 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
             month: 'short'
         });
         
+        // Badge de participantes
+        const participantCount = t.participants ? t.participants.length : 0;
+        const participantNames = t.participants 
+            ? t.participants.slice(0, 3).map(p => p.name).join(', ')
+            : '';
+        const moreParticipants = participantCount > 3 ? ` +${participantCount - 3}` : '';
+        
         const onclick = `handleTastingClick(event, '${t.code}', ${t.isArchived})`;
         const oncontextmenu = `event.preventDefault(); deleteTastingPrompt('${t.code}', ${t.isArchived}); return false;`;
         const ontouchstart = `handleTastingLongPress(event, '${t.code}', ${t.isArchived})`;
         
         return `
             <div class="recent-tasting-simple" onclick="${onclick}" oncontextmenu="${oncontextmenu}" ontouchstart="${ontouchstart}" ontouchend="clearTastingLongPress()">
-                <div class="recent-tasting-name">${SecurityUtils.escapeHTML(t.name)}</div>
+                <div style="flex:1;min-width:0;">
+                    <div class="recent-tasting-name">${SecurityUtils.escapeHTML(t.name)}</div>
+                    ${participantCount > 1 ? `
+                        <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:0.2rem;display:flex;align-items:center;gap:0.3rem;">
+                            <span>👥</span>
+                            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${participantNames}${moreParticipants}">
+                                ${participantNames}${moreParticipants}
+                            </span>
+                        </div>
+                    ` : ''}
+                </div>
                 <div class="recent-tasting-status-group">
                     <div class="recent-tasting-date">${createdDate}</div>
                     <div class="recent-tasting-status-ring" style="border-color:${statusInfo.color};">
