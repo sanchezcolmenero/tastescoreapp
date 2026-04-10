@@ -5430,7 +5430,7 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
         // Badge de participantes
         const participantCount = t.participants ? t.participants.length : 0;
         const participantNames = t.participants 
-            ? t.participants.slice(0, 3).map(p => p.name).join(', ')
+            ? t.participants.slice(0, 3).map(p => SecurityUtils.escapeHTML(p.name)).join(', ')
             : '';
         const moreParticipants = participantCount > 3 ? ` +${participantCount - 3}` : '';
         
@@ -5445,7 +5445,7 @@ async function loadRecentTastings(containerId = 'recentTastingsList') {
                     ${participantCount > 1 ? `
                         <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:0.2rem;display:flex;align-items:center;gap:0.3rem;">
                             <span>👥</span>
-                            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${participantNames}${moreParticipants}">
+                            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                                 ${participantNames}${moreParticipants}
                             </span>
                         </div>
