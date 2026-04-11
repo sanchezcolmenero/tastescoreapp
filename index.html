@@ -1652,10 +1652,17 @@
 <!-- ARCHIVE DETAIL -->
 <div class="screen" id="archiveScreen">
     <div class="container">
-        <div class="card" style="margin-top:0.75rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin:0.75rem 0 0.5rem;">
+            <button onclick="navigateTo('home')" style="background:none;border:none;color:var(--text);font-size:1.5rem;cursor:pointer;padding:0.25rem;">←</button>
+            <h2 style="font-size:1.1rem;font-weight:600;margin:0;">Cata Finalizada</h2>
+        </div>
+        <div class="card">
             <h2 id="archiveTastingName" style="margin-bottom:0.35rem;font-size:1.1rem;font-weight:600;"></h2>
             <p id="archiveDate" style="color:var(--text-secondary);margin-bottom:1rem;font-size:0.8rem;"></p>
             <div id="archiveResults"></div>
+            <button class="btn btn-secondary" onclick="shareCompletedTasting()" id="shareArchivedBtn" style="margin-top:1rem;display:none;">
+                🔗 Compartir Cata
+            </button>
         </div>
     </div>
 </div>
@@ -5752,7 +5759,8 @@ async function viewArchivedTasting(code) {
         const scoreBorder = getScoreBorder(avg);
         
         return `
-            <div class="result-card collapsed" style="${scoreBorder}" onclick="toggleResultCard(this)">
+            <div class="result-card collapsed" style="${scoreBorder}" onclick="toggleResultCard(this)" data-product-id="${product.id}">
+                <!-- Vista compacta -->
                 <div class="result-card-compact">
                     <img src="${product.image || ''}" class="product-image" onerror="this.style.display='none'">
                     <div class="result-card-compact-info">
@@ -5765,6 +5773,7 @@ async function viewArchivedTasting(code) {
                     <div class="result-card-arrow">›</div>
                 </div>
                 
+                <!-- Detalles expandidos -->
                 <div class="result-card-details">
                     ${votes.length ? `
                         <h4 style="margin:0 0 0.75rem;font-size:0.875rem;font-weight:600;color:var(--text-secondary);">Puntuaciones de participantes</h4>
@@ -5782,6 +5791,18 @@ async function viewArchivedTasting(code) {
             </div>
         `;
     }).join('');
+    
+    // Establecer como currentTasting para que funcione el botón compartir
+    currentTasting = {
+        ...tasting,
+        isArchived: true
+    };
+    
+    // Mostrar botón compartir
+    const shareBtn = document.getElementById('shareArchivedBtn');
+    if (shareBtn) {
+        shareBtn.style.display = 'block';
+    }
     
     showScreen('archiveScreen');
 }
