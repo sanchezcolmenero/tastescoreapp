@@ -5664,30 +5664,86 @@ function getScoreBorder(score) {
     return '';
 }
 
-function viewArchivedTasting(code) {
+async function viewArchivedTasting(code) {
     console.log('viewArchivedTasting llamada con código:', code);
     
+    let tasting = null;
+    
+    // 1. Buscar en localStorage archivedTastings
     const archived = JSON.parse(localStorage.getItem('archivedTastings') || '[]');
-    const tasting = archived.find(t => t.code === code);
+    tasting = archived.find(t => t.code === code);
+    
+    if (tasting) {
+        console.log('Cata encontrada en localStorage archived');
+    }
+    
+    // 2. Si no está, buscar en Supabase archived_tastings
+    if (!tasting && authenticatedUser) {
+        console.log('Buscando en Supabase...');
+        try {
+            const { data, error } = await supabaseClient
+                .from('archived_tastings')
+                .select('*')
+                .eq('tasting_code', code)
+                .limit(1);
+            
+            if (!error && data && data.length > 0) {
+                tasting = data[0].tasting_data;
+                console.log('Cata encontrada en Supabase');
+            }
+        } catch (err) {
+            console.error('Error buscando en Supabase:', err);
+        }
+    }
+    
+    // 3. Si no está, buscar en localStorage tastings (activas)
+    if (!tasting) {
+        console.log('Buscando en localStorage tastings...');
+        const tastings = JSON.parse(localStorage.getItem('tastings') || '{}');
+        tasting = tastings[code];
+        
+        if (tasting) {
+            console.log('Cata encontrada en localStorage tastings (activa)');
+        }
+    }
+    
+    // 4. Si aún no está, buscar en Supabase tastings (activas)
+    if (!tasting && authenticatedUser) {
+        console.log('Buscando en Supabase tastings...');
+        try {
+            const { data, error } = await supabaseClient
+                .from('tastings')
+                .select('*')
+                .eq('code', code)
+                .single();
+            
+            if (!error && data) {
+                tasting = data;
+                console.log('Cata encontrada en Supabase tastings');
+            }
+        } catch (err) {
+            console.error('Error buscando en Supabase tastings:', err);
+        }
+    }
     
     if (!tasting) {
-        console.error('Cata archivada no encontrada:', code);
+        console.error('Cata NO encontrada en ningún lugar:', code);
         showToast('⚠️ Cata no encontrada');
         return;
     }
     
     console.log('Cata encontrada:', tasting);
     
+    // Verificar que tiene productos
+    if (!tasting.products || tasting.products.length === 0) {
+        showToast('⚠️ Esta cata no tiene productos');
+        return;
+    }
+    
     document.getElementById('archiveTastingName').textContent = tasting.name || 'Sin nombre';
     document.getElementById('archiveDate').textContent = 'Finalizada el ' + new Date(tasting.archivedAt || tasting.createdAt).toLocaleDateString('es-ES');
     
     const c = document.getElementById('archiveResults');
-    
-    if (!tasting.products || tasting.products.length === 0) {
-        c.innerHTML = '<div class="empty-state"><div class="icon">📦</div><p>Sin productos</p></div>';
-        showScreen('archiveScreen');
-        return;
-    }
     
     c.innerHTML = tasting.products.map(function(product) {
         const votes = tasting.votes[product.id] || [];
