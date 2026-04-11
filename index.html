@@ -1652,17 +1652,18 @@
 <!-- ARCHIVE DETAIL -->
 <div class="screen" id="archiveScreen">
     <div class="container">
-        <div style="display:flex;align-items:center;gap:0.5rem;margin:0.75rem 0 0.5rem;">
-            <button onclick="navigateTo('home')" style="background:none;border:none;color:var(--text);font-size:1.5rem;cursor:pointer;padding:0.25rem;">←</button>
-            <h2 style="font-size:1.1rem;font-weight:600;margin:0;">Cata Finalizada</h2>
-        </div>
-        <div class="card">
+        <div class="card" style="margin-top:0.75rem;">
             <h2 id="archiveTastingName" style="margin-bottom:0.35rem;font-size:1.1rem;font-weight:600;"></h2>
-            <p id="archiveDate" style="color:var(--text-secondary);margin-bottom:1rem;font-size:0.8rem;"></p>
+            <p id="archiveDate" style="color:var(--text-secondary);margin-bottom:0.5rem;font-size:0.8rem;"></p>
             <div id="archiveResults"></div>
-            <button class="btn btn-secondary" onclick="shareCompletedTasting()" id="shareArchivedBtn" style="margin-top:1rem;display:none;">
-                🔗 Compartir Cata
-            </button>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:1rem;">
+                <button class="btn btn-secondary" onclick="shareCompletedTasting()" id="shareArchivedBtn">
+                    🔗 Compartir
+                </button>
+                <button class="btn btn-primary" onclick="duplicateTasting()" id="duplicateArchivedBtn">
+                    📋 Duplicar
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -5094,6 +5095,58 @@ function shareNativeUrl(url) {
     }
 }
 
+// ===== DUPLICAR CATA =====
+
+async function duplicateTasting() {
+    if (!currentTasting) {
+        showToast('⚠️ No hay cata para duplicar');
+        return;
+    }
+    
+    // Pedir nombre para la nueva cata
+    const newName = prompt('Nombre para la nueva cata:', currentTasting.name + ' (copia)');
+    if (!newName) return;
+    
+    // Generar nuevo código
+    const code = generateTastingCode();
+    
+    // Crear nueva cata con los mismos productos
+    const newTasting = {
+        id: Date.now().toString(),
+        code: code,
+        name: newName,
+        description: currentTasting.description || '',
+        date: new Date().toISOString(),
+        host: authenticatedUser ? authenticatedUser.name : currentTasting.host,
+        participants: [{
+            name: authenticatedUser ? authenticatedUser.name : currentTasting.host,
+            isHost: true,
+            userId: authenticatedUser ? authenticatedUser.id : 'local_' + Date.now()
+        }],
+        products: currentTasting.products.map(p => ({...p})), // Copiar productos
+        votes: {}, // Votos vacíos
+        status: 'adding_products',
+        createdAt: new Date().toISOString(),
+        userId: authenticatedUser ? authenticatedUser.id : null
+    };
+    
+    // Establecer como cata actual
+    currentTasting = newTasting;
+    currentUser = newTasting.participants[0];
+    
+    // Guardar
+    await saveTasting();
+    
+    // Suscribirse a updates
+    subscribeToTastingUpdates();
+    
+    // Mostrar pantalla de añadir productos
+    updateAddedProducts();
+    showScreen('addProductsScreen');
+    
+    showToast(`✅ Cata "${newName}" creada con ${newTasting.products.length} productos`);
+}
+
 // Detectar si se abrió con parámetro ?share=CODIGO
 async function handleSharedTasting() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -5792,17 +5845,11 @@ async function viewArchivedTasting(code) {
         `;
     }).join('');
     
-    // Establecer como currentTasting para que funcione el botón compartir
+    // Establecer como currentTasting para que funcionen los botones
     currentTasting = {
         ...tasting,
         isArchived: true
     };
-    
-    // Mostrar botón compartir
-    const shareBtn = document.getElementById('shareArchivedBtn');
-    if (shareBtn) {
-        shareBtn.style.display = 'block';
-    }
     
     showScreen('archiveScreen');
 }
