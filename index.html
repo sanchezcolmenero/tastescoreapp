@@ -1039,7 +1039,27 @@
         <h2 style="margin-bottom:0.75rem;font-size:1.125rem;font-weight:600;">Escanear Código de Barras</h2>
         <div id="reader" style="width:100%;border-radius:6px;overflow:hidden;"></div>
         <p id="scannerStatus" style="text-align:center;margin:0.75rem 0;color:var(--text-secondary);font-size:0.875rem;">Enfoca el código de barras</p>
-        <button class="btn btn-secondary" onclick="closeScanner()">Cancelar</button>
+        
+        <!-- Tarjeta de confirmación (oculta por defecto) -->
+        <div id="scannedProductCard" style="display:none;margin-top:1rem;background:var(--bg-secondary);border-radius:8px;padding:1rem;border:2px solid var(--primary);">
+            <div style="display:flex;gap:0.75rem;align-items:center;margin-bottom:1rem;">
+                <img id="scannedProductImage" src="" class="product-image" style="width:60px;height:60px;object-fit:cover;" onerror="this.style.display='none'">
+                <div style="flex:1;">
+                    <h4 id="scannedProductName" style="margin:0 0 0.25rem;font-size:0.9rem;font-weight:600;"></h4>
+                    <p id="scannedProductBrand" style="margin:0;font-size:0.8rem;color:var(--text-secondary);"></p>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+                <button class="btn btn-secondary" onclick="rejectScannedProduct()" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+                    <span style="font-size:1.2rem;">✕</span> No añadir
+                </button>
+                <button class="btn btn-primary" onclick="confirmScannedProduct()" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+                    <span style="font-size:1.2rem;">✓</span> Añadir
+                </button>
+            </div>
+        </div>
+        
+        <button class="btn btn-secondary" onclick="closeScanner()" style="margin-top:1rem;">Cerrar Escáner</button>
     </div>
 </div>
 
@@ -2310,7 +2330,15 @@ const APP_LIMITS = {
 };
 
 // ===== RANKING =====
-function loadGlobalRanking(){globalRanking=JSON.parse(localStorage.getItem('globalRanking')||'{}');displayGlobalRanking();}
+async function loadGlobalRanking() {
+    // Cargar desde localStorage primero (rápido)
+    globalRanking = JSON.parse(localStorage.getItem('globalRanking') || '{}');
+    displayGlobalRanking();
+    
+    // Luego cargar desde Supabase y actualizar (sincronización)
+    await loadGlobalRankingFromSupabase();
+    displayGlobalRanking(); // Refrescar con datos de Supabase
+}
 function updateGlobalRanking(name,brand,image,score){
     // Ignorar productos "no probados"
     if (score === -1) {
@@ -2374,26 +2402,146 @@ function addVoteToRanking(name, brand, image, score, userName) {
 }
 
 // Procesar todos los votos de una cata al ranking global
-function processTastingToRanking(tasting) {
+async function processTastingToRanking(tasting) {
+    console.log('📊 Procesando cata al ranking:', tasting.name);
     
-    tasting.products.forEach(product => {
+    // Procesar cada producto
+    for (const product of tasting.products) {
         const votes = tasting.votes[product.id] || [];
         
-        votes.forEach(vote => {
+        for (const vote of votes) {
             if (vote.score !== -1) {  // Ignorar "no probados"
+                // Añadir al ranking local
                 addVoteToRanking(
                     product.name,
                     product.brand,
                     product.image,
                     vote.score,
-                    vote.user  // ← Usar el nombre del usuario del voto
+                    vote.user
                 );
+                
+                // NUEVO: Si hay usuario autenticado, también guardar en Supabase
+                if (authenticatedUser && vote.userId === authenticatedUser.id) {
+                    await saveVoteToSupabase(
+                        product.name,
+                        product.brand,
+                        product.image,
+                        vote.score,
+                        vote.user || authenticatedUser.name,
+                        tasting.code
+                    );
+                }
             }
-        });
-    });
+        }
+    }
     
-    // Guardar ranking actualizado
+    // Guardar ranking local actualizado
     localStorage.setItem('globalRanking', JSON.stringify(globalRanking));
+    
+    console.log('✅ Ranking actualizado');
+}
+
+// NUEVA FUNCIÓN: Guardar voto individual en Supabase
+async function saveVoteToSupabase(productName, productBrand, productImage, score, userName, tastingCode) {
+    if (!authenticatedUser || !supabaseClient) return;
+    
+    try {
+        const productKey = (productName + '|' + productBrand).toLowerCase();
+        
+        const { data, error } = await supabaseClient
+            .from('global_product_votes')
+            .upsert({
+                product_key: productKey,
+                product_name: productName,
+                product_brand: productBrand,
+                product_image: productImage,
+                user_id: authenticatedUser.id,
+                user_name: userName,
+                score: score,
+                tasting_code: tastingCode
+            }, {
+                onConflict: 'product_key,user_id'
+            });
+        
+        if (error) {
+            console.error('Error guardando voto en Supabase:', error);
+        } else {
+            console.log('✅ Voto guardado en Supabase:', productName);
+        }
+    } catch (err) {
+        console.error('Error al guardar voto:', err);
+    }
+}
+
+// NUEVA FUNCIÓN: Cargar ranking global desde Supabase
+async function loadGlobalRankingFromSupabase() {
+    if (!supabaseClient) return;
+    
+    try {
+        console.log('📥 Cargando ranking global desde Supabase...');
+        
+        const { data, error } = await supabaseClient
+            .from('global_ranking')
+            .select('*')
+            .order('avg_score', { ascending: false });
+        
+        if (error) {
+            console.error('Error cargando ranking:', error);
+            return;
+        }
+        
+        if (data && data.length > 0) {
+            // Convertir datos de Supabase a formato local
+            const newRanking = {};
+            
+            data.forEach(row => {
+                newRanking[row.product_key] = {
+                    name: row.product_name,
+                    brand: row.product_brand,
+                    image: row.product_image,
+                    totalScore: parseFloat(row.total_score),
+                    voteCount: parseInt(row.vote_count),
+                    avgScore: parseFloat(row.avg_score),
+                    votes: row.votes || []
+                };
+            });
+            
+            // Mergear con ranking local
+            globalRanking = { ...globalRanking, ...newRanking };
+            localStorage.setItem('globalRanking', JSON.stringify(globalRanking));
+            
+            console.log('✅ Ranking global cargado:', data.length, 'productos');
+        }
+    } catch (err) {
+        console.error('Error al cargar ranking global:', err);
+    }
+}
+
+// NUEVA FUNCIÓN: Cargar ranking personal desde Supabase
+async function loadPersonalRankingFromSupabase() {
+    if (!authenticatedUser || !supabaseClient) return;
+    
+    try {
+        console.log('📥 Cargando ranking personal desde Supabase...');
+        
+        const { data, error } = await supabaseClient
+            .rpc('get_user_ranking', { target_user_id: authenticatedUser.id });
+        
+        if (error) {
+            console.error('Error cargando ranking personal:', error);
+            return;
+        }
+        
+        if (data && data.length > 0) {
+            console.log('✅ Ranking personal cargado:', data.length, 'productos');
+            return data;
+        }
+        
+        return [];
+    } catch (err) {
+        console.error('Error al cargar ranking personal:', err);
+        return [];
+    }
 }
 
 function removeVotesFromRanking(tasting) {
@@ -2477,17 +2625,18 @@ function switchRankingTab(tab) {
     }
 }
 
-function displayMyVotesRanking() {
+async function displayMyVotesRanking() {
     const c = document.getElementById('rankingList');
-    const allProducts = Object.values(globalRanking);
     
-    // Filtrar solo productos votados por el usuario
-    const myProducts = allProducts.filter(p => {
-        // Verificar si hay un voto del usuario para este producto
-        return p.votes && p.votes.some(v => v.user === (authenticatedUser ? authenticatedUser.name : ''));
-    });
+    if (!authenticatedUser) {
+        c.innerHTML = '<div class="empty-state"><div class="icon">🔐</div><p>Inicia sesión para ver tu ranking personal</p></div>';
+        return;
+    }
     
-    if (!myProducts.length) {
+    // Cargar datos desde Supabase
+    const personalData = await loadPersonalRankingFromSupabase();
+    
+    if (!personalData || personalData.length === 0) {
         c.innerHTML = '<div class="empty-state"><div class="icon">🗳️</div><p>Aún no has votado ningún producto.<br>¡Participa en una cata!</p></div>';
         return;
     }
@@ -2500,6 +2649,52 @@ function displayMyVotesRanking() {
                     p.name === productName && p.brand === brandName
                 );
                 if (found) return true;
+            }
+        }
+        return false;
+    }
+    
+    // Separar en supermercado y restaurante
+    const supermarketProducts = personalData.filter(p => !isRestaurantProduct(p.product_name, p.product_brand));
+    const restaurantProducts = personalData.filter(p => isRestaurantProduct(p.product_name, p.product_brand));
+    
+    // Mostrar solo la pestaña activa
+    let productsToShow = activeRankingTab === 'supermarket' ? supermarketProducts : restaurantProducts;
+    
+    if (!productsToShow.length) {
+        const emptyIcon = activeRankingTab === 'supermarket' ? '🛒' : '🍔';
+        const emptyText = activeRankingTab === 'supermarket' ? 'supermercado' : 'restaurantes';
+        c.innerHTML = `<div class="empty-state"><div class="icon">${emptyIcon}</div><p>Aún no has votado productos de ${emptyText}.<br>¡Participa en una cata!</p></div>`;
+        return;
+    }
+    
+    // Ordenar por mi puntuación
+    const sorted = productsToShow.sort((a, b) => parseFloat(b.my_score) - parseFloat(a.my_score));
+    
+    const html = sorted.map((p, i) => {
+        const cls = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+        const myScore = parseFloat(p.my_score);
+        const globalAvg = p.global_avg ? parseFloat(p.global_avg).toFixed(1) : 'N/A';
+        const globalVotes = p.global_votes ? parseInt(p.global_votes) : 0;
+        
+        return `
+            <div class="ranking-item">
+                <div class="ranking-position ${cls}">${i + 1}</div>
+                <div class="product-info" style="flex:1;">
+                    <h4>${SecurityUtils.escapeHTML(p.product_name)}</h4>
+                    <p>${SecurityUtils.escapeHTML(p.product_brand)}</p>
+                    <div style="display:flex;gap:1rem;margin-top:0.35rem;font-size:0.75rem;color:var(--text-secondary);">
+                        <span>Mi voto: <strong style="color:var(--primary);">${myScore.toFixed(1)}</strong></span>
+                        <span>Global: <strong>${globalAvg}</strong> (${globalVotes} votos)</span>
+                    </div>
+                </div>
+                <div class="product-score">${myScore.toFixed(1)}</div>
+            </div>
+        `;
+    }).join('');
+    
+    c.innerHTML = html;
+}
             }
         }
         return false;
@@ -3163,36 +3358,118 @@ function renderManageParticipants(){
 }
 
 // ===== SCANNER =====
+let scannedProductData = null; // Guardar producto escaneado temporalmente
+
 function openScanner(){
     scannerTargetScreen=document.getElementById('editCataScreen').classList.contains('active')?'editCataScreen':'addProductsScreen';
-    const modal=document.getElementById('scannerModal');modal.classList.add('active');
+    const modal=document.getElementById('scannerModal');
+    modal.classList.add('active');
     document.getElementById('scannerStatus').textContent='Iniciando cámara...';
+    document.getElementById('scannedProductCard').style.display='none';
+    scannedProductData = null;
+    
     if(html5QrCode){try{html5QrCode.stop();}catch(e){} html5QrCode=null;}
     document.getElementById('reader').innerHTML='';
     html5QrCode=new Html5Qrcode("reader",{verbose:false});
     Html5Qrcode.getCameras().then(function(cameras){
-        if(!cameras||!cameras.length){document.getElementById('scannerStatus').textContent='No se encontró cámara';return;}
+        if(!cameras||!cameras.length){
+            document.getElementById('scannerStatus').textContent='No se encontró cámara';
+            return;
+        }
         let cameraId=cameras.length>1?cameras[cameras.length-1].id:cameras[0].id;
         document.getElementById('scannerStatus').textContent='Enfoca el código de barras...';
         html5QrCode.start(cameraId,{fps:10,qrbox:{width:220,height:220}},
             function onDecode(text){
-                document.getElementById('scannerStatus').textContent='Código detectado';
-                html5QrCode.stop().then(function(){html5QrCode=null;modal.classList.remove('active');searchProductByBarcode(text);}).catch(function(){html5QrCode=null;modal.classList.remove('active');searchProductByBarcode(text);});
+                document.getElementById('scannerStatus').textContent='Código detectado, buscando...';
+                // CAMBIO: NO cerrar la cámara, pausarla y mostrar confirmación
+                html5QrCode.pause(true);
+                searchProductByBarcode(text);
             },
             function onError(){}
-        ).catch(function(err){document.getElementById('scannerStatus').textContent='Error al abrir cámara.';});
-    }).catch(function(){document.getElementById('scannerStatus').textContent='Error al detectar cámaras.';});
+        ).catch(function(err){
+            document.getElementById('scannerStatus').textContent='Error al abrir cámara.';
+        });
+    }).catch(function(){
+        document.getElementById('scannerStatus').textContent='Error al detectar cámaras.';
+    });
 }
-function closeScanner(){if(html5QrCode){html5QrCode.stop().catch(function(){});html5QrCode=null;}document.getElementById('reader').innerHTML='';document.getElementById('scannerModal').classList.remove('active');}
+
+function closeScanner(){
+    if(html5QrCode){
+        html5QrCode.stop().catch(function(){});
+        html5QrCode=null;
+    }
+    document.getElementById('reader').innerHTML='';
+    document.getElementById('scannerModal').classList.remove('active');
+    document.getElementById('scannedProductCard').style.display='none';
+    scannedProductData = null;
+}
+
+function rejectScannedProduct(){
+    // Ocultar tarjeta y reanudar escáner
+    document.getElementById('scannedProductCard').style.display='none';
+    document.getElementById('scannerStatus').textContent='Enfoca el código de barras...';
+    scannedProductData = null;
+    if(html5QrCode){
+        html5QrCode.resume();
+    }
+}
+
+function confirmScannedProduct(){
+    if(scannedProductData){
+        // Añadir producto
+        if(scannerTargetScreen==='editCataScreen'){
+            addProductFromEdit(scannedProductData);
+        } else {
+            addProduct(scannedProductData);
+        }
+        
+        // Ocultar tarjeta y reanudar escáner para siguiente producto
+        document.getElementById('scannedProductCard').style.display='none';
+        document.getElementById('scannerStatus').textContent='✅ Añadido. Escanea siguiente producto...';
+        scannedProductData = null;
+        
+        if(html5QrCode){
+            html5QrCode.resume();
+        }
+    }
+}
+
 async function searchProductByBarcode(barcode){
     try{
         const res=await fetch('https://world.openfoodfacts.org/api/v0/product/'+barcode+'.json');
         const data=await res.json();
         if(data.status===1&&data.product){
-            const p=data.product;const product={name:p.product_name||'Producto sin nombre',brand:p.brands||'Marca desconocida',image:p.image_url||''};
-            if(scannerTargetScreen==='editCataScreen')addProductFromEdit(product);else addProduct(product);
-        } else showToast('⚠️ Producto no encontrado. Añádelo manualmente.');
-    }catch(e){showToast('❌ Error al buscar. Comprueba tu conexión.');}
+            const p=data.product;
+            const product={
+                name:p.product_name||'Producto sin nombre',
+                brand:p.brands||'Marca desconocida',
+                image:p.image_url||''
+            };
+            
+            // Guardar producto y mostrar tarjeta de confirmación
+            scannedProductData = product;
+            document.getElementById('scannedProductName').textContent = product.name;
+            document.getElementById('scannedProductBrand').textContent = product.brand;
+            document.getElementById('scannedProductImage').src = product.image || '';
+            document.getElementById('scannedProductImage').style.display = product.image ? 'block' : 'none';
+            document.getElementById('scannedProductCard').style.display = 'block';
+            document.getElementById('scannerStatus').textContent='¿Añadir este producto?';
+            
+        } else {
+            showToast('⚠️ Producto no encontrado');
+            document.getElementById('scannerStatus').textContent='Producto no encontrado. Intenta otro...';
+            if(html5QrCode){
+                html5QrCode.resume();
+            }
+        }
+    }catch(e){
+        showToast('❌ Error al buscar. Comprueba tu conexión.');
+        document.getElementById('scannerStatus').textContent='Error. Intenta de nuevo...';
+        if(html5QrCode){
+            html5QrCode.resume();
+        }
+    }
 }
 
 // ===== PRODUCT SEARCH =====
