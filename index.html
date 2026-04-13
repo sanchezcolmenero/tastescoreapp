@@ -2083,14 +2083,14 @@ async function logout(){
 }
 
 // ===== NAVIGATION =====
-function navigateTo(dest){
+async function navigateTo(dest){
     switch(dest){
         case 'home': 
-            loadRecentTastings(); // FIX: Cargar catas recientes
+            await loadRecentTastings(); // FIX: Esperar a que carguen las catas
             showScreen('homeScreen'); 
             break;
-        case 'ranking': loadGlobalRanking(); showScreen('rankingScreen'); break;
-        case 'myTastings': if(!authenticatedUser){showScreen('authScreen');break;} loadUserTastings(); showScreen('myTastingsScreen'); break;
+        case 'ranking': await loadGlobalRanking(); showScreen('rankingScreen'); break;
+        case 'myTastings': if(!authenticatedUser){showScreen('authScreen');break;} await loadUserTastings(); showScreen('myTastingsScreen'); break;
         case 'favs': if(!authenticatedUser){showScreen('authScreen');break;} loadFavLists(); renderFavs(); showScreen('favsScreen'); break;
         case 'auth': showScreen('authScreen'); break;
         case 'profile': if(!authenticatedUser){showScreen('authScreen');break;} loadProfileData(); showScreen('profileScreen'); break;
