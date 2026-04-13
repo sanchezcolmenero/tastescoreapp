@@ -2695,47 +2695,6 @@ async function displayMyVotesRanking() {
     
     c.innerHTML = html;
 }
-            }
-        }
-        return false;
-    }
-    
-    // Separar en supermercado y restaurante
-    const supermarketProducts = myProducts.filter(p => !isRestaurantProduct(p.name, p.brand));
-    const restaurantProducts = myProducts.filter(p => isRestaurantProduct(p.name, p.brand));
-    
-    // Mostrar solo la pestaña activa
-    let productsToShow = activeRankingTab === 'supermarket' ? supermarketProducts : restaurantProducts;
-    const sorted = productsToShow.sort((a, b) => b.avgScore - a.avgScore);
-    
-    if (!sorted.length) {
-        const emptyIcon = activeRankingTab === 'supermarket' ? '🛒' : '🍔';
-        const emptyText = activeRankingTab === 'supermarket' ? 'supermercado' : 'restaurantes';
-        c.innerHTML = `<div class="empty-state"><div class="icon">${emptyIcon}</div><p>No has votado productos de ${emptyText}.</p></div>`;
-        return;
-    }
-    
-    const html = sorted.map((p, i) => {
-        const cls = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-        const imageParam = activeRankingTab === 'supermarket' ? ((p.image || '')).replace(/'/g, "\\'") : '';
-        
-        // Obtener el voto del usuario actual
-        const userVote = p.votes ? p.votes.find(v => v.user === (authenticatedUser ? authenticatedUser.name : '')) : null;
-        const myScore = userVote ? userVote.score : p.avgScore;
-        
-        return `<div class="ranking-item">
-            <div class="ranking-position ${cls}">${i + 1}</div>
-            <div class="product-info" style="flex:1;">
-                <h4>${SecurityUtils.escapeHTML(p.name)}</h4>
-                <p>${SecurityUtils.escapeHTML(p.brand)} • ${p.voteCount} voto${p.voteCount === 1 ? '' : 's'}</p>
-            </div>
-            <div class="product-score">${p.avgScore.toFixed(1)}</div>
-            ${authenticatedUser ? '<button onclick="toggleFav(\'' + SecurityUtils.escapeHTML(p.name).replace(/'/g, "\\'") + '\',' + "'" + SecurityUtils.escapeHTML(p.brand).replace(/'/g, "\\'") + "'" + ',\'' + imageParam + '\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">' + (isFav(p.name, p.brand) ? '❤️' : '🤍') + '</button>' : ''}
-        </div>`;
-    }).join('');
-    
-    c.innerHTML = html;
-}
 
 function displayGlobalRanking(){
     const c=document.getElementById('rankingList');
