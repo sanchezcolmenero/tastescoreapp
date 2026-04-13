@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpiar Cache - TasteScore</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #1a202c;
+        }
+        p {
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        .step {
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+        }
+        .step h3 {
+            font-size: 0.9rem;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        button {
+            width: 100%;
+            padding: 1rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        button.secondary {
+            background: #48bb78;
+        }
+        button.secondary:hover {
+            background: #38a169;
+        }
+        .status {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+        }
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+        .warning {
+            background: #fef5e7;
+            border: 2px solid #f39c12;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .warning h3 {
+            color: #d68910;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        code {
+            background: #2d3748;
+            color: #68d391;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Limpiar Cache de TasteScore</h1>
+        
+        <p>Si la app muestra una versión antigua o no funcionan los botones, usa esta herramienta para limpiar completamente el cache.</p>
+        
+        <div class="warning">
+            <h3>⚠️ Importante:</h3>
+            <p style="font-size: 0.85rem; margin: 0;">Si NO tienes cuenta, perderás tus catas locales. Asegúrate de tener usuario antes de limpiar.</p>
+        </div>
+
+        <div class="step">
+            <h3>Paso 1: Desregistrar Service Worker</h3>
+            <p style="font-size: 0.85rem; margin: 0;">Elimina el service worker que puede estar sirviendo archivos antiguos.</p>
+        </div>
+
+        <button onclick="unregisterServiceWorker()">🗑️ Desregistrar Service Worker</button>
+
+        <div class="step">
+            <h3>Paso 2: Limpiar todos los caches</h3>
+            <p style="font-size: 0.85rem; margin: 0;">Borra todos los archivos cacheados por la app.</p>
+        </div>
+
+        <button onclick="clearAllCaches()">🧹 Limpiar Caches</button>
+
+        <div class="step">
+            <h3>Paso 3: Forzar recarga</h3>
+            <p style="font-size: 0.85rem; margin: 0;">Recarga la página sin usar cache.</p>
+        </div>
+
+        <button onclick="hardReload()">🔄 Recargar sin Cache</button>
+
+        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #e2e8f0;">
+
+        <button class="secondary" onclick="doEverything()">⚡ Hacer Todo Automáticamente</button>
+
+        <div id="status" class="status"></div>
+
+        <p style="margin-top: 1.5rem; font-size: 0.75rem; color: #718096; text-align: center;">
+            Después de limpiar, cierra TODAS las pestañas de TasteScore y abre una nueva.
+        </p>
+    </div>
+
+    <script>
+        function showStatus(message, isError = false) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + (isError ? 'error' : 'success');
+            status.style.display = 'block';
+        }
+
+        async function unregisterServiceWorker() {
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    
+                    if (registrations.length === 0) {
+                        showStatus('✅ No hay service workers registrados');
+                        return;
+                    }
+
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                    
+                    showStatus(`✅ ${registrations.length} service worker(s) desregistrado(s)`);
+                } else {
+                    showStatus('ℹ️ Service Workers no soportados en este navegador');
+                }
+            } catch (err) {
+                showStatus('❌ Error: ' + err.message, true);
+            }
+        }
+
+        async function clearAllCaches() {
+            try {
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    
+                    if (cacheNames.length === 0) {
+                        showStatus('✅ No hay caches para borrar');
+                        return;
+                    }
+
+                    for (let name of cacheNames) {
+                        await caches.delete(name);
+                    }
+                    
+                    showStatus(`✅ ${cacheNames.length} cache(s) borrado(s)`);
+                } else {
+                    showStatus('ℹ️ Cache API no soportada en este navegador');
+                }
+            } catch (err) {
+                showStatus('❌ Error: ' + err.message, true);
+            }
+        }
+
+        function hardReload() {
+            showStatus('🔄 Recargando...');
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 500);
+        }
+
+        async function doEverything() {
+            try {
+                showStatus('⏳ Limpiando todo...');
+                
+                // Paso 1: Desregistrar SW
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                }
+                
+                // Paso 2: Limpiar caches
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    for (let name of cacheNames) {
+                        await caches.delete(name);
+                    }
+                }
+                
+                showStatus('✅ Todo limpio. Recargando en 2 segundos...');
+                
+                // Paso 3: Hard reload
+                setTimeout(() => {
+                    window.location.href = window.location.origin + window.location.pathname;
+                }, 2000);
+                
+            } catch (err) {
+                showStatus('❌ Error: ' + err.message, true);
+            }
+        }
+    </script>
+</body>
+</html>
