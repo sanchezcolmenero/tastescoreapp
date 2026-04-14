@@ -2084,16 +2084,42 @@ async function logout(){
 
 // ===== NAVIGATION =====
 async function navigateTo(dest){
+    console.log('📍 Navegando a:', dest);
+    
     switch(dest){
         case 'home': 
-            await loadRecentTastings(); // FIX: Esperar a que carguen las catas
-            showScreen('homeScreen'); 
+            console.log('🏠 Cargando home...');
+            showScreen('homeScreen'); // Mostrar primero
+            await loadRecentTastings(); // Luego cargar datos
+            console.log('✅ Home cargado');
             break;
-        case 'ranking': await loadGlobalRanking(); showScreen('rankingScreen'); break;
-        case 'myTastings': if(!authenticatedUser){showScreen('authScreen');break;} await loadUserTastings(); showScreen('myTastingsScreen'); break;
-        case 'favs': if(!authenticatedUser){showScreen('authScreen');break;} loadFavLists(); renderFavs(); showScreen('favsScreen'); break;
-        case 'auth': showScreen('authScreen'); break;
-        case 'profile': if(!authenticatedUser){showScreen('authScreen');break;} loadProfileData(); showScreen('profileScreen'); break;
+        case 'ranking': 
+            console.log('📊 Cargando ranking...');
+            showScreen('rankingScreen');
+            await loadGlobalRanking(); 
+            console.log('✅ Ranking cargado');
+            break;
+        case 'myTastings': 
+            if(!authenticatedUser){showScreen('authScreen');break;} 
+            console.log('📝 Cargando mis catas...');
+            showScreen('myTastingsScreen');
+            await loadUserTastings(); 
+            console.log('✅ Mis catas cargadas');
+            break;
+        case 'favs': 
+            if(!authenticatedUser){showScreen('authScreen');break;} 
+            showScreen('favsScreen');
+            loadFavLists(); 
+            renderFavs(); 
+            break;
+        case 'auth': 
+            showScreen('authScreen'); 
+            break;
+        case 'profile': 
+            if(!authenticatedUser){showScreen('authScreen');break;} 
+            showScreen('profileScreen');
+            loadProfileData(); 
+            break;
     }
 }
 function setActiveNav(sid){
@@ -2331,13 +2357,99 @@ const APP_LIMITS = {
 
 // ===== RANKING =====
 async function loadGlobalRanking() {
+    console.log('📊 Cargando ranking global...');
+    
     // Cargar desde localStorage primero (rápido)
     globalRanking = JSON.parse(localStorage.getItem('globalRanking') || '{}');
+    const localCount = Object.keys(globalRanking).length;
+    console.log(`   localStorage: ${localCount} productos`);
+    
     displayGlobalRanking();
     
     // Luego cargar desde Supabase y actualizar (sincronización)
     await loadGlobalRankingFromSupabase();
-    displayGlobalRanking(); // Refrescar con datos de Supabase
+    const supabaseCount = Object.keys(globalRanking).length;
+    console.log(`   Después de Supabase: ${supabaseCount} productos`);
+    
+    // Si sigue vacío, reconstruir desde catas locales
+    if (Object.keys(globalRanking).length === 0) {
+        console.log('⚠️ Ranking vacío, reconstruyendo desde catas locales...');
+        await rebuildRankingFromLocalTastings();
+    }
+    
+    displayGlobalRanking(); // Refrescar con datos actualizados
+}
+
+// NUEVA FUNCIÓN: Reconstruir ranking automáticamente desde catas locales
+async function rebuildRankingFromLocalTastings() {
+    const archived = JSON.parse(localStorage.getItem('archivedTastings') || '[]');
+    const tastings = JSON.parse(localStorage.getItem('tastings') || '{}');
+    const activeTastings = Object.values(tastings);
+    
+    console.log(`   Procesando ${archived.length} catas archivadas...`);
+    console.log(`   Procesando ${activeTastings.length} catas activas...`);
+    
+    let processed = 0;
+    
+    // Procesar catas archivadas
+    for (const tasting of archived) {
+        if (tasting.products && tasting.votes) {
+            for (const product of tasting.products) {
+                const votes = tasting.votes[product.id] || [];
+                for (const vote of votes) {
+                    if (vote.score !== -1) {
+                        addVoteToRanking(product.name, product.brand, product.image, vote.score, vote.user);
+                        
+                        // Si está autenticado y es su voto, guardar en Supabase
+                        if (authenticatedUser && vote.userId === authenticatedUser.id) {
+                            await saveVoteToSupabase(
+                                product.name,
+                                product.brand,
+                                product.image,
+                                vote.score,
+                                vote.user,
+                                tasting.code
+                            );
+                        }
+                        processed++;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Procesar catas activas finalizadas
+    const finished = activeTastings.filter(t => t.status === 'finished');
+    for (const tasting of finished) {
+        if (tasting.products && tasting.votes) {
+            for (const product of tasting.products) {
+                const votes = tasting.votes[product.id] || [];
+                for (const vote of votes) {
+                    if (vote.score !== -1) {
+                        addVoteToRanking(product.name, product.brand, product.image, vote.score, vote.user);
+                        
+                        if (authenticatedUser && vote.userId === authenticatedUser.id) {
+                            await saveVoteToSupabase(
+                                product.name,
+                                product.brand,
+                                product.image,
+                                vote.score,
+                                vote.user,
+                                tasting.code
+                            );
+                        }
+                        processed++;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Guardar ranking actualizado
+    localStorage.setItem('globalRanking', JSON.stringify(globalRanking));
+    
+    console.log(`✅ Ranking reconstruido: ${processed} votos procesados`);
+    console.log(`   Total productos: ${Object.keys(globalRanking).length}`);
 }
 function updateGlobalRanking(name,brand,image,score){
     // Ignorar productos "no probados"
