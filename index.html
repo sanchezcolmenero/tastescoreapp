@@ -5446,17 +5446,28 @@ function shareNativeUrl(url) {
 // ===== DUPLICAR CATA =====
 
 async function duplicateTasting() {
+    console.log('📋 Duplicando cata...', currentTasting);
+    
     if (!currentTasting) {
+        console.error('❌ No hay currentTasting');
         showToast('⚠️ No hay cata para duplicar');
         return;
     }
     
+    console.log('✅ currentTasting existe:', currentTasting.name);
+    
     // Pedir nombre para la nueva cata
     const newName = prompt('Nombre para la nueva cata:', currentTasting.name + ' (copia)');
-    if (!newName) return;
+    if (!newName) {
+        console.log('❌ Usuario canceló');
+        return;
+    }
+    
+    console.log('✅ Nuevo nombre:', newName);
     
     // Generar nuevo código
     const code = generateTastingCode();
+    console.log('✅ Código generado:', code);
     
     // Crear nueva cata con los mismos productos
     const newTasting = {
@@ -5478,12 +5489,16 @@ async function duplicateTasting() {
         userId: authenticatedUser ? authenticatedUser.id : null
     };
     
+    console.log('✅ Nueva cata creada:', newTasting);
+    
     // Establecer como cata actual
     currentTasting = newTasting;
     currentUser = newTasting.participants[0];
     
     // Guardar
+    console.log('💾 Guardando cata...');
     await saveTasting();
+    console.log('✅ Cata guardada');
     
     // Suscribirse a updates
     subscribeToTastingUpdates();
@@ -5493,6 +5508,7 @@ async function duplicateTasting() {
     showScreen('addProductsScreen');
     
     showToast(`✅ Cata "${newName}" creada con ${newTasting.products.length} productos`);
+    console.log('✅ Duplicación completada');
 }
 
 // Detectar si se abrió con parámetro ?share=CODIGO
