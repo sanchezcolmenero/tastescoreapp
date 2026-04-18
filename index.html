@@ -5456,59 +5456,108 @@ async function duplicateTasting() {
     
     console.log('✅ currentTasting existe:', currentTasting.name);
     
-    // Pedir nombre para la nueva cata
-    const newName = prompt('Nombre para la nueva cata:', currentTasting.name + ' (copia)');
-    if (!newName) {
-        console.log('❌ Usuario canceló');
-        return;
-    }
-    
-    console.log('✅ Nuevo nombre:', newName);
-    
-    // Generar nuevo código
-    const code = generateTastingCode();
-    console.log('✅ Código generado:', code);
-    
-    // Crear nueva cata con los mismos productos
-    const newTasting = {
-        id: Date.now().toString(),
-        code: code,
-        name: newName,
-        description: currentTasting.description || '',
-        date: new Date().toISOString(),
-        host: authenticatedUser ? authenticatedUser.name : currentTasting.host,
-        participants: [{
-            name: authenticatedUser ? authenticatedUser.name : currentTasting.host,
-            isHost: true,
-            userId: authenticatedUser ? authenticatedUser.id : 'local_' + Date.now()
-        }],
-        products: currentTasting.products.map(p => ({...p})), // Copiar productos
-        votes: {}, // Votos vacíos
-        status: 'adding_products',
-        createdAt: new Date().toISOString(),
-        userId: authenticatedUser ? authenticatedUser.id : null
-    };
-    
-    console.log('✅ Nueva cata creada:', newTasting);
-    
-    // Establecer como cata actual
-    currentTasting = newTasting;
-    currentUser = newTasting.participants[0];
-    
-    // Guardar
-    console.log('💾 Guardando cata...');
-    await saveTasting();
-    console.log('✅ Cata guardada');
-    
-    // Suscribirse a updates
-    subscribeToTastingUpdates();
-    
-    // Mostrar pantalla de añadir productos
-    updateAddedProducts();
-    showScreen('addProductsScreen');
-    
-    showToast(`✅ Cata "${newName}" creada con ${newTasting.products.length} productos`);
-    console.log('✅ Duplicación completada');
+    // Crear modal personalizado en lugar de prompt()
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:10000;';
+        
+        const content = document.createElement('div');
+        content.style.cssText = 'background:var(--bg-primary);padding:1.5rem;border-radius:12px;max-width:400px;width:90%;';
+        
+        content.innerHTML = `
+            <h3 style="margin:0 0 1rem;color:var(--text-primary);">Duplicar cata</h3>
+            <input type="text" id="duplicateNameInput" 
+                value="${SecurityUtils.escapeHTML(currentTasting.name)} (copia)" 
+                style="width:100%;padding:0.75rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:1rem;margin-bottom:1rem;">
+            <div style="display:flex;gap:0.75rem;">
+                <button id="duplicateCancelBtn" style="flex:1;padding:0.75rem;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--text-primary);font-size:1rem;cursor:pointer;">
+                    Cancelar
+                </button>
+                <button id="duplicateConfirmBtn" style="flex:1;padding:0.75rem;border:none;border-radius:8px;background:var(--accent);color:white;font-size:1rem;cursor:pointer;">
+                    Duplicar
+                </button>
+            </div>
+        `;
+        
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+        
+        const input = document.getElementById('duplicateNameInput');
+        input.focus();
+        input.select();
+        
+        document.getElementById('duplicateCancelBtn').onclick = () => {
+            console.log('❌ Usuario canceló');
+            document.body.removeChild(modal);
+            resolve(null);
+        };
+        
+        const confirmDuplicate = async () => {
+            const newName = input.value.trim();
+            if (!newName) {
+                showToast('⚠️ Debes poner un nombre');
+                return;
+            }
+            
+            document.body.removeChild(modal);
+            console.log('✅ Nuevo nombre:', newName);
+            
+            // Generar nuevo código
+            const code = generateTastingCode();
+            console.log('✅ Código generado:', code);
+            
+            // Crear nueva cata con los mismos productos
+            const newTasting = {
+                id: Date.now().toString(),
+                code: code,
+                name: newName,
+                description: currentTasting.description || '',
+                date: new Date().toISOString(),
+                host: authenticatedUser ? authenticatedUser.name : currentTasting.host,
+                participants: [{
+                    name: authenticatedUser ? authenticatedUser.name : currentTasting.host,
+                    isHost: true,
+                    userId: authenticatedUser ? authenticatedUser.id : 'local_' + Date.now()
+                }],
+                products: currentTasting.products.map(p => ({...p})), // Copiar productos
+                votes: {}, // Votos vacíos
+                status: 'adding_products',
+                createdAt: new Date().toISOString(),
+                userId: authenticatedUser ? authenticatedUser.id : null
+            };
+            
+            console.log('✅ Nueva cata creada:', newTasting);
+            
+            // Establecer como cata actual
+            currentTasting = newTasting;
+            currentUser = newTasting.participants[0];
+            
+            // Guardar
+            console.log('💾 Guardando cata...');
+            await saveTasting();
+            console.log('✅ Cata guardada');
+            
+            // Suscribirse a updates
+            subscribeToTastingUpdates();
+            
+            // Mostrar pantalla de añadir productos
+            updateAddedProducts();
+            showScreen('addProductsScreen');
+            
+            showToast(`✅ Cata "${newName}" creada con ${newTasting.products.length} productos`);
+            console.log('✅ Duplicación completada');
+            
+            resolve(newTasting);
+        };
+        
+        document.getElementById('duplicateConfirmBtn').onclick = confirmDuplicate;
+        
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                confirmDuplicate();
+            }
+        });
+    });
 }
 
 // Detectar si se abrió con parámetro ?share=CODIGO
