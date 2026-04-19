@@ -2186,13 +2186,19 @@ function showScreen(sid){
                 showProductSelectionScreen();
             }
             else if(sid==='resultsScreen') {
-                showProductSelectionScreen();
+                // FIX: Volver a home en lugar de productSelectionScreen
+                currentTasting = null;
+                currentUser = null;
+                navigateTo('home');
             }
             else if(sid==='editCataScreen') {
                 showProductSelectionScreen();
             }
             else if(sid==='archiveScreen') {
-                showScreen('myTastingsScreen');
+                // FIX: Volver a home en lugar de myTastingsScreen
+                currentTasting = null;
+                currentUser = null;
+                navigateTo('home');
             }
             else if(sid==='editProfileScreen') {
                 showScreen('profileScreen');
@@ -2656,42 +2662,73 @@ async function loadPersonalRankingFromSupabase() {
     }
 }
 
-function removeVotesFromRanking(tasting) {
+async function removeVotesFromRanking(tasting) {
+    console.log('🗑️ Eliminando votos de la cata del ranking...');
+    
     // Para cada producto en la cata
-    tasting.products.forEach(product => {
+    for (const product of tasting.products) {
         const key = (product.name + '|' + product.brand).toLowerCase();
         const productRanking = globalRanking[key];
-        
-        if (!productRanking) return;
         
         // Obtener votos de esta cata
         const tastingVotes = tasting.votes[product.id] || [];
         
-        // Eliminar cada voto del ranking
-        tastingVotes.forEach(vote => {
-            const voteIndex = productRanking.votes.findIndex(v => v.user === vote.user && v.score === vote.score);
-            
-            if (voteIndex >= 0) {
-                // Restar del total
-                productRanking.totalScore -= vote.score;
-                productRanking.voteCount--;
+        // Eliminar de localStorage
+        if (productRanking) {
+            tastingVotes.forEach(vote => {
+                const voteIndex = productRanking.votes.findIndex(v => v.user === vote.user && v.score === vote.score);
                 
-                // Eliminar voto
-                productRanking.votes.splice(voteIndex, 1);
+                if (voteIndex >= 0) {
+                    productRanking.totalScore -= vote.score;
+                    productRanking.voteCount--;
+                    productRanking.votes.splice(voteIndex, 1);
+                }
+            });
+            
+            // Si no quedan votos, eliminar el producto del ranking
+            if (productRanking.voteCount === 0) {
+                delete globalRanking[key];
+            } else {
+                // Recalcular promedio
+                productRanking.avgScore = productRanking.totalScore / productRanking.voteCount;
             }
-        });
-        
-        // Si no quedan votos, eliminar el producto del ranking
-        if (productRanking.voteCount === 0) {
-            delete globalRanking[key];
-        } else {
-            // Recalcular promedio
-            productRanking.avgScore = productRanking.totalScore / productRanking.voteCount;
         }
-    });
+        
+        // Eliminar de Supabase
+        if (authenticatedUser && supabaseClient) {
+            try {
+                // Eliminar todos los votos de esta cata para este producto
+                const { error } = await supabaseClient
+                    .from('global_product_votes')
+                    .delete()
+                    .eq('tasting_code', tasting.code)
+                    .eq('product_key', key);
+                
+                if (error) {
+                    console.error('Error eliminando votos de Supabase:', error);
+                } else {
+                    console.log(`✅ Votos eliminados de Supabase: ${product.name}`);
+                }
+            } catch (err) {
+                console.error('Excepción eliminando votos:', err);
+            }
+        }
+    }
     
-    // Guardar ranking actualizado
+    // Guardar ranking actualizado en localStorage
     localStorage.setItem('globalRanking', JSON.stringify(globalRanking));
+    
+    // Refrescar vista materializada en Supabase
+    if (authenticatedUser && supabaseClient) {
+        try {
+            await supabaseClient.rpc('refresh_global_ranking');
+            console.log('✅ Ranking global refrescado en Supabase');
+        } catch (err) {
+            console.log('ℹ️ No se pudo refrescar vista (puede que no exista la función)');
+        }
+    }
+    
+    console.log('✅ Votos eliminados del ranking');
 }
 // Variable para la pestaña activa del ranking
 let activeRankingTab = 'supermarket';
@@ -6083,7 +6120,7 @@ async function deleteTastingPrompt(code, isArchived) {
                     
                     // Eliminar votos de esta cata del ranking global
                     if (tastingToDelete && tastingToDelete.products && tastingToDelete.votes) {
-                        removeVotesFromRanking(tastingToDelete);
+                        await removeVotesFromRanking(tastingToDelete);
                     }
                     
                     // Recargar lista
