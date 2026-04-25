@@ -1014,13 +1014,9 @@
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         <span>Ranking</span>
     </button>
-    <button class="nav-btn" id="nav-favs" onclick="navigateTo('favs')" style="display:none;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        <span>Favoritos</span>
-    </button>
-    <button class="nav-btn" id="nav-mytastings" onclick="navigateTo('myTastings')" style="display:none;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        <span>Mis Catas</span>
+    <button class="nav-btn" id="nav-profile" onclick="navigateTo('profile')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <span>Perfil</span>
     </button>
 </nav>
 
@@ -1191,18 +1187,25 @@
 <div class="screen" id="rankingScreen">
     <div class="container">
         <div class="card">
-            <h2 style="margin-bottom:1rem;font-size:1.2rem;font-weight:600;">🏆 Ranking</h2>
+            <h2 style="margin-bottom:1.5rem;font-size:1.5rem;font-weight:700;text-align:center;">Ranking de Productos</h2>
             
-            <!-- Tabs principales: Global vs Mis Votos -->
-            <div class="tabs" style="margin-bottom:1rem;">
-                <button class="tab active" onclick="switchRankingMode('global')">Global</button>
-                <button class="tab" onclick="switchRankingMode('my')">Mis Votos</button>
+            <!-- Toggle Global vs Mis Votos -->
+            <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;">
+                <button id="rankingModeGlobal" onclick="switchRankingMode('global')" style="flex:1;padding:0.75rem;border-radius:8px;font-weight:600;font-size:0.875rem;border:2px solid #e5e7eb;background:#2563eb;color:white;cursor:pointer;transition:all 0.2s;">
+                    Global
+                </button>
+                <button id="rankingModeMy" onclick="switchRankingMode('my')" style="flex:1;padding:0.75rem;border-radius:8px;font-weight:600;font-size:0.875rem;border:2px solid #e5e7eb;background:white;color:#6b7280;cursor:pointer;transition:all 0.2s;">
+                    Mis Votos
+                </button>
             </div>
             
-            <!-- Tabs secundarias: Supermercado vs Restaurante -->
-            <div id="rankingTypeTabs" class="tabs" style="margin-bottom:1rem;">
-                <button class="tab active" onclick="switchRankingTab('supermarket')">🛒 Supermercado</button>
-                <button class="tab" onclick="switchRankingTab('restaurant')">🍔 Restaurantes</button>
+            <!-- Filtro de categoría (dropdown simple) -->
+            <div style="margin-bottom:1.5rem;">
+                <select id="rankingCategoryFilter" onchange="applyRankingFilter()" style="width:100%;padding:0.75rem;border:1px solid #e5e7eb;border-radius:8px;font-size:0.875rem;font-weight:500;color:#1f2937;background:white;cursor:pointer;">
+                    <option value="all">Todas las categorías</option>
+                    <option value="supermarket">Supermercado</option>
+                    <option value="restaurant">Restaurantes</option>
+                </select>
             </div>
             
             <div id="rankingList"></div>
@@ -1397,12 +1400,23 @@
 <!-- CREATE -->
 <div class="screen" id="createScreen">
     <div class="container">
-        <div class="card" style="margin-top:1rem;">
-            <h2 style="margin-bottom:1.25rem;font-size:1.1rem;font-weight:600;">Crear Nueva Cata</h2>
-            <div class="input-group" id="fieldTastingName"><label>Nombre de la Cata *</label><input type="text" id="tastingName" placeholder="Ej: Cata de Cervezas Artesanales"><p class="field-error" id="errTastingName">Este campo es obligatorio</p></div>
-            <div class="input-group" id="fieldHostName"><label>Tu Nombre *</label><input type="text" id="hostName" placeholder="Tu nombre"><p class="field-error" id="errHostName">Este campo es obligatorio</p></div>
-            <div class="input-group"><label>Descripción (opcional)</label><textarea id="tastingDescription" rows="3" placeholder="Detalles sobre la cata..."></textarea></div>
-            <button class="btn btn-primary" onclick="createTasting()">Crear Cata</button>
+        <div class="card" style="margin-top:1rem;max-width:500px;margin-left:auto;margin-right:auto;">
+            <h2 style="margin-bottom:0.5rem;font-size:1.5rem;font-weight:700;text-align:center;">Crear Cata</h2>
+            <p style="text-align:center;color:#6b7280;font-size:0.875rem;margin-bottom:1.5rem;">Dale un nombre y empieza en segundos</p>
+            
+            <div class="input-group" id="fieldTastingName">
+                <label style="font-size:0.875rem;font-weight:600;color:#1f2937;margin-bottom:0.5rem;">¿Qué están catando?</label>
+                <input type="text" id="tastingName" placeholder="Ej: Empanadas caseras" style="font-size:1rem;padding:0.875rem;">
+                <p class="field-error" id="errTastingName">Dale un nombre a tu cata</p>
+            </div>
+            
+            <button class="btn btn-primary" onclick="createTastingQuick()" style="width:100%;padding:1rem;font-size:1rem;margin-top:0.5rem;">
+                Crear Cata
+            </button>
+            
+            <p style="text-align:center;color:#9ca3af;font-size:0.75rem;margin-top:1rem;">
+                Podrás añadir productos después
+            </p>
         </div>
     </div>
 </div>
@@ -2816,41 +2830,49 @@ let activeRankingMode = 'global'; // 'global' o 'my'
 function switchRankingMode(mode) {
     activeRankingMode = mode;
     
-    // Actualizar tabs del modo
-    const modeTabs = document.querySelectorAll('#rankingScreen .tabs:first-of-type .tab');
-    modeTabs.forEach((t, i) => {
-        if ((mode === 'global' && i === 0) || (mode === 'my' && i === 1)) {
-            t.classList.add('active');
-        } else {
-            t.classList.remove('active');
-        }
-    });
+    // Actualizar botones visuales
+    const globalBtn = document.getElementById('rankingModeGlobal');
+    const myBtn = document.getElementById('rankingModeMy');
     
     if (mode === 'global') {
+        globalBtn.style.background = '#2563eb';
+        globalBtn.style.color = 'white';
+        globalBtn.style.borderColor = '#2563eb';
+        
+        myBtn.style.background = 'white';
+        myBtn.style.color = '#6b7280';
+        myBtn.style.borderColor = '#e5e7eb';
+        
+        displayGlobalRanking();
+    } else {
+        myBtn.style.background = '#2563eb';
+        myBtn.style.color = 'white';
+        myBtn.style.borderColor = '#2563eb';
+        
+        globalBtn.style.background = 'white';
+        globalBtn.style.color = '#6b7280';
+        globalBtn.style.borderColor = '#e5e7eb';
+        
+        displayMyVotesRanking();
+    }
+}
+
+// Nueva función para aplicar filtro de categoría
+function applyRankingFilter() {
+    const filter = document.getElementById('rankingCategoryFilter').value;
+    activeRankingTab = filter === 'supermarket' ? 'supermarket' : filter === 'restaurant' ? 'restaurant' : 'all';
+    
+    // Re-renderizar según el modo activo
+    if (activeRankingMode === 'global') {
         displayGlobalRanking();
     } else {
         displayMyVotesRanking();
     }
 }
 
+// DEPRECADA - Mantener para compatibilidad pero redirigir a nuevo sistema
 function switchRankingTab(tab) {
-    activeRankingTab = tab;
-    
-    // Actualizar tabs visuales de tipo
-    const typeTabs = document.querySelectorAll('#rankingTypeTabs .tab');
-    typeTabs.forEach((t, i) => {
-        if ((tab === 'supermarket' && i === 0) || (tab === 'restaurant' && i === 1)) {
-            t.classList.add('active');
-        } else {
-            t.classList.remove('active');
-        }
-    });
-    
-    if (activeRankingMode === 'global') {
-        displayGlobalRanking();
-    } else {
-        displayMyVotesRanking();
-    }
+    applyRankingFilter();
 }
 
 async function displayMyVotesRanking() {
@@ -2882,17 +2904,19 @@ async function displayMyVotesRanking() {
         return false;
     }
     
-    // Separar en supermercado y restaurante
-    const supermarketProducts = personalData.filter(p => !isRestaurantProduct(p.product_name, p.product_brand));
-    const restaurantProducts = personalData.filter(p => isRestaurantProduct(p.product_name, p.product_brand));
+    // Filtrar según activeRankingTab
+    let productsToShow = personalData;
     
-    // Mostrar solo la pestaña activa
-    let productsToShow = activeRankingTab === 'supermarket' ? supermarketProducts : restaurantProducts;
+    if (activeRankingTab === 'supermarket') {
+        productsToShow = personalData.filter(p => !isRestaurantProduct(p.product_name, p.product_brand));
+    } else if (activeRankingTab === 'restaurant') {
+        productsToShow = personalData.filter(p => isRestaurantProduct(p.product_name, p.product_brand));
+    }
+    // Si activeRankingTab === 'all', mostrar todos
     
     if (!productsToShow.length) {
-        const emptyIcon = activeRankingTab === 'supermarket' ? '🛒' : '🍔';
-        const emptyText = activeRankingTab === 'supermarket' ? 'supermercado' : 'restaurantes';
-        c.innerHTML = `<div class="empty-state"><div class="icon">${emptyIcon}</div><p>Aún no has votado productos de ${emptyText}.<br>¡Participa en una cata!</p></div>`;
+        const emptyText = activeRankingTab === 'supermarket' ? 'supermercado' : activeRankingTab === 'restaurant' ? 'restaurantes' : 'productos';
+        c.innerHTML = `<div style="text-align:center;padding:3rem 1rem;color:#6b7280;"><div style="font-size:1.125rem;font-weight:600;color:#1f2937;margin-bottom:0.5rem;">Aún no has votado productos de ${emptyText}</div><p style="font-size:0.875rem;margin:0;">¡Participa en una cata!</p></div>`;
         return;
     }
     
@@ -2941,30 +2965,49 @@ function displayGlobalRanking(){
         return false;
     }
     
-    // Separar en supermercado y restaurante
-    const supermarketProducts = allProducts.filter(p => !isRestaurantProduct(p.name, p.brand));
-    const restaurantProducts = allProducts.filter(p => isRestaurantProduct(p.name, p.brand));
-    
     if(!allProducts.length){
-        c.innerHTML='<div class="empty-state"><div class="icon">🏆</div><p>Aún no hay productos.<br>¡Sé el primero en votar!</p></div>';
+        c.innerHTML='<div style="text-align:center;padding:3rem 1rem;color:#6b7280;"><div style="font-size:1.125rem;font-weight:600;color:#1f2937;margin-bottom:0.5rem;">Aún no hay productos</div><p style="font-size:0.875rem;margin:0;">¡Sé el primero en votar!</p></div>';
         return;
     }
     
-    // Mostrar solo la pestaña activa
-    let productsToShow = activeRankingTab === 'supermarket' ? supermarketProducts : restaurantProducts;
+    // Filtrar según activeRankingTab
+    let productsToShow = allProducts;
+    
+    if (activeRankingTab === 'supermarket') {
+        productsToShow = allProducts.filter(p => !isRestaurantProduct(p.name, p.brand));
+    } else if (activeRankingTab === 'restaurant') {
+        productsToShow = allProducts.filter(p => isRestaurantProduct(p.name, p.brand));
+    }
+    // Si activeRankingTab === 'all', mostrar todos
+    
     const sorted = productsToShow.sort((a,b)=>b.avgScore-a.avgScore).slice(0,50);
     
     if(!sorted.length){
-        const emptyIcon = activeRankingTab === 'supermarket' ? '🛒' : '🍔';
-        const emptyText = activeRankingTab === 'supermarket' ? 'supermercado' : 'restaurantes';
-        c.innerHTML=`<div class="empty-state"><div class="icon">${emptyIcon}</div><p>Aún no hay productos de ${emptyText}.<br>¡Sé el primero en votar!</p></div>`;
+        const emptyText = activeRankingTab === 'supermarket' ? 'supermercado' : activeRankingTab === 'restaurant' ? 'restaurantes' : 'productos';
+        c.innerHTML=`<div style="text-align:center;padding:3rem 1rem;color:#6b7280;"><div style="font-size:1.125rem;font-weight:600;color:#1f2937;margin-bottom:0.5rem;">Aún no hay productos de ${emptyText}</div><p style="font-size:0.875rem;margin:0;">¡Sé el primero en votar!</p></div>`;
         return;
     }
     
     const html = sorted.map((p,i)=>{
         const cls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
         const imageParam = activeRankingTab === 'supermarket' ? ((p.image||'')).replace(/'/g,"\\'") : '';
-        return `<div class="ranking-item"><div class="ranking-position ${cls}">${i+1}</div><div class="product-info" style="flex:1;"><h4>${SecurityUtils.escapeHTML(p.name)}</h4><p>${SecurityUtils.escapeHTML(p.brand)} • ${p.voteCount} voto${p.voteCount===1?'':'s'}</p></div><div class="product-score">${p.avgScore.toFixed(1)}</div>${authenticatedUser?'<button onclick="toggleFav(\''+SecurityUtils.escapeHTML(p.name).replace(/'/g,"\\'")+'\',' + "'"+SecurityUtils.escapeHTML(p.brand).replace(/'/g,"\\'")+"'" + ',\''+ imageParam +'\')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">'+(isFav(p.name,p.brand)?'❤️':'🤍')+'</button>':''}</div>`;
+        
+        // Botón favorito solo si está autenticado (sin emoji)
+        const favBtn = authenticatedUser 
+            ? `<button onclick="toggleFav('${SecurityUtils.escapeHTML(p.name).replace(/'/g,"\\'")}','${SecurityUtils.escapeHTML(p.brand).replace(/'/g,"\\'")}','${imageParam}')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:0.2rem;flex-shrink:0;">${isFav(p.name,p.brand)?'❤️':'🤍'}</button>`
+            : '';
+        
+        return `
+            <div class="ranking-item">
+                <div class="ranking-position ${cls}">${i+1}</div>
+                <div class="product-info" style="flex:1;">
+                    <h4>${SecurityUtils.escapeHTML(p.name)}</h4>
+                    <p>${SecurityUtils.escapeHTML(p.brand)} • ${p.voteCount} voto${p.voteCount===1?'':'s'}</p>
+                </div>
+                <div class="product-score">${p.avgScore.toFixed(1)}</div>
+                ${favBtn}
+            </div>
+        `;
     }).join('');
     
     c.innerHTML = html;
@@ -3140,6 +3183,110 @@ async function checkAutoJoin() {
         }, 100);
     } else {
     }
+}
+
+/**
+ * NUEVO: Crear cata ultra-rápida (sin descripción, sin pedir nombre host)
+ */
+async function createTastingQuick() {
+    const name = document.getElementById('tastingName').value.trim();
+    
+    // Validación mínima
+    if (!name || name.length < 3) {
+        showToast('⚠️ Dale un nombre a tu cata (mínimo 3 caracteres)');
+        document.getElementById('tastingName').focus();
+        return;
+    }
+    
+    // Rate limiting
+    if (!SecurityUtils.rateLimit('createTasting', 5000)) {
+        showToast('⚠️ Espera 5 segundos');
+        return;
+    }
+    
+    // Validar con SecurityUtils
+    if (!SecurityUtils.validateInput(name, {minLength: 3, maxLength: 50})) {
+        showToast('⚠️ Nombre inválido (máx 50 caracteres, sin HTML)');
+        return;
+    }
+    
+    // Usar nombre del usuario autenticado o pedir uno temporal
+    let hostName = authenticatedUser ? authenticatedUser.name : null;
+    
+    if (!hostName) {
+        // Usuario no autenticado - crear nombre temporal o usar localStorage
+        hostName = localStorage.getItem('guestUserName');
+        
+        if (!hostName) {
+            // Primera vez - pedir nombre
+            const tempName = prompt('¿Cómo te llamas?');
+            if (!tempName || tempName.trim().length < 2) {
+                showToast('⚠️ Necesitamos tu nombre para continuar');
+                return;
+            }
+            hostName = tempName.trim();
+            localStorage.setItem('guestUserName', hostName);
+        }
+    }
+    
+    // Crear cata
+    const code = generateCode();
+    currentTasting = {
+        id: Date.now().toString(),
+        code,
+        name,
+        description: '', // Sin descripción
+        date: new Date().toISOString(),
+        host: hostName,
+        participants: [{
+            name: hostName,
+            isHost: true,
+            userId: authenticatedUser ? authenticatedUser.id : 'guest_' + Date.now()
+        }],
+        products: [],
+        votes: {},
+        status: 'adding_products', // Ir directo a añadir productos
+        createdAt: new Date().toISOString(),
+        userId: authenticatedUser ? authenticatedUser.id : null
+    };
+    
+    currentUser = {
+        name: hostName,
+        isHost: true,
+        userId: authenticatedUser ? authenticatedUser.id : 'guest_' + Date.now()
+    };
+    
+    // Guardar en localStorage
+    saveTasting();
+    
+    // Guardar en Supabase si está autenticado
+    if (authenticatedUser && supabaseClient) {
+        try {
+            const { error } = await supabaseClient
+                .from('tastings')
+                .insert([{
+                    code: currentTasting.code,
+                    name: currentTasting.name,
+                    description: currentTasting.description,
+                    host: currentTasting.host,
+                    participants: currentTasting.participants,
+                    products: currentTasting.products,
+                    votes: currentTasting.votes,
+                    status: currentTasting.status,
+                    date: currentTasting.date,
+                    user_id: authenticatedUser.id,
+                    created_at: currentTasting.createdAt
+                }]);
+            
+            if (error) console.error('Error guardando en Supabase:', error);
+        } catch (err) {
+            console.error('Excepción guardando en Supabase:', err);
+        }
+    }
+    
+    // Ir directo a añadir productos
+    showToast(`✅ Cata "${name}" creada - Código: ${code}`);
+    showProductSelectionScreen();
 }
 
 async function createTasting(){
