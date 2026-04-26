@@ -1150,31 +1150,6 @@
     </div>
 </div>
 
-<!-- FLOATING ACTION BUTTON - DEPRECADO, ahora usamos botones fijos -->
-<button class="main-fab" id="mainFab" onclick="toggleFabMenu()" style="display:none !important;">+</button>
-<div class="fab-menu" id="fabMenu" style="display:none !important;">
-    <div class="fab-menu-item">
-        <span class="fab-menu-label">Crear nueva cata</span>
-        <button class="fab-menu-btn" onclick="createNewTasting()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="12" y1="18" x2="12" y2="12"/>
-                <line x1="9" y1="15" x2="15" y2="15"/>
-            </svg>
-        </button>
-    </div>
-    <div class="fab-menu-item">
-        <span class="fab-menu-label">Unirse a cata</span>
-        <button class="fab-menu-btn" onclick="openJoinScreen()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-            </svg>
-        </button>
-    </div>
-</div>
-
 <!-- SHARE FAB (solo en addProductsScreen) -->
 <button class="main-fab" id="shareFab" onclick="openShareModal()" style="display:none;">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1706,17 +1681,50 @@
                 <div class="product-info" style="flex:1;"><h4 id="votingProductName"></h4><p id="votingProductBrand"></p></div>
                 <div id="votingProductScore" style="font-size:1.1rem;font-weight:600;color:white;padding:0.3rem 0.7rem;border-radius:6px;text-shadow:0 1px 2px rgba(0,0,0,0.15);flex-shrink:0;display:none;"></div>
             </div>
-            <div class="rating-container">
-                <label style="font-weight:500;display:block;margin-bottom:0.5rem;font-size:0.875rem;">Tu Puntuación</label>
-                <div class="rating-slider-container">
-                    <input type="range" id="ratingSlider" class="rating-slider" min="0" max="10" step="0.1" value="5.0" oninput="updateRatingValue()">
-                    <div class="rating-labels"><span>0</span><span>5</span><span>10</span></div>
+            
+            <!-- TOGGLE MODO VOTACIÓN -->
+            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+                <button id="modeSliderBtn" onclick="switchVotingMode('slider')" style="flex:1;padding:0.5rem;border-radius:6px;font-size:0.75rem;font-weight:600;border:2px solid #2563eb;background:#2563eb;color:white;cursor:pointer;">
+                    Slider
+                </button>
+                <button id="modeQuickBtn" onclick="switchVotingMode('quick')" style="flex:1;padding:0.5rem;border-radius:6px;font-size:0.75rem;font-weight:600;border:2px solid #e5e7eb;background:white;color:#6b7280;cursor:pointer;">
+                    Rápido
+                </button>
+            </div>
+            
+            <!-- MODO SLIDER (tradicional) -->
+            <div id="sliderMode">
+                <div class="rating-container">
+                    <label style="font-weight:500;display:block;margin-bottom:0.5rem;font-size:0.875rem;">Tu Puntuación</label>
+                    <div class="rating-slider-container">
+                        <input type="range" id="ratingSlider" class="rating-slider" min="0" max="10" step="0.1" value="5.0" oninput="updateRatingValue()">
+                        <div class="rating-labels"><span>0</span><span>5</span><span>10</span></div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.75rem;margin-top:1rem;">
+                    <button class="btn" onclick="markAsNotTasted()" style="flex:1;background:var(--bg-tertiary);color:var(--text);border:1px solid var(--border);font-weight:500;">No probado</button>
+                    <button class="btn btn-primary" onclick="submitVote()" style="flex:1;">Enviar Voto</button>
                 </div>
             </div>
-            <div style="display:flex;gap:0.75rem;">
-                <button class="btn" onclick="markAsNotTasted()" style="flex:1;background:var(--bg-tertiary);color:var(--text);border:1px solid var(--border);font-weight:500;">No probado</button>
-                <button class="btn btn-primary" onclick="submitVote()" style="flex:1;">Enviar Voto</button>
+            
+            <!-- MODO RÁPIDO (botones) -->
+            <div id="quickMode" style="display:none;">
+                <label style="font-weight:500;display:block;margin-bottom:0.75rem;font-size:0.875rem;text-align:center;">Toca tu puntuación</label>
+                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.5rem;margin-bottom:1rem;">
+                    <button onclick="quickVote(1)" style="aspect-ratio:1;border:2px solid #e5e7eb;background:white;border-radius:8px;font-size:1.25rem;font-weight:700;color:#ef4444;cursor:pointer;transition:all 0.2s;">1</button>
+                    <button onclick="quickVote(2)" style="aspect-ratio:1;border:2px solid #e5e7eb;background:white;border-radius:8px;font-size:1.25rem;font-weight:700;color:#f59e0b;cursor:pointer;transition:all 0.2s;">2</button>
+                    <button onclick="quickVote(3)" style="aspect-ratio:1;border:2px solid #e5e7eb;background:white;border-radius:8px;font-size:1.25rem;font-weight:700;color:#f59e0b;cursor:pointer;transition:all 0.2s;">3</button>
+                    <button onclick="quickVote(4)" style="aspect-ratio:1;border:2px solid #e5e7eb;background:white;border-radius:8px;font-size:1.25rem;font-weight:700;color:#f59e0b;cursor:pointer;transition:all 0.2s;">4</button>
+                    <button onclick="quickVote(5)" style="aspect-ratio:1;border:2px solid #e5e7eb;background:white;border-radius:8px;font-size:1.25rem;font-weight:700;color:#eab308;cursor:pointer;transition:all 0.2s;">5</button>
+                    <button onclick="quickVote(6)" style="aspect-ratio:1;border:2px solid #e5e7eb;background:white;border-radius:8px;font-size:1.25rem;font-weight:700;color:#eab308;cursor:pointer;transition:all 0.2s;">6</button>
+                    <button onclick="quickVote(7)" style="aspect-ratio:1;border:2px solid #e5e7eb;background:white;border-radius:8px;font-size:1.25rem;font-weight:700;color:#84cc16;cursor:pointer;transition:all 0.2s;">7</button>
+                    <button onclick="quickVote(8)" style="aspect-ratio:1;border:2px solid #e5e7eb;background:white;border-radius:8px;font-size:1.25rem;font-weight:700;color:#22c55e;cursor:pointer;transition:all 0.2s;">8</button>
+                    <button onclick="quickVote(9)" style="aspect-ratio:1;border:2px solid #e5e7eb;background:white;border-radius:8px;font-size:1.25rem;font-weight:700;color:#10b981;cursor:pointer;transition:all 0.2s;">9</button>
+                    <button onclick="quickVote(10)" style="aspect-ratio:1;border:2px solid #e5e7eb;background:white;border-radius:8px;font-size:1.25rem;font-weight:700;color:#059669;cursor:pointer;transition:all 0.2s;">10</button>
+                </div>
+                <button class="btn" onclick="markAsNotTasted()" style="width:100%;background:var(--bg-tertiary);color:var(--text);border:1px solid var(--border);font-weight:500;">No probado</button>
             </div>
+            
             <div class="stats-bar"><p><strong id="votedCount" style="color:var(--primary);">0</strong> de <strong id="votedTotal">0</strong> han votado</p></div>
         </div>
     </div>
@@ -2165,13 +2173,10 @@ function toggleAuthMode(){
 async function logout(){
     await supabaseClient.auth.signOut();
     
-    // Mostrar pantalla de auth forzada si ya completó onboarding
-    const completed = localStorage.getItem('onboarding_completed');
-    if (completed) {
-        document.getElementById('forcedAuthScreen').style.display = 'flex';
-    } else {
-        showScreen('homeScreen');
-    }
+    // Siempre permitir usar app sin login - mostrar home
+    showScreen('homeScreen');
+    await loadRecentTastings();
+    updateHomeStats();
 }
 
 // ===== NAVIGATION =====
@@ -7066,28 +7071,16 @@ function toggleFabMenu() {
 }
 
 function createNewTasting() {
-    toggleFabMenu();
-    
-    // Limpiar campos
-    document.getElementById('tastingName').value = '';
-    document.getElementById('tastingDescription').value = '';
-    
-    // Pre-rellenar solo "Tu Nombre" con nombre de usuario si está autenticado
-    if (authenticatedUser) {
-        const hostNameInput = document.getElementById('hostName');
-        if (hostNameInput) {
-            hostNameInput.value = authenticatedUser.name;
-        }
-    } else {
-        document.getElementById('hostName').value = '';
+    // Limpiar campo de nombre solamente (ya no hay descripción ni hostName)
+    const tastingNameField = document.getElementById('tastingName');
+    if (tastingNameField) {
+        tastingNameField.value = '';
     }
     
     showScreen('createScreen');
 }
 
 function openJoinScreen() {
-    toggleFabMenu();
-    
     // Pre-rellenar nombre si está autenticado
     if (authenticatedUser) {
         const participantNameInput = document.getElementById('participantName');
@@ -7176,8 +7169,65 @@ function checkOnboarding() {
     }
 }
 
+/**
+ * Cambiar entre modo slider y modo rápido de votación
+ */
+function switchVotingMode(mode) {
+    const sliderMode = document.getElementById('sliderMode');
+    const quickMode = document.getElementById('quickMode');
+    const sliderBtn = document.getElementById('modeSliderBtn');
+    const quickBtn = document.getElementById('modeQuickBtn');
+    
+    if (mode === 'slider') {
+        sliderMode.style.display = 'block';
+        quickMode.style.display = 'none';
+        sliderBtn.style.background = '#2563eb';
+        sliderBtn.style.color = 'white';
+        sliderBtn.style.borderColor = '#2563eb';
+        quickBtn.style.background = 'white';
+        quickBtn.style.color = '#6b7280';
+        quickBtn.style.borderColor = '#e5e7eb';
+    } else {
+        sliderMode.style.display = 'none';
+        quickMode.style.display = 'block';
+        quickBtn.style.background = '#2563eb';
+        quickBtn.style.color = 'white';
+        quickBtn.style.borderColor = '#2563eb';
+        sliderBtn.style.background = 'white';
+        sliderBtn.style.color = '#6b7280';
+        sliderBtn.style.borderColor = '#e5e7eb';
+    }
+    
+    // Guardar preferencia
+    localStorage.setItem('votingMode', mode);
+}
+
+/**
+ * Votar rápido con un número (1-10)
+ * Auto-avanza al siguiente producto
+ */
+async function quickVote(score) {
+    console.log(`⚡ Voto rápido: ${score}`);
+    
+    // Establecer el score en el slider también (por compatibilidad)
+    document.getElementById('ratingSlider').value = score;
+    
+    // Guardar voto
+    await submitVote();
+    
+    // El submitVote ya avanza al siguiente, no necesitamos hacer nada más
+}
+
 // Ejecutar al cargar la página
 setTimeout(checkOnboarding, 100);
+
+// Restaurar modo de votación preferido
+document.addEventListener('DOMContentLoaded', () => {
+    const savedMode = localStorage.getItem('votingMode') || 'slider';
+    if (savedMode === 'quick') {
+        switchVotingMode('quick');
+    }
+});
 
 // ========================================
 // NUEVAS FUNCIONES: HOME REDESIGN
