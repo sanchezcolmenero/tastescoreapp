@@ -1197,24 +1197,23 @@
 
         <!-- CTA BUTTONS (siempre visibles) -->
         <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;">
-            <button onclick="createNewTasting()" style="flex:1;background:#2563eb;color:white;padding:1rem;border-radius:8px;font-weight:600;font-size:1rem;border:none;cursor:pointer;box-shadow:0 2px 4px rgba(37,99,235,0.2);display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+            <button onclick="createNewTasting()" style="flex:2;background:#2563eb;color:white;padding:1rem;border-radius:8px;font-weight:600;font-size:1rem;border:none;cursor:pointer;box-shadow:0 2px 4px rgba(37,99,235,0.2);display:flex;align-items:center;justify-content:center;gap:0.5rem;">
                 <span style="font-size:1.25rem;line-height:1;">+</span>
                 Nueva Cata
             </button>
-            <button onclick="openJoinScreen()" style="flex:1;background:white;color:#2563eb;padding:1rem;border-radius:8px;font-weight:600;font-size:1rem;border:2px solid #2563eb;cursor:pointer;">
+            <button onclick="showQuickScanScreen()" title="Escanear producto" style="flex:0.8;background:white;color:#10b981;padding:1rem;border-radius:8px;font-weight:600;font-size:1rem;border:2px solid #10b981;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                    <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                    <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                    <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                    <rect x="7" y="7" width="10" height="10"></rect>
+                </svg>
+            </button>
+            <button onclick="openJoinScreen()" style="flex:1.5;background:white;color:#2563eb;padding:1rem;border-radius:8px;font-weight:600;font-size:1rem;border:2px solid #2563eb;cursor:pointer;">
                 Unirse
             </button>
         </div>
-        
-        <!-- BOTÓN ESCANEAR PRODUCTO (nuevo) -->
-        <button onclick="showQuickScanScreen()" style="width:100%;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;padding:1rem;border-radius:8px;font-weight:600;font-size:1rem;border:none;cursor:pointer;box-shadow:0 2px 4px rgba(16,185,129,0.3);margin-bottom:1.5rem;display:flex;align-items:center;justify-content:center;gap:0.75rem;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="9" y1="9" x2="15" y2="15"></line>
-                <line x1="15" y1="9" x2="9" y2="15"></line>
-            </svg>
-            Escanear y Votar Producto
-        </button>
 
         <!-- RECENT TASTINGS -->
         <div class="card">
@@ -6938,29 +6937,38 @@ async function deleteAccount(){
 initApp();
 
 // ===== PWA =====
-// Service Worker registration with update detection
+// Service Worker registration with update detection and better error handling
 if('serviceWorker' in navigator){
     window.addEventListener('load',function(){
         navigator.serviceWorker.register('sw.js')
             .then(function(registration){
+                console.log('✅ Service Worker registrado');
                 
                 // Check for updates every 30 seconds
                 setInterval(function(){
-                    registration.update();
+                    try {
+                        registration.update();
+                    } catch (err) {
+                        console.warn('Error actualizando SW:', err);
+                    }
                 }, 30000);
                 
                 // Listen for new service worker
                 registration.addEventListener('updatefound', function(){
                     const newWorker = registration.installing;
-                    newWorker.addEventListener('statechange', function(){
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // New version available
-                            showUpdateBanner();
-                        }
-                    });
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', function(){
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New version available
+                                showUpdateBanner();
+                            }
+                        });
+                    }
                 });
             })
             .catch(function(err){
+                console.warn('⚠️ Service Worker no disponible:', err.message);
+                // La app sigue funcionando sin SW (sin caché offline)
             });
         
         // Listen for messages from service worker
@@ -7472,11 +7480,24 @@ async function quickScanVote(score) {
  * Cargar y mostrar productos votados por el usuario
  */
 async function loadMyProducts() {
+    console.log('📦 Cargando mis productos...');
     const container = document.getElementById('myProductsList');
+    
+    // Asegurar que globalRanking está cargado
+    if (!globalRanking || Object.keys(globalRanking).length === 0) {
+        const stored = localStorage.getItem('globalRanking');
+        if (stored) {
+            globalRanking = JSON.parse(stored);
+            console.log('   GlobalRanking cargado de localStorage:', Object.keys(globalRanking).length, 'productos');
+        }
+    }
     
     const userName = authenticatedUser 
         ? authenticatedUser.name 
         : localStorage.getItem('guestUserName');
+    
+    console.log('   Usuario:', userName);
+    console.log('   Total productos en ranking:', Object.keys(globalRanking).length);
     
     if (!userName) {
         container.innerHTML = '<div style="text-align:center;padding:3rem 1rem;color:#6b7280;"><div style="font-size:1.125rem;font-weight:600;color:#1f2937;margin-bottom:0.5rem;">No has votado productos</div><p style="font-size:0.875rem;margin:0;">¡Empieza votando en una cata o escanea un producto!</p></div>';
@@ -7488,11 +7509,17 @@ async function loadMyProducts() {
     
     for (const key in globalRanking) {
         const product = globalRanking[key];
+        
+        if (!product.votes || !Array.isArray(product.votes)) {
+            console.warn('   Producto sin votos válidos:', key);
+            continue;
+        }
+        
         const myVotes = product.votes.filter(v => v.user === userName);
         
         if (myVotes.length > 0) {
             // Calcular mi puntuación promedio si voté varias veces
-            const myTotalScore = myVotes.reduce((sum, v) => sum + v.score, 0);
+            const myTotalScore = myVotes.reduce((sum, v) => sum + (v.score || 0), 0);
             const myAvgScore = myTotalScore / myVotes.length;
             
             myVotedProducts.push({
@@ -7501,15 +7528,17 @@ async function loadMyProducts() {
                 image: product.image,
                 myScore: myAvgScore,
                 myVoteCount: myVotes.length,
-                globalAvg: product.avgScore,
-                globalVotes: product.voteCount,
+                globalAvg: product.avgScore || 0,
+                globalVotes: product.voteCount || 0,
                 lastVoted: myVotes[myVotes.length - 1].timestamp || null
             });
         }
     }
     
+    console.log('   Productos votados por mí:', myVotedProducts.length);
+    
     if (myVotedProducts.length === 0) {
-        container.innerHTML = '<div style="text-align:center;padding:3rem 1rem;color:#6b7280;"><div style="font-size:1.125rem;font-weight:600;color:#1f2937;margin-bottom:0.5rem;">No has votado productos</div><p style="font-size:0.875rem;margin:0;">¡Participa en una cata o escanea un producto!</p></div>';
+        container.innerHTML = '<div style="text-align:center;padding:3rem 1rem;color:#6b7280;"><div style="font-size:1.125rem;font-weight:600;color:#1f2937;margin-bottom:0.5rem;">No has votado productos todavía</div><p style="font-size:0.875rem;margin:0;">¡Participa en una cata o escanea un producto!</p></div>';
         return;
     }
     
@@ -7537,6 +7566,7 @@ async function loadMyProducts() {
     }).join('');
     
     container.innerHTML = html;
+    console.log('✅ Productos renderizados');
 }
 
 /**
