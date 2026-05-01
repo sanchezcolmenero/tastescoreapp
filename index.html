@@ -2974,18 +2974,53 @@ function switchRankingTab(tab) {
 }
 
 async function displayMyVotesRanking() {
+    console.log('👤 Cargando MIS VOTOS...');
     const c = document.getElementById('rankingList');
     
-    if (!authenticatedUser) {
-        c.innerHTML = '<div class="empty-state"><div class="icon">🔐</div><p>Inicia sesión para ver tu ranking personal</p></div>';
+    const userName = authenticatedUser 
+        ? authenticatedUser.name 
+        : localStorage.getItem('guestUserName');
+    
+    console.log('   Usuario:', userName);
+    
+    if (!userName) {
+        c.innerHTML = '<div style="text-align:center;padding:3rem 1rem;color:#6b7280;"><div style="font-size:1.125rem;font-weight:600;color:#1f2937;margin-bottom:0.5rem;">No has votado productos</div><p style="font-size:0.875rem;margin:0;">¡Inicia sesión o vota como invitado!</p></div>';
         return;
     }
     
-    // Cargar datos desde Supabase
-    const personalData = await loadPersonalRankingFromSupabase();
+    // Usar localStorage para todos (más confiable que Supabase que tiene problemas de filtrado)
+    const allProducts = Object.values(globalRanking);
+    console.log('   Total productos en ranking:', allProducts.length);
     
-    if (!personalData || personalData.length === 0) {
-        c.innerHTML = '<div class="empty-state"><div class="icon">🗳️</div><p>Aún no has votado ningún producto.<br>¡Participa en una cata!</p></div>';
+    // Filtrar SOLO productos que YO voté
+    const myVotedProducts = [];
+    
+    for (const product of allProducts) {
+        if (!product.votes || !Array.isArray(product.votes)) continue;
+        
+        // Buscar MIS votos en este producto
+        const myVotes = product.votes.filter(v => v.user === userName);
+        
+        if (myVotes.length > 0) {
+            // Calcular MI puntuación promedio
+            const myTotalScore = myVotes.reduce((sum, v) => sum + (v.score || 0), 0);
+            const myAvgScore = myTotalScore / myVotes.length;
+            
+            myVotedProducts.push({
+                product_name: product.name,
+                product_brand: product.brand,
+                product_image: product.image,
+                my_score: myAvgScore,
+                global_avg: product.avgScore,
+                global_votes: product.voteCount
+            });
+        }
+    }
+    
+    console.log('   Productos votados por mí:', myVotedProducts.length);
+    
+    if (myVotedProducts.length === 0) {
+        c.innerHTML = '<div style="text-align:center;padding:3rem 1rem;color:#6b7280;"><div style="font-size:1.125rem;font-weight:600;color:#1f2937;margin-bottom:0.5rem;">Aún no has votado productos</div><p style="font-size:0.875rem;margin:0;">¡Participa en una cata!</p></div>';
         return;
     }
     
@@ -3003,14 +3038,13 @@ async function displayMyVotesRanking() {
     }
     
     // Filtrar según activeRankingTab
-    let productsToShow = personalData;
+    let productsToShow = myVotedProducts;
     
     if (activeRankingTab === 'supermarket') {
-        productsToShow = personalData.filter(p => !isRestaurantProduct(p.product_name, p.product_brand));
+        productsToShow = myVotedProducts.filter(p => !isRestaurantProduct(p.product_name, p.product_brand));
     } else if (activeRankingTab === 'restaurant') {
-        productsToShow = personalData.filter(p => isRestaurantProduct(p.product_name, p.product_brand));
+        productsToShow = myVotedProducts.filter(p => isRestaurantProduct(p.product_name, p.product_brand));
     }
-    // Si activeRankingTab === 'all', mostrar todos
     
     if (!productsToShow.length) {
         const emptyText = activeRankingTab === 'supermarket' ? 'supermercado' : activeRankingTab === 'restaurant' ? 'restaurantes' : 'productos';
@@ -3044,6 +3078,7 @@ async function displayMyVotesRanking() {
     }).join('');
     
     c.innerHTML = html;
+    console.log('✅ Mis votos renderizados:', sorted.length, 'productos');
 }
 
 function displayGlobalRanking(){
@@ -7323,12 +7358,21 @@ async function quickVote(score) {
 // Ejecutar al cargar la página
 setTimeout(checkOnboarding, 100);
 
-// Restaurar modo de votación preferido
+// Restaurar modo de votación preferido + Actualizar stats iniciales
 document.addEventListener('DOMContentLoaded', () => {
     const savedMode = localStorage.getItem('votingMode') || 'slider';
     if (savedMode === 'quick') {
         switchVotingMode('quick');
     }
+    
+    // Actualizar stats al cargar página si estamos en home
+    setTimeout(() => {
+        const activeScreen = document.querySelector('.screen.active');
+        if (activeScreen && activeScreen.id === 'homeScreen') {
+            console.log('🏠 Actualizando stats iniciales...');
+            updateHomeStats();
+        }
+    }, 500);
 });
 
 // ========================================
@@ -7480,42 +7524,72 @@ async function quickScanVote(score) {
  * Cargar y mostrar productos votados por el usuario
  */
 async function loadMyProducts() {
-    console.log('📦 Cargando mis productos...');
+    console.log('📦 === CARGANDO MIS PRODUCTOS ===');
     const container = document.getElementById('myProductsList');
     
-    // Asegurar que globalRanking está cargado
+    // PASO 1: Asegurar que globalRanking está cargado
     if (!globalRanking || Object.keys(globalRanking).length === 0) {
+        console.log('   GlobalRanking vacío, cargando desde localStorage...');
         const stored = localStorage.getItem('globalRanking');
         if (stored) {
-            globalRanking = JSON.parse(stored);
-            console.log('   GlobalRanking cargado de localStorage:', Object.keys(globalRanking).length, 'productos');
+            try {
+                globalRanking = JSON.parse(stored);
+                console.log('   ✅ GlobalRanking cargado:', Object.keys(globalRanking).length, 'productos');
+            } catch (e) {
+                console.error('   ❌ Error parseando globalRanking:', e);
+                globalRanking = {};
+            }
+        } else {
+            console.log('   ℹ️ No hay globalRanking en localStorage');
         }
+    } else {
+        console.log('   ✅ GlobalRanking ya en memoria:', Object.keys(globalRanking).length, 'productos');
     }
     
+    // PASO 2: Obtener nombre del usuario
     const userName = authenticatedUser 
         ? authenticatedUser.name 
         : localStorage.getItem('guestUserName');
     
-    console.log('   Usuario:', userName);
-    console.log('   Total productos en ranking:', Object.keys(globalRanking).length);
+    console.log('   Usuario actual:', userName);
     
     if (!userName) {
+        console.log('   ❌ No hay usuario, mostrando mensaje');
         container.innerHTML = '<div style="text-align:center;padding:3rem 1rem;color:#6b7280;"><div style="font-size:1.125rem;font-weight:600;color:#1f2937;margin-bottom:0.5rem;">No has votado productos</div><p style="font-size:0.875rem;margin:0;">¡Empieza votando en una cata o escanea un producto!</p></div>';
         return;
     }
     
-    // Recopilar todos los productos votados desde globalRanking
+    // PASO 3: Buscar productos votados por el usuario
     const myVotedProducts = [];
+    
+    console.log('   Buscando votos de:', userName);
     
     for (const key in globalRanking) {
         const product = globalRanking[key];
         
+        // Debug: mostrar estructura del producto
+        if (myVotedProducts.length === 0) {
+            console.log('   Ejemplo producto:', {
+                key,
+                name: product.name,
+                votes: product.votes ? product.votes.length : 'null',
+                votesArray: Array.isArray(product.votes)
+            });
+        }
+        
         if (!product.votes || !Array.isArray(product.votes)) {
-            console.warn('   Producto sin votos válidos:', key);
+            console.warn('   ⚠️ Producto sin votos válidos:', key);
             continue;
         }
         
-        const myVotes = product.votes.filter(v => v.user === userName);
+        // Buscar MIS votos
+        const myVotes = product.votes.filter(v => {
+            const match = v.user === userName;
+            if (match && myVotedProducts.length === 0) {
+                console.log('   ✅ Encontrado voto:', v);
+            }
+            return match;
+        });
         
         if (myVotes.length > 0) {
             // Calcular mi puntuación promedio si voté varias veces
@@ -7532,12 +7606,17 @@ async function loadMyProducts() {
                 globalVotes: product.voteCount || 0,
                 lastVoted: myVotes[myVotes.length - 1].timestamp || null
             });
+            
+            if (myVotedProducts.length <= 3) {
+                console.log(`   Producto ${myVotedProducts.length}:`, product.name, '- Mi nota:', myAvgScore.toFixed(1));
+            }
         }
     }
     
-    console.log('   Productos votados por mí:', myVotedProducts.length);
+    console.log('   📊 RESUMEN: Encontrados', myVotedProducts.length, 'productos votados por', userName);
     
     if (myVotedProducts.length === 0) {
+        console.log('   ℹ️ Mostrando mensaje de "sin productos"');
         container.innerHTML = '<div style="text-align:center;padding:3rem 1rem;color:#6b7280;"><div style="font-size:1.125rem;font-weight:600;color:#1f2937;margin-bottom:0.5rem;">No has votado productos todavía</div><p style="font-size:0.875rem;margin:0;">¡Participa en una cata o escanea un producto!</p></div>';
         return;
     }
@@ -7566,7 +7645,8 @@ async function loadMyProducts() {
     }).join('');
     
     container.innerHTML = html;
-    console.log('✅ Productos renderizados');
+    console.log('   ✅ Renderizados', myVotedProducts.length, 'productos');
+    console.log('📦 === FIN CARGA MIS PRODUCTOS ===\n');
 }
 
 /**
