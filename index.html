@@ -2999,7 +2999,7 @@ async function displayMyVotesRanking() {
         if (!product.votes || !Array.isArray(product.votes)) continue;
         
         // Buscar MIS votos en este producto
-        const myVotes = product.votes.filter(v => v.user === userName);
+        const myVotes = product.votes.filter(v => v.user_name === userName || v.user === userName);
         
         if (myVotes.length > 0) {
             // Calcular MI puntuación promedio
@@ -7584,7 +7584,7 @@ async function loadMyProducts() {
         
         // Buscar MIS votos
         const myVotes = product.votes.filter(v => {
-            const match = v.user === userName;
+            const match = v.user_name === userName || v.user === userName;
             if (match && myVotedProducts.length === 0) {
                 console.log('   ✅ Encontrado voto:', v);
             }
@@ -7719,7 +7719,8 @@ function updateHomeStats() {
                 if (Array.isArray(productVotes)) {
                     productVotes.forEach(vote => {
                         // Contar si es este usuario Y tiene puntuación válida
-                        if (vote.user === userName && vote.score !== undefined && vote.score !== -1) {
+                        const isMyVote = vote.user_name === userName || vote.user === userName;
+                        if (isMyVote && vote.score !== undefined && vote.score !== -1) {
                             totalVotes++;
                             totalScore += vote.score;
                             scoreCount++;
@@ -7737,7 +7738,8 @@ function updateHomeStats() {
                 if (Array.isArray(productVotes)) {
                     productVotes.forEach(vote => {
                         // Contar si es este usuario Y tiene puntuación válida
-                        if (vote.user === userName && vote.score !== undefined && vote.score !== -1) {
+                        const isMyVote = vote.user_name === userName || vote.user === userName;
+                        if (isMyVote && vote.score !== undefined && vote.score !== -1) {
                             totalVotes++;
                             totalScore += vote.score;
                             scoreCount++;
