@@ -996,6 +996,8 @@
         <div class="header-content">
             <button class="back-btn" id="backBtn" style="display:none;">←</button>
             <div><h1>TasteScore</h1><p id="headerSubtitle">Catas de productos en grupo</p></div>
+            <!-- Indicador Realtime -->
+            <div id="realtimeIndicator" style="display:none;align-items:center;gap:0.5rem;padding:0.25rem 0.75rem;border-radius:20px;font-size:0.75rem;font-weight:600;color:white;"></div>
         </div>
         <div id="headerProfile" class="header-profile" onclick="headerProfileClick()">
             <svg id="headerLoginIcon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -1965,6 +1967,293 @@ function initMascots(){
 
 // ===== STATE =====
 let currentTasting=null, currentUser=null, selectedProductId=null;
+
+// ========================================
+// SUPABASE REALTIME SYSTEM
+// ========================================
+
+/**
+ * Sistema de sincronización en tiempo real
+ * Resuelve race conditions y votos perdidos
+ */
+const RealtimeSync = {
+    channel: null,
+    tastingCode: null,
+    isConnected: false,
+    
+    /**
+     * Conectar a canal de cata específica
+     */
+    async connect(tastingCode) {
+        console.log(`🔴 Conectando Realtime: ${tastingCode}`);
+        
+        // Desconectar canal anterior si existe
+        if (this.channel) {
+            await this.disconnect();
+        }
+        
+        this.tastingCode = tastingCode;
+        
+        // Crear canal para esta cata
+        this.channel = supabaseClient.channel(`tasting:${tastingCode}`)
+            // Escuchar votos nuevos
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'global_product_votes',
+                filter: `tasting_code=eq.${tastingCode}`
+            }, payload => {
+                console.log('✅ Nuevo voto recibido:', payload.new);
+                this.handleNewVote(payload.new);
+            })
+            // Escuchar actualizaciones de votos
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'global_product_votes',
+                filter: `tasting_code=eq.${tastingCode}`
+            }, payload => {
+                console.log('🔄 Voto actualizado:', payload.new);
+                this.handleVoteUpdate(payload.new);
+            })
+            // Escuchar cambios de estado de cata
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'tasting_state',
+                filter: `tasting_code=eq.${tastingCode}`
+            }, payload => {
+                console.log('📊 Estado de cata actualizado:', payload);
+                this.handleStateChange(payload);
+            })
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    this.isConnected = true;
+                    console.log('✅ Realtime conectado');
+                    this.showRealtimeIndicator(true);
+                } else if (status === 'CLOSED') {
+                    this.isConnected = false;
+                    console.log('❌ Realtime desconectado');
+                    this.showRealtimeIndicator(false);
+                }
+            });
+        
+        // Registrar presencia del usuario
+        await this.updatePresence('active');
+    },
+    
+    /**
+     * Manejar voto nuevo de otro usuario
+     */
+    handleNewVote(vote) {
+        if (!currentTasting) return;
+        
+        // Buscar producto
+        const product = currentTasting.products.find(p => 
+            p.name === vote.product_name && p.brand === vote.product_brand
+        );
+        
+        if (!product) {
+            console.warn('Producto no encontrado:', vote.product_name);
+            return;
+        }
+        
+        // Añadir voto si no existe
+        if (!currentTasting.votes[product.id]) {
+            currentTasting.votes[product.id] = [];
+        }
+        
+        const exists = currentTasting.votes[product.id].some(v => 
+            v.user_name === vote.user_name && v.timestamp === vote.created_at
+        );
+        
+        if (!exists) {
+            currentTasting.votes[product.id].push({
+                user_name: vote.user_name,
+                score: vote.score,
+                userId: vote.user_id,
+                timestamp: vote.created_at
+            });
+            
+            // Actualizar UI si estamos en pantalla de votación
+            if (document.getElementById('votingScreen').classList.contains('active')) {
+                updateVotingProgress();
+            }
+            
+            // Guardar en localStorage
+            saveTasting();
+            
+            // Mostrar notificación
+            showToast(`${vote.user_name} votó ${vote.product_name}`);
+        }
+    },
+    
+    /**
+     * Manejar actualización de voto
+     */
+    handleVoteUpdate(vote) {
+        // Similar a handleNewVote pero actualiza existente
+        this.handleNewVote(vote);
+    },
+    
+    /**
+     * Manejar cambio de estado de cata
+     */
+    handleStateChange(payload) {
+        if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+            const state = payload.new;
+            
+            // Actualizar estado local
+            if (currentTasting && currentTasting.code === state.tasting_code) {
+                const oldStatus = currentTasting.status;
+                currentTasting.status = state.status;
+                
+                // Si la cata fue finalizada por otro usuario
+                if (state.status === 'finished' && oldStatus !== 'finished') {
+                    showToast(`${state.finalized_by} finalizó la cata`);
+                    
+                    // Navegar a resultados
+                    setTimeout(() => {
+                        navigateTo('results');
+                    }, 2000);
+                }
+                
+                saveTasting();
+            }
+        }
+    },
+    
+    /**
+     * Actualizar presencia del usuario
+     */
+    async updatePresence(status) {
+        if (!this.tastingCode) return;
+        
+        try {
+            const userName = authenticatedUser 
+                ? authenticatedUser.name 
+                : localStorage.getItem('guestUserName');
+            
+            const { error } = await supabaseClient
+                .from('tasting_state')
+                .upsert({
+                    tasting_code: this.tastingCode,
+                    status: currentTasting?.status || 'voting',
+                    current_voters: [userName]
+                });
+            
+            if (error) console.error('Error actualizando presencia:', error);
+        } catch (err) {
+            console.error('Excepción actualizando presencia:', err);
+        }
+    },
+    
+    /**
+     * Guardar voto en Supabase (sincronización inmediata)
+     */
+    async saveVote(productName, productBrand, score, productImage = '') {
+        const userName = authenticatedUser 
+            ? authenticatedUser.name 
+            : localStorage.getItem('guestUserName');
+        
+        const userId = authenticatedUser 
+            ? authenticatedUser.id + '_' + userName
+            : 'guest_' + Date.now();
+        
+        try {
+            const { data, error } = await supabaseClient
+                .from('global_product_votes')
+                .insert([{
+                    product_key: (productName + '|' + productBrand).toLowerCase(),
+                    product_name: productName,
+                    product_brand: productBrand,
+                    product_image: productImage,
+                    user_id: userId,
+                    user_name: userName,
+                    score: score,
+                    tasting_code: this.tastingCode || 'DIRECT'
+                }])
+                .select();
+            
+            if (error) {
+                console.error('❌ Error guardando voto en Supabase:', error);
+                return false;
+            }
+            
+            console.log('✅ Voto guardado en Supabase:', data);
+            return true;
+        } catch (err) {
+            console.error('❌ Excepción guardando voto:', err);
+            return false;
+        }
+    },
+    
+    /**
+     * Finalizar cata (broadcast a todos)
+     */
+    async finishTasting() {
+        if (!this.tastingCode) return;
+        
+        const userName = authenticatedUser 
+            ? authenticatedUser.name 
+            : localStorage.getItem('guestUserName');
+        
+        try {
+            const { error } = await supabaseClient
+                .from('tasting_state')
+                .upsert({
+                    tasting_code: this.tastingCode,
+                    status: 'finished',
+                    finalized_by: userName,
+                    finalized_at: new Date().toISOString()
+                });
+            
+            if (error) {
+                console.error('Error finalizando cata:', error);
+                return false;
+            }
+            
+            console.log('✅ Cata finalizada en Supabase');
+            return true;
+        } catch (err) {
+            console.error('Excepción finalizando cata:', err);
+            return false;
+        }
+    },
+    
+    /**
+     * Desconectar
+     */
+    async disconnect() {
+        if (this.channel) {
+            await this.channel.unsubscribe();
+            this.channel = null;
+            this.tastingCode = null;
+            this.isConnected = false;
+            this.showRealtimeIndicator(false);
+            console.log('🔴 Realtime desconectado');
+        }
+    },
+    
+    /**
+     * Mostrar indicador visual de conexión
+     */
+    showRealtimeIndicator(connected) {
+        const indicator = document.getElementById('realtimeIndicator');
+        if (!indicator) return;
+        
+        if (connected) {
+            indicator.style.display = 'flex';
+            indicator.style.background = '#10b981';
+            indicator.innerHTML = '🟢 En vivo';
+        } else {
+            indicator.style.display = 'flex';
+            indicator.style.background = '#ef4444';
+            indicator.innerHTML = '🔴 Desconectado';
+        }
+    }
+};
+
 let userVotes={}, searchTimeout=null, html5QrCode=null;
 let globalRanking={}, isAuthMode='login', authenticatedUser=null;
 let scannerTargetScreen='addProductsScreen';
@@ -3392,6 +3681,9 @@ async function createTastingQuick() {
     // Guardar en localStorage
     saveTasting();
     
+    // 🔴 REALTIME: Conectar al canal de esta nueva cata
+    await RealtimeSync.connect(currentTasting.code);
+    
     // Guardar en Supabase si está autenticado
     if (authenticatedUser && supabaseClient) {
         try {
@@ -3573,6 +3865,10 @@ async function joinTasting(){
         // Actualizar currentUser con el participante existente
         currentUser = existingParticipant;
     }
+    
+    // 🔴 REALTIME: Conectar al canal de esta cata
+    await RealtimeSync.connect(currentTasting.code);
+    
     subscribeToTastingUpdates(); // Subscribe to realtime updates
     if(currentTasting.status==='waiting') showWaitingRoom();
     else if(currentTasting.status==='voting') showProductSelectionScreen();
@@ -5035,20 +5331,30 @@ async function submitVote(){
     const product=currentTasting.products.find(function(p){return p.id===selectedProductId;});
     if(!currentTasting.votes[selectedProductId])currentTasting.votes[selectedProductId]=[];
     
-    // FIX 1: Filtrar y buscar por userId en lugar de name
+    // Filtrar votos anteriores de este usuario
     currentTasting.votes[selectedProductId]=currentTasting.votes[selectedProductId].filter(function(v){
         return v.userId !== currentUser.userId;
     });
     
-    // FIX 1: Guardar voto con userId y userName
-    currentTasting.votes[selectedProductId].push({
+    // Guardar voto localmente
+    const voteData = {
         userId: currentUser.userId,
+        user_name: currentUser.name,
         user: currentUser.name,  // Mantener para compatibilidad
-        score: score
-    });
+        score: score,
+        timestamp: new Date().toISOString()
+    };
     
+    currentTasting.votes[selectedProductId].push(voteData);
     userVotes[selectedProductId]=true;
     updateGlobalRanking(product.name,product.brand,product.image,score);
+    
+    // 🔴 REALTIME: Guardar en Supabase inmediatamente
+    RealtimeSync.saveVote(product.name, product.brand, score, product.image)
+        .catch(err => {
+            console.error('Error sync voto:', err);
+            showToast('⚠️ Voto guardado localmente, sincronización pendiente');
+        });
     
     // Actualizar tarjeta de producto votado
     document.getElementById('votedProductImage').src = product.image || '';
@@ -5061,7 +5367,7 @@ async function submitVote(){
     // Volver a la lista inmediatamente (optimistic)
     showProductSelectionScreen();
     
-    // Guardar en background
+    // Guardar en localStorage en background
     saveTasting().catch(err => {
         console.error('Error guardando voto:', err);
         showToast('⚠️ Error al guardar voto');
@@ -5402,9 +5708,18 @@ async function confirmFinishTasting() {
     };
 }
 
-function finishTasting(){
+async function finishTasting(){
+    // 🔴 REALTIME: Notificar a todos que la cata terminó
+    if (RealtimeSync.isConnected) {
+        await RealtimeSync.finishTasting();
+    }
+    
     archiveTasting();
     unsubscribeFromTastingUpdates(); // Clean up realtime subscription
+    
+    // 🔴 REALTIME: Desconectar
+    await RealtimeSync.disconnect();
+    
     currentTasting=null;
     currentUser=null;
     userVotes={};
