@@ -2236,20 +2236,23 @@ const RealtimeSync = {
     },
     
     /**
-     * Mostrar indicador visual de conexión
+     * Mostrar indicador visual de conexión (solo en pantallas relevantes)
      */
     showRealtimeIndicator(connected) {
         const indicator = document.getElementById('realtimeIndicator');
         if (!indicator) return;
         
-        if (connected) {
+        // Solo mostrar en pantallas de cata activa
+        const activeScreen = document.querySelector('.screen.active');
+        const relevantScreens = ['votingScreen', 'productSelectionScreen', 'waitingRoom'];
+        const isRelevantScreen = activeScreen && relevantScreens.includes(activeScreen.id);
+        
+        if (connected && isRelevantScreen) {
             indicator.style.display = 'flex';
             indicator.style.background = '#10b981';
-            indicator.innerHTML = '🟢 En vivo';
+            indicator.innerHTML = '🟢 Sincronizado';
         } else {
-            indicator.style.display = 'flex';
-            indicator.style.background = '#ef4444';
-            indicator.innerHTML = '🔴 Desconectado';
+            indicator.style.display = 'none';
         }
     }
 };
